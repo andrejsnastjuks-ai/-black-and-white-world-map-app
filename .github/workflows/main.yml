@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Final APK
 
 on:
   workflow_dispatch:
@@ -8,21 +8,265 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Create clean Flutter project
+        run: |
+          flutter create black_world_map_final
+          cd black_world_map_final
+
+          cat > pubspec.yaml <<'EOF'
+          name: black_world_map_final
+          description: Black World Map travel discovery app
+          publish_to: 'none'
+          version: 1.0.0+1
+
+          environment:
+            sdk: '>=3.3.0 <4.0.0'
+
+          dependencies:
+            flutter:
+              sdk: flutter
+            flutter_map: ^6.2.1
+            latlong2: ^0.9.1
+            geolocator: ^12.0.0
+            permission_handler: ^11.3.1
+
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+            flutter_lints: ^4.0.0
+
+          flutter:
+            uses-material-design: true
+          EOF
+
+          cat > lib/main.dart <<'EOF'
+          import 'dart:async';
+          import 'package:flutter/material.dart';
+          import 'package:flutter_map/flutter_map.dart';
+          import 'package:geolocator/geolocator.dart';
+          import 'package:latlong2/latlong.dart';
+          import 'package:permission_handler/permission_handler.dart';
+
+          void main() {
+            runApp(const BlackWorldMapApp());
+          }
+
+          class BlackWorldMapApp extends StatelessWidget {
+            const BlackWorldMapApp({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                title: 'Black World Map',
+                theme: ThemeData.dark(useMaterial3: true),
+                home: const MapScreen(),
+              );
+            }
+          }
+
+          class MapScreen extends StatefulWidget {
+            const MapScreen({super.key});
+
+            @override
+            State<MapScreen> createState() => _MapScreenState();
+          }
+
+          class _MapScreenState extends State<MapScreen> {
+            final MapController _mapController = MapController();
+            final List<LatLng> _points = [];
+            StreamSubscription<Position>? _subscription;
+            LatLng _center = const LatLng(56.9496, 24.1052);
+            bool _tracking = false;
+            double _distanceMeters = 0;
+
+            Future<void> _startTracking() async {
+              await Permission.location.request();
+
+              final enabled = await Geolocator.isLocationServiceEnabled();
+              if (!enabled) {
+                _showMessage('Please enable GPS/location services.');
+                return;
+              }
+
+              LocationPermission permission = await Geolocator.checkPermission();
+              if (permission == LocationPermission.denied) {
+                permission = await Geolocator.requestPermission();
+              }
+
+              if (permission == LocationPermission.denied ||
+                  permission == LocationPermission.deniedForever) {
+                _showMessage('Location permission is required.');
+                return;
+              }
+
+              setState(() {
+                _tracking = true;
+              });
+
+              _subscription = Geolocator.getPositionStream(
+                locationSettings: const LocationSettings(
+                  accuracy: LocationAccuracy.best,
+                  distanceFilter: 8,
+                ),
+              ).listen((position) {
+                final point = LatLng(position.latitude, position.longitude);
+
+                setState(() {
+                  if (_points.isNotEmpty) {
+                    _distanceMeters += const Distance().as(
+                      LengthUnit.Meter,
+                      _points.last,
+                      point,
+                    );
+                  }
+
+                  _points.add(point);
+                  _center = point;
+                });
+
+                _mapController.move(point, 16);
+              });
+            }
+
+            Future<void> _stopTracking() async {
+              await _subscription?.cancel();
+              setState(() {
+                _tracking = false;
+              });
+            }
+
+            void _showMessage(String text) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(text)),
+              );
+            }
+
+            @override
+            void dispose() {
+              _subscription?.cancel();
+              super.dispose();
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('Black World Map'),
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Center(
+                        child: Text('${(_distanceMeters / 1000).toStringAsFixed(2)} km'),
+                      ),
+                    ),
+                  ],
+                ),
+                body: Stack(
+                  children: [
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: _center,
+                        initialZoom: 13,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.vsa.blackworldmap',
+                        ),
+                        CircleLayer(
+                          circles: _points
+                              .map(
+                                (p) => CircleMarker(
+                                  point: p,
+                                  radius: 70,
+                                  useRadiusInMeter: true,
+                                  color: Colors.white.withOpacity(0.18),
+                                  borderColor: Colors.white.withOpacity(0.35),
+                                  borderStrokeWidth: 1,
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        if (_points.length > 1)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: _points,
+                                strokeWidth: 5,
+                                color: Colors.greenAccent,
+                              ),
+                            ],
+                          ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _center,
+                              width: 48,
+                              height: 48,
+                              child: const Icon(
+                                Icons.my_location,
+                                color: Colors.greenAccent,
+                                size: 36,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IgnorePointer(
+                      child: Container(color: Colors.black.withOpacity(0.48)),
+                    ),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 24,
+                      child: FilledButton.icon(
+                        onPressed: _tracking ? _stopTracking : _startTracking,
+                        icon: Icon(_tracking ? Icons.stop : Icons.play_arrow),
+                        label: Text(_tracking ? 'Stop trip' : 'Start trip'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          text = p.read_text()
+          text = text.replace(
+              "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">",
+              """<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />"""
+          )
+          p.write_text(text)
+          PY
+
+          flutter pub get
+          flutter analyze
 
       - name: Build APK
-        run: flutter build apk --debug
+        run: |
+          cd black_world_map_final
+          flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: black-world-map-apk
+          path: black_world_map_final/build/app/outputs/flutter-apk/*.apk
