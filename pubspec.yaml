@@ -1,0 +1,32 @@
+name: black_world_map
+version: 1.0.0+1
+publish_to: 'none'
+description: Fog of war travel map app for discovering the world by walking and travelling.
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_map: ^6.2.1
+  latlong2: ^0.9.1
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+  provider: ^6.1.2
+  shared_preferences: ^2.2.3
+  flutter_background_service: ^5.0.6
+  flutter_local_notifications: ^17.2.1
+  share_plus: ^9.0.0
+  path_provider: ^2.1.3
+  intl: ^0.19.0
+  collection: ^1.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
