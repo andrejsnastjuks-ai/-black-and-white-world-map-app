@@ -10,23 +10,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip
-        run: unzip black_world_map_android_direct_build.zip -d project
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          distribution: temurin
-          java-version: 17
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
 
       - name: Build APK
-        run: |
-          cd project
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: project/app/build/outputs/apk/debug/*.apk
+          path: build/app/outputs/flutter-apk/*.apk
