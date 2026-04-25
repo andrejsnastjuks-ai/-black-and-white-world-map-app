@@ -2,29 +2,39 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Black Map</title>
+<title>Black World Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body { margin:0; background:black; color:white; font-family:sans-serif;}
-#map { height:100vh; filter: grayscale(1) brightness(0.4); }
+body{margin:0;background:#000;font-family:sans-serif;}
+#map{height:100vh;filter:grayscale(1) brightness(.45);}
 
-#panel {
-  position:fixed;
-  bottom:20px;
-  left:20px;
-  right:20px;
-  background:rgba(0,0,0,0.8);
-  padding:15px;
-  border-radius:15px;
+.panel{
+ position:fixed;
+ bottom:20px;
+ left:20px;
+ right:20px;
+ background:rgba(0,0,0,.9);
+ color:white;
+ padding:15px;
+ border-radius:20px;
 }
 
-button {
-  width:100%;
-  padding:15px;
-  font-size:18px;
-  margin-top:10px;
+.row{display:flex;gap:10px;margin-top:10px;}
+button{flex:1;padding:15px;border-radius:12px;border:0;font-size:16px;}
+.green{background:#00ff99;}
+.dark{background:#222;color:white;}
+.blue{background:#1a73e8;color:white;}
+
+.modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:black;
+ color:white;
+ padding:20px;
+ z-index:9999;
 }
 </style>
 </head>
@@ -33,70 +43,83 @@ button {
 
 <div id="map"></div>
 
-<div id="panel">
+<div class="panel">
   <h3>Black World Map</h3>
-  <button onclick="start()">Start</button>
-  <button onclick="openSettings()">⚙️ Settings</button>
+
+  <div class="row">
+    <button class="green" onclick="start()">Start</button>
+    <button class="dark" onclick="stop()">Stop</button>
+  </div>
+
+  <div class="row">
+    <button class="blue" onclick="addPlace()">⭐ Place</button>
+    <button class="dark" onclick="openMenu()">☰ Menu</button>
+  </div>
 </div>
 
-<div id="settings" style="display:none; position:fixed; inset:0; background:black; padding:20px;">
-  <h2>Settings</h2>
-  <p>Удаление данных защищено</p>
-  <button onclick="deleteData()" style="background:red;">Delete all</button>
-  <button onclick="closeSettings()">Close</button>
+<div id="menu" class="modal">
+  <h2>Menu</h2>
+  <button onclick="showPlaces()">⭐ My places</button>
+  <button onclick="closeMenu()">Close</button>
+  <div id="list"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map = L.map('map').setView([56.95,24.1],13);
-
+const map=L.map('map').setView([56.95,24.1],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let visited = JSON.parse(localStorage.getItem('zones')||'[]');
+let watch=null;
+let current=null;
+let places=JSON.parse(localStorage.places||'[]');
 
-visited.forEach(p=>{
-  L.circle(p,{radius:40,color:'white',fillOpacity:0.4}).addTo(map);
+places.forEach(p=>{
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup(p.name);
 });
 
 function start(){
- navigator.geolocation.watchPosition(pos=>{
-   const p=[pos.coords.latitude,pos.coords.longitude];
-
-   map.setView(p,16);
-
-   let newZone=true;
-   visited.forEach(v=>{
-     if(map.distance(v,p)<30) newZone=false;
-   });
-
-   if(newZone){
-     visited.push(p);
-     localStorage.setItem('zones',JSON.stringify(visited));
-     L.circle(p,{radius:40,color:'white',fillOpacity:0.4}).addTo(map);
-   }
-
+ watch=navigator.geolocation.watchPosition(pos=>{
+  current=[pos.coords.latitude,pos.coords.longitude];
+  map.setView(current,16);
  });
 }
 
-function openSettings(){
- document.getElementById('settings').style.display='block';
+function stop(){
+ if(watch)navigator.geolocation.clearWatch(watch);
 }
 
-function closeSettings(){
- document.getElementById('settings').style.display='none';
+function addPlace(){
+ if(!current){alert("Нажми Start");return;}
+ let name=prompt("Название места");
+ if(!name)return;
+
+ let p={name:name,lat:current[0],lng:current[1]};
+ places.push(p);
+ localStorage.places=JSON.stringify(places);
+
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup(name);
 }
 
-function deleteData(){
- let confirmText=prompt("Напиши DELETE");
+function openMenu(){
+ document.getElementById('menu').style.display='block';
+}
 
- if(confirmText==="DELETE"){
-   localStorage.clear();
-   alert("Удалено");
-   location.reload();
- } else {
-   alert("Отмена");
- }
+function closeMenu(){
+ document.getElementById('menu').style.display='none';
+}
+
+function showPlaces(){
+ let list=document.getElementById('list');
+ list.innerHTML="";
+
+ places.forEach(p=>{
+  list.innerHTML+=`
+  <div style="margin:10px 0;">
+    <b>${p.name}</b><br>
+    <button onclick="map.setView([${p.lat},${p.lng}],17)">Go</button>
+  </div>`;
+ });
 }
 </script>
 
