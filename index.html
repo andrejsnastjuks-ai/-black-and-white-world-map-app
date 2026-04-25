@@ -3,436 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>WanderGlow V6</title>
+<title>WanderGlow</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-:root{
-  --mint:#7dffd0;
-  --mint2:#e2fff5;
-  --blue:#8cc9ff;
-  --red:#9b2929;
-  --muted:rgba(247,251,255,.65);
-  --line:rgba(255,255,255,.16);
-}
-
 html,body{
   margin:0;
   height:100%;
   overflow:hidden;
-  background:#010305;
+  background:#05080a;
   color:white;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
+/* карта */
 #map{
-  height:100vh;
-  width:100vw;
+  position:fixed;
+  inset:0;
 }
 
-/* ВАЖНО: затемняем только карту, НЕ маркеры */
 .leaflet-tile-pane{
-  filter:grayscale(1) brightness(.25) contrast(.9) saturate(.18);
+  filter:grayscale(1) brightness(.28) contrast(.95);
 }
 
+/* UI */
 .glass{
-  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.04));
-  backdrop-filter:blur(34px) saturate(1.45);
-  -webkit-backdrop-filter:blur(34px) saturate(1.45);
-  border:1px solid var(--line);
-  box-shadow:
-    0 22px 55px rgba(0,0,0,.35),
-    inset 0 0 38px rgba(125,255,208,.045);
-}
-
-button,.card{
-  transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease;
-  -webkit-tap-highlight-color:transparent;
-}
-
-button:active,.card:active{
-  transform:scale(.93);
-  opacity:.78;
-  box-shadow:0 0 26px rgba(125,255,208,.4);
-}
-
-.tap-flash{
-  animation:tapFlash .28s ease;
-}
-
-@keyframes tapFlash{
-  0%{filter:brightness(1)}
-  50%{filter:brightness(1.75)}
-  100%{filter:brightness(1)}
-}
-
-button{
-  border:0;
-  font-weight:900;
-  font-size:15px;
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:28px;
 }
 
 .panel{
   position:fixed;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:9999;
-  color:white;
-  border-radius:34px;
+  bottom:16px;
+  left:12px;
+  right:12px;
   padding:16px;
-  transition:.28s ease;
-}
-
-.panel.hidden{
-  transform:translateY(125%);
-  opacity:0;
-  pointer-events:none;
-}
-
-.showPanel{
-  display:none;
-  position:fixed;
-  left:50%;
-  bottom:18px;
-  transform:translateX(-50%);
   z-index:9999;
-  width:78px;
-  height:46px;
-  border-radius:99px;
-  color:white;
-  font-size:24px;
 }
 
-.showPanel.visible{
-  display:block;
-}
-
-.hideHandle{
-  width:48px;
-  height:5px;
-  border-radius:99px;
-  background:rgba(255,255,255,.32);
-  margin:0 auto 14px;
-}
-
-.top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-}
-
-.brand b{
-  font-size:23px;
-}
-
-.brand small{
-  color:var(--muted);
-  font-size:14px;
-}
-
-.explore{
-  min-width:110px;
-  padding:14px 18px;
-  border-radius:22px;
-  background:linear-gradient(135deg,var(--mint),var(--mint2));
-  color:#031c13;
-  box-shadow:0 0 30px rgba(125,255,208,.42);
-  animation:explorePulse 2.4s infinite;
-}
-
-.explore.active{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
-  color:white;
-  box-shadow:0 0 30px rgba(77,150,255,.45);
-}
-
-@keyframes explorePulse{
-  0%{box-shadow:0 0 18px rgba(125,255,208,.25)}
-  50%{box-shadow:0 0 38px rgba(125,255,208,.5)}
-  100%{box-shadow:0 0 18px rgba(125,255,208,.25)}
-}
-
-.stats{
-  display:flex;
-  gap:10px;
-  margin-top:14px;
-}
-
-.stat{
-  flex:1;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:22px;
-  padding:11px 8px;
-  text-align:center;
-}
-
-.stat b{
-  font-size:20px;
-}
-
-.stat span{
-  display:block;
-  margin-top:2px;
-  color:var(--muted);
-  font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:.7px;
-}
-
-.levelBox{
-  margin-top:12px;
-  background:rgba(255,255,255,.06);
-  border-radius:20px;
-  padding:11px 12px;
-}
-
-.levelTop{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  color:white;
-  font-size:14px;
-}
-
-.progressBar{
-  height:9px;
-  margin-top:9px;
-  border-radius:99px;
-  background:rgba(255,255,255,.09);
-  overflow:hidden;
-}
-
-.progressFill{
-  height:100%;
-  width:0%;
-  border-radius:99px;
-  background:linear-gradient(90deg,var(--mint),var(--blue));
-  box-shadow:0 0 20px rgba(125,255,208,.65);
-  transition:width .45s ease;
-}
-
-.goal{
-  margin-top:10px;
-  font-size:13px;
-  color:var(--muted);
-}
-
-.actions{
-  display:flex;
-  gap:9px;
-  margin-top:13px;
-}
-
-.action{
-  flex:1;
-  padding:13px;
-  border-radius:20px;
-  color:white;
+button{
+  border:0;
+  padding:14px;
+  border-radius:18px;
   background:rgba(255,255,255,.08);
+  color:white;
+  font-weight:700;
 }
 
-.action.blue{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+button:active{
+  transform:scale(.92);
+  filter:brightness(1.6);
 }
 
+/* кнопки справа */
 .capsule{
   position:fixed;
-  right:16px;
-  top:62px;
-  z-index:9999;
+  right:14px;
+  top:60px;
   display:flex;
   flex-direction:column;
   gap:8px;
-  padding:8px;
-  border-radius:34px;
-}
-
-.capsule.hidden{
-  display:none;
+  z-index:9999;
 }
 
 .circle{
   width:50px;
   height:50px;
   border-radius:50%;
-  color:white;
-  font-size:20px;
-  background:rgba(255,255,255,.075);
 }
 
-.modal{
-  display:none;
-  position:fixed;
-  left:12px;
-  right:12px;
-  bottom:18px;
-  z-index:10000;
-  color:white;
-  padding:22px 20px 20px;
-  border-radius:34px;
-  max-height:72vh;
-  overflow:auto;
-}
-
-.handle{
-  width:48px;
-  height:5px;
-  border-radius:99px;
-  background:rgba(255,255,255,.32);
-  margin:0 auto 18px;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.card{
-  min-height:86px;
-  border-radius:24px;
-  background:rgba(255,255,255,.075);
-  color:white;
-  text-align:left;
-  padding:16px;
-  box-sizing:border-box;
-  font-weight:800;
-}
-
-.card.primary{
-  background:linear-gradient(135deg,rgba(77,150,255,.6),rgba(125,255,208,.22));
-}
-
-.card strong{
-  display:block;
-  font-size:16px;
-  margin-top:6px;
-}
-
-.card small{
-  color:var(--muted);
-}
-
-.item{
-  background:rgba(255,255,255,.075);
-  border-radius:22px;
-  padding:14px;
-  margin-top:10px;
-}
-
-.red{
-  background:rgba(155,41,41,.82);
-  color:white;
-}
-
+/* точка пользователя */
 .user-dot{
-  width:22px;
-  height:22px;
+  width:30px;
+  height:30px;
   border-radius:50%;
-  background:var(--mint);
+  background:#7dffd0;
   border:4px solid white;
-  box-shadow:0 0 0 9px rgba(125,255,208,.24),0 0 34px rgba(125,255,208,1);
-  animation:userPulse 1.55s infinite;
+  box-shadow:0 0 0 10px rgba(125,255,208,.2),0 0 30px #7dffd0;
+  animation:pulse 1.5s infinite;
 }
 
-.user-person{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  font-size:15px;
-}
-
-@keyframes userPulse{
-  0%{box-shadow:0 0 0 5px rgba(125,255,208,.42),0 0 28px rgba(125,255,208,1)}
-  70%{box-shadow:0 0 0 25px rgba(125,255,208,0),0 0 34px rgba(125,255,208,1)}
-  100%{box-shadow:0 0 0 5px rgba(125,255,208,0),0 0 28px rgba(125,255,208,1)}
-}
-
-.unlock-flash{
-  position:fixed;
-  width:180px;
-  height:180px;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:9998;
-  background:radial-gradient(circle,rgba(125,255,208,.72),rgba(125,255,208,.24),rgba(125,255,208,0));
-  transform:translate(-50%,-50%) scale(.2);
-  animation:unlock .95s ease-out forwards;
-}
-
-@keyframes unlock{
-  0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}
-  80%{opacity:.75;transform:translate(-50%,-50%) scale(1.9)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(2.35)}
-}
-
-.toast{
-  position:fixed;
-  left:18px;
-  right:18px;
-  top:58px;
-  z-index:10001;
-  color:white;
-  padding:14px 16px;
-  border-radius:24px;
-  display:none;
-  font-weight:900;
-}
-
-.levelUp{
-  position:fixed;
-  inset:0;
-  z-index:10002;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  color:white;
-  pointer-events:none;
-}
-
-.levelCard{
-  padding:28px;
-  border-radius:34px;
-  text-align:center;
-  transform:scale(.85);
-  animation:levelPop 1.4s ease forwards;
-}
-
-.levelCard h1{
-  margin:0;
-  font-size:34px;
-}
-
-.levelCard p{
-  margin:8px 0 0;
-  color:var(--muted);
-  font-size:18px;
-}
-
-@keyframes levelPop{
-  0%{opacity:0;transform:scale(.75)}
-  25%{opacity:1;transform:scale(1.05)}
-  70%{opacity:1;transform:scale(1)}
-  100%{opacity:0;transform:scale(.92)}
-}
-
-input,textarea,select{
-  width:100%;
-  box-sizing:border-box;
-  padding:14px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(255,255,255,.08);
-  color:white;
-  font-size:16px;
-}
-
-.leaflet-control-attribution{
-  font-size:10px;
+@keyframes pulse{
+  0%{box-shadow:0 0 0 5px rgba(125,255,208,.4),0 0 20px #7dffd0}
+  70%{box-shadow:0 0 0 25px rgba(125,255,208,0),0 0 30px #7dffd0}
+  100%{box-shadow:0 0 0 5px rgba(125,255,208,0),0 0 20px #7dffd0}
 }
 </style>
 </head>
@@ -440,499 +97,125 @@ input,textarea,select{
 <body>
 
 <div id="map"></div>
-<div id="toast" class="toast glass"></div>
 
-<div id="levelUp" class="levelUp">
-  <div class="levelCard glass">
-    <h1>LEVEL UP</h1>
-    <p id="levelUpText">Explorer II</p>
-  </div>
-</div>
-
-<div id="capsule" class="capsule glass">
+<div class="capsule glass">
   <button class="circle" onclick="centerMe()">📍</button>
-  <button class="circle" onclick="openPlaceEditor()">⭐</button>
-  <button class="circle" onclick="openMenu()">☰</button>
+  <button class="circle" onclick="start()">▶</button>
+  <button class="circle" onclick="stop()">⏸</button>
 </div>
 
-<button id="showPanelBtn" class="showPanel glass" onclick="showPanel()">⌃</button>
-
-<div id="panel" class="panel glass">
-  <div class="hideHandle" onclick="hidePanel()"></div>
-
-  <div class="top">
-    <div class="brand">
-      <b>WanderGlow</b><br>
-      <small id="status">Ready to explore</small>
-    </div>
-    <button id="exploreBtn" class="explore" onclick="start()">Explore</button>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><b id="km">0.00</b><span>km</span></div>
-    <div class="stat"><b id="cells">0</b><span>cells</span></div>
-    <div class="stat"><b id="xp">0</b><span>XP</span></div>
-  </div>
-
-  <div class="levelBox">
-    <div class="levelTop">
-      <b id="levelName">Explorer I</b>
-      <span id="levelNeed">0 / 10 cells</span>
-    </div>
-    <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
-    <div id="dailyGoal" class="goal">Daily goal: 0 / 10 XP</div>
-  </div>
-
-  <div class="actions">
-    <button class="action" onclick="stop()">Stop</button>
-    <button class="action blue" onclick="openPlaceEditor()">Place</button>
-    <button class="action" onclick="openMenu()">Menu</button>
-  </div>
-</div>
-
-<div id="menu" class="modal glass">
-  <div class="handle" onclick="closeMenu()"></div>
-  <h2>WanderGlow</h2>
-  <p style="color:var(--muted)">Открывай город шаг за шагом. Каждая новая клетка даёт XP, уровень и прогресс.</p>
-
-  <div class="grid">
-    <div class="card primary" onclick="centerMe()">📍<strong>My location</strong><small>Вернуться к себе</small></div>
-    <div class="card primary" onclick="showPlaces()">⭐<strong>My places</strong><small>Сохранённые места</small></div>
-    <div class="card" onclick="hideAllUI()">👁️<strong>Hide UI</strong><small>Чистая карта</small></div>
-    <div class="card" onclick="showAllUI()">✨<strong>Show UI</strong><small>Вернуть интерфейс</small></div>
-    <div class="card" onclick="exportData()">⬇️<strong>Backup</strong><small>Сохранить данные</small></div>
-    <div class="card" onclick="openImport()">⬆️<strong>Import</strong><small>Восстановить</small></div>
-  </div>
-
-  <br>
-  <button class="red" style="width:100%;padding:14px;border-radius:22px" onclick="deleteAll()">Delete all data</button>
-  <button class="action" style="width:100%;margin-top:10px" onclick="closeMenu()">Close</button>
-
-  <div id="list"></div>
-</div>
-
-<div id="placeModal" class="modal glass">
-  <div class="handle" onclick="closePlaceEditor()"></div>
-  <h2>Save place</h2>
-
-  <input id="placeName" placeholder="Название места">
-  <br><br>
-  <select id="placeCategory">
-    <option value="⭐">⭐ Избранное</option>
-    <option value="🏨">🏨 Отель</option>
-    <option value="🍽️">🍽️ Еда</option>
-    <option value="📸">📸 Фото</option>
-    <option value="🌳">🌳 Природа</option>
-    <option value="📍">📍 Другое</option>
-  </select>
-
-  <br><br>
-  <button class="action blue" style="width:100%" onclick="savePlaceFromEditor()">Save place</button>
-  <button class="action" style="width:100%;margin-top:10px" onclick="closePlaceEditor()">Close</button>
-</div>
-
-<div id="importModal" class="modal glass">
-  <div class="handle" onclick="closeImport()"></div>
-  <h2>Import data</h2>
-  <textarea id="importText" rows="8" placeholder="Paste backup JSON here"></textarea>
-  <br><br>
-  <button class="action blue" style="width:100%" onclick="importData()">Import</button>
-  <button class="action" style="width:100%;margin-top:10px" onclick="closeImport()">Close</button>
+<div class="panel glass">
+  <div>KM: <b id="km">0</b></div>
+  <div>Cells: <b id="cells">0</b></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map',{attributionControl:true}).setView([56.9496,24.1052],13);
+const map = L.map('map').setView([56.9496,24.1052],13);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,
-  attribution:'© OpenStreetMap contributors'
+  attribution:'© OpenStreetMap'
 }).addTo(map);
 
-let watch=null,current=null,last=null,userMarker=null,trail=null;
-let follow=true;
-let total=Number(localStorage.wg_total||0);
-let xpValue=Number(localStorage.wg_xp||0);
-let dailyXP=Number(localStorage.wg_dailyXP||0);
-let dailyDate=localStorage.wg_dailyDate||new Date().toDateString();
-let opened=JSON.parse(localStorage.wg_opened||'{}');
-let places=JSON.parse(localStorage.wg_places||'[]');
-let trailPoints=JSON.parse(localStorage.wg_trail||'[]');
-let lastLevel=localStorage.wg_lastLevel||'Explorer I';
+let watch=null;
+let current=null;
+let last=null;
+let total=0;
+let opened={};
+let userMarker=null;
 
-if(dailyDate!==new Date().toDateString()){
-  dailyDate=new Date().toDateString();
-  dailyXP=0;
-}
-
-map.on('dragstart',()=>{follow=false;status.innerText='Free map'});
-map.on('zoomstart',()=>{follow=false});
-
-document.addEventListener('click', e=>{
-  const el=e.target.closest('button,.card');
-  if(!el)return;
-  el.classList.add('tap-flash');
-  setTimeout(()=>el.classList.remove('tap-flash'),280);
-  if(navigator.vibrate)navigator.vibrate(12);
-});
-
-function gridKey(lat,lng){
-  const size=0.00025;
-  return Math.floor(lat/size)+'_'+Math.floor(lng/size);
-}
-
-function save(){
-  localStorage.wg_total=total;
-  localStorage.wg_xp=xpValue;
-  localStorage.wg_dailyXP=dailyXP;
-  localStorage.wg_dailyDate=dailyDate;
-  localStorage.wg_opened=JSON.stringify(opened);
-  localStorage.wg_places=JSON.stringify(places);
-  localStorage.wg_trail=JSON.stringify(trailPoints.slice(-900));
-  localStorage.wg_lastLevel=lastLevel;
-}
-
-function drawCell(key){
-  const size=0.00025;
-  const parts=key.split('_');
-  const lat=Number(parts[0])*size;
-  const lng=Number(parts[1])*size;
-
-  L.rectangle([[lat,lng],[lat+size,lng+size]],{
-    stroke:false,
-    fillColor:'#7dffd0',
-    fillOpacity:.34
-  }).addTo(map);
-}
-
-function drawTrail(){
-  if(trail)map.removeLayer(trail);
-  if(trailPoints.length>1){
-    trail=L.polyline(trailPoints,{
-      color:'#7dffd0',
-      weight:4,
-      opacity:.58
-    }).addTo(map);
-  }
-}
-
-function drawPlace(p){
+/* рисуем пользователя */
+function drawUser(pos){
   const icon=L.divIcon({
-    html:`<div style="font-size:24px">${p.cat||'⭐'}</div>`,
+    html:'<div class="user-dot"></div>',
     className:'',
-    iconSize:[28,28],
-    iconAnchor:[14,14]
-  });
-
-  L.marker([p.lat,p.lng],{icon}).addTo(map)
-    .bindPopup(`<b>${p.cat||'⭐'} ${p.name}</b><br><small>${p.date||''}</small>`);
-}
-
-function drawUser(p){
-  const icon=L.divIcon({
-    html:'<div class="user-dot"><span class="user-person">●</span></div>',
-    className:'',
-    iconSize:[34,34],
-    iconAnchor:[17,17]
+    iconSize:[40,40],
+    iconAnchor:[20,20]
   });
 
   if(userMarker){
-    userMarker.setLatLng(p);
+    userMarker.setLatLng(pos);
   }else{
-    userMarker=L.marker(p,{icon,zIndexOffset:10000}).addTo(map).bindPopup('Ты здесь');
+    userMarker=L.marker(pos,{icon}).addTo(map);
   }
 }
 
-function getLevel(count){
-  if(count < 10) return {name:'Explorer I', next:10, prev:0};
-  if(count < 25) return {name:'Explorer II', next:25, prev:10};
-  if(count < 50) return {name:'Traveler I', next:50, prev:25};
-  if(count < 100) return {name:'Traveler II', next:100, prev:50};
-  if(count < 200) return {name:'City Seeker', next:200, prev:100};
-  if(count < 400) return {name:'World Seeker', next:400, prev:200};
-  return {name:'Map Master', next:Math.max(count,401), prev:400};
+/* клетки */
+function cellKey(lat,lng){
+  return Math.floor(lat*4000)+'_'+Math.floor(lng*4000);
 }
 
-function ui(){
-  const count=Object.keys(opened).length;
-  km.innerText=(total/1000).toFixed(2);
-  cells.innerText=count;
-  xp.innerText=xpValue;
+function drawCell(key){
+  const parts=key.split('_');
+  const lat=parts[0]/4000;
+  const lng=parts[1]/4000;
 
-  const lvl=getLevel(count);
-  levelName.innerText=lvl.name;
-  levelNeed.innerText=count+' / '+lvl.next+' cells';
-
-  const levelPct=Math.min(100,((count-lvl.prev)/(lvl.next-lvl.prev))*100);
-  progressFill.style.width=levelPct+'%';
-
-  dailyGoal.innerText='Daily goal: '+dailyXP+' / 100 XP';
-
-  if(lvl.name!==lastLevel){
-    showLevelUp(lvl.name);
-    lastLevel=lvl.name;
-    save();
-  }
+  L.rectangle([[lat,lng],[lat+0.00025,lng+0.00025]],{
+    color:false,
+    fillColor:'#7dffd0',
+    fillOpacity:.3
+  }).addTo(map);
 }
 
-function showToast(text){
-  toast.innerText=text;
-  toast.style.display='block';
-  setTimeout(()=>toast.style.display='none',2400);
-}
-
-function unlockFlash(latlng){
-  const p=map.latLngToContainerPoint(latlng);
-  const el=document.createElement('div');
-  el.className='unlock-flash';
-  el.style.left=p.x+'px';
-  el.style.top=p.y+'px';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),1000);
-}
-
-function showLevelUp(name){
-  levelUpText.innerText=name;
-  levelUp.style.display='flex';
-  if(navigator.vibrate)navigator.vibrate([40,60,40]);
-  setTimeout(()=>levelUp.style.display='none',1450);
-}
-
-Object.keys(opened).forEach(drawCell);
-places.forEach(drawPlace);
-drawTrail();
-ui();
-
+/* старт */
 function start(){
   if(!navigator.geolocation){
-    status.innerText='GPS not supported';
-    return;
-  }
-
-  if(navigator.vibrate)navigator.vibrate(40);
-
-  exploreBtn.innerText='Exploring';
-  exploreBtn.classList.add('active');
-  status.innerText='Finding GPS...';
-
-  if(watch!==null){
-    status.innerText='Already exploring';
+    alert('Нет GPS');
     return;
   }
 
   watch=navigator.geolocation.watchPosition(pos=>{
-    current=[pos.coords.latitude,pos.coords.longitude];
-    drawUser(current);
+    const p=[pos.coords.latitude,pos.coords.longitude];
+    current=p;
 
-    if(follow){
-      map.setView(current,16);
-    }
+    drawUser(p);
+
+    map.setView(p,17);
 
     if(last){
-      const d=map.distance(last,current);
-      if(d>3&&d<1000)total+=d;
+      const d=map.distance(last,p);
+      if(d<1000) total+=d;
     }
 
-    last=current;
+    last=p;
 
-    trailPoints.push(current);
-    if(trailPoints.length>900)trailPoints.shift();
-    drawTrail();
-
-    const key=gridKey(current[0],current[1]);
+    const key=cellKey(p[0],p[1]);
 
     if(!opened[key]){
       opened[key]=true;
-      xpValue+=10;
-      dailyXP+=10;
-
       drawCell(key);
-      unlockFlash(current);
-
-      if(navigator.vibrate)navigator.vibrate([10,25,10]);
-
-      const count=Object.keys(opened).length;
-      const lvl=getLevel(count);
-
-      showToast('✨ New area +10 XP · '+lvl.name);
     }
 
-    status.innerText=follow?'Exploring':'Free map';
-    save();
-    ui();
+    km.innerText=(total/1000).toFixed(2);
+    cells.innerText=Object.keys(opened).length;
 
-  },e=>{
-    status.innerText='GPS error: '+e.message;
-    exploreBtn.innerText='Explore';
-    exploreBtn.classList.remove('active');
+  },err=>{
+    alert(err.message);
   },{
-    enableHighAccuracy:true,
-    maximumAge:0,
-    timeout:15000
+    enableHighAccuracy:true
   });
 }
 
+/* стоп */
 function stop(){
-  if(watch!==null)navigator.geolocation.clearWatch(watch);
-  watch=null;
-  exploreBtn.innerText='Explore';
-  exploreBtn.classList.remove('active');
-  status.innerText='Saved';
+  if(watch){
+    navigator.geolocation.clearWatch(watch);
+    watch=null;
+  }
 }
 
+/* центр */
 function centerMe(){
   if(current){
-    follow=true;
     map.setView(current,17);
-    drawUser(current);
-    status.innerText='Following';
-    showToast('📍 Centered on you');
   }else{
-    alert('Нажми Explore и дождись GPS');
-  }
-}
-
-function hidePanel(){
-  panel.classList.add('hidden');
-  showPanelBtn.classList.add('visible');
-}
-
-function showPanel(){
-  panel.classList.remove('hidden');
-  showPanelBtn.classList.remove('visible');
-}
-
-function hideAllUI(){
-  closeMenu();
-  panel.classList.add('hidden');
-  capsule.classList.add('hidden');
-  showPanelBtn.classList.add('visible');
-}
-
-function showAllUI(){
-  panel.classList.remove('hidden');
-  capsule.classList.remove('hidden');
-  showPanelBtn.classList.remove('visible');
-}
-
-function openMenu(){menu.style.display='block'}
-function closeMenu(){menu.style.display='none'}
-
-function openPlaceEditor(){
-  if(!current){
-    alert('Нажми Explore и дождись GPS');
-    return;
-  }
-
-  placeName.value='';
-  placeCategory.value='⭐';
-  placeModal.style.display='block';
-}
-
-function closePlaceEditor(){placeModal.style.display='none'}
-
-function savePlaceFromEditor(){
-  const name=placeName.value.trim();
-
-  if(!name){
-    alert('Введите название');
-    return;
-  }
-
-  const p={
-    name,
-    cat:placeCategory.value,
-    lat:current[0],
-    lng:current[1],
-    date:new Date().toLocaleDateString()
-  };
-
-  places.push(p);
-  drawPlace(p);
-  save();
-  closePlaceEditor();
-  showToast('⭐ Place saved');
-}
-
-function showPlaces(){
-  list.innerHTML='<h3>My places</h3>';
-
-  if(!places.length){
-    list.innerHTML+='<div class="item">Пока нет сохранённых мест.</div>';
-    return;
-  }
-
-  places.forEach((p,i)=>{
-    list.innerHTML+=`
-      <div class="item">
-        <b>${p.cat||'⭐'} ${p.name}</b><br>
-        <small>${p.date||''}</small><br><br>
-        <button class="action blue" onclick="map.setView([${p.lat},${p.lng}],17);follow=false;closeMenu()">Show</button>
-        <button class="red" onclick="removePlace(${i})">Delete</button>
-      </div>`;
-  });
-}
-
-function removePlace(i){
-  if(!confirm('Удалить это место?'))return;
-  places.splice(i,1);
-  save();
-  location.reload();
-}
-
-function exportData(){
-  const data={
-    total,
-    xpValue,
-    dailyXP,
-    opened,
-    places,
-    trailPoints,
-    exportedAt:new Date().toISOString()
-  };
-
-  const text=JSON.stringify(data,null,2);
-
-  navigator.clipboard.writeText(text)
-    .then(()=>alert('Backup copied'))
-    .catch(()=>prompt('Copy backup:',text));
-}
-
-function openImport(){importModal.style.display='block'}
-function closeImport(){importModal.style.display='none'}
-
-function importData(){
-  try{
-    const data=JSON.parse(importText.value);
-
-    if(!data.opened||!data.places){
-      throw new Error('Bad data');
-    }
-
-    localStorage.wg_total=Number(data.total||0);
-    localStorage.wg_xp=Number(data.xpValue||0);
-    localStorage.wg_dailyXP=Number(data.dailyXP||0);
-    localStorage.wg_opened=JSON.stringify(data.opened||{});
-    localStorage.wg_places=JSON.stringify(data.places||[]);
-    localStorage.wg_trail=JSON.stringify(data.trailPoints||[]);
-
-    alert('Imported. App will reload.');
-    location.reload();
-
-  }catch(e){
-    alert('Import error. Проверь JSON.');
-  }
-}
-
-function deleteAll(){
-  const t=prompt('Для удаления всех данных напиши DELETE');
-
-  if(t==='DELETE'){
-    localStorage.clear();
-    location.reload();
-  }else{
-    alert('Отмена');
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const p=[pos.coords.latitude,pos.coords.longitude];
+      current=p;
+      drawUser(p);
+      map.setView(p,17);
+    });
   }
 }
 </script>
