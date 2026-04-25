@@ -3,65 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V21 FINAL</title>
+<title>WanderGlow V22</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system;color:#fff}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:-apple-system}
 #map{height:100%;filter:grayscale(1) brightness(.35)}
 #fog{position:absolute;inset:0;pointer-events:none}
 
 .player{
-  width:28px;height:28px;border-radius:50%;
+  width:30px;height:30px;border-radius:50%;
   background:#7dffd0;border:4px solid #fff;
   box-shadow:0 0 0 8px rgba(125,255,208,.3),0 0 30px #7dffd0;
 }
 
+.panel,.menu,.toast,.showBtn{
+  background:rgba(20,20,20,.75);
+  backdrop-filter:blur(20px);
+}
+
 .panel{
   position:absolute;bottom:20px;left:10px;right:10px;
-  background:rgba(20,20,20,.7);
-  backdrop-filter:blur(20px);
-  padding:14px;border-radius:18px;
+  padding:14px;border-radius:16px;
 }
 
 .menu{
   position:absolute;top:70px;right:10px;
-  background:rgba(20,20,20,.8);
-  padding:10px;border-radius:16px;
-  display:none;
+  padding:10px;border-radius:12px;
+  display:none;width:180px;
 }
 .menu.open{display:block}
 .menu.small{width:60px}
-.menu.small div{display:none}
-
-.btn{
-  padding:10px;border-radius:10px;
-  background:#333;color:#fff;border:0;
-  margin:3px;
-}
-.btn:active{transform:scale(.9)}
-.main{background:#7dffd0;color:#000;font-weight:bold}
+.menu.small .body{display:none}
 
 .row{display:flex;gap:8px;margin-top:8px}
 .stat{flex:1;text-align:center;background:#222;padding:8px;border-radius:10px}
 
+.btn{
+  flex:1;padding:10px;border-radius:10px;
+  background:#333;color:#fff;border:0;
+}
+.btn:active{transform:scale(.9)}
+.main{background:#7dffd0;color:#000}
+
 .barWrap{height:6px;background:#222;border-radius:6px;margin-top:8px}
 .bar{height:100%;width:0%;background:#7dffd0}
+
+.toast{
+  position:absolute;top:20px;left:50%;
+  transform:translateX(-50%);
+  padding:8px 12px;border-radius:8px;
+  opacity:0;transition:.3s;
+}
 
 .showBtn{
   position:absolute;bottom:20px;left:50%;
   transform:translateX(-50%);
   display:none;
 }
-.showBtn.visible{display:block}
-.hidden{display:none}
 
-.toast{
-  position:absolute;top:20px;left:50%;
-  transform:translateX(-50%);
-  background:#333;padding:8px 12px;border-radius:8px;
-  opacity:0;transition:.3s;
+.flash{
+  position:absolute;width:160px;height:160px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(125,255,208,.5),transparent);
+  pointer-events:none;
+  animation:flash .7s forwards;
+}
+
+@keyframes flash{
+  to{transform:scale(2);opacity:0}
 }
 </style>
 </head>
@@ -72,16 +83,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-appl
 <canvas id="fog"></canvas>
 
 <div id="toast" class="toast"></div>
-
 <button id="showBtn" class="showBtn btn" onclick="showUI()">Show UI</button>
 
 <div id="menu" class="menu">
-  <button class="btn main" onclick="toggleMenu()">☰</button>
-  <div>
+  <button class="btn main" onclick="menuSize()">☰</button>
+  <div class="body">
     <button class="btn" onclick="center()">📍</button>
     <button class="btn" onclick="hideUI()">Hide</button>
     <button class="btn" onclick="backup()">Backup</button>
-    <button class="btn" onclick="clearAll()">Reset</button>
+    <button class="btn" onclick="reset()">Reset</button>
   </div>
 </div>
 
@@ -98,6 +108,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-appl
     <div class="stat"><b id="cells">0</b><br>Cells</div>
     <div class="stat"><b id="xp">0</b><br>XP</div>
     <div class="stat"><b id="level">1</b><br>Level</div>
+    <div class="stat"><b id="zones">0</b><br>Zones</div>
   </div>
 
   <div class="barWrap"><div id="bar" class="bar"></div></div>
@@ -115,30 +126,27 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-appl
 let map=L.map('map').setView([56.95,24.1],15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-/* STATE */
 let exploring=false,marker=null,lat=0,lng=0;
+
 let xp=Number(localStorage.xp||0);
 let cells=JSON.parse(localStorage.cells||"{}");
+let zones=JSON.parse(localStorage.zones||"{}");
 let path=JSON.parse(localStorage.path||"[]");
 
 let line=L.polyline(path,{color:'#7dffd0'}).addTo(map);
 
-/* FOG */
 let fog=document.getElementById("fog");
 let ctx=fog.getContext("2d");
+fog.width=innerWidth;fog.height=innerHeight;
 
-function resize(){fog.width=innerWidth;fog.height=innerHeight}
-resize();
-
+/* FOG */
 function reveal(x,y,r){
   let g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
   g.addColorStop(1,"rgba(0,0,0,0)");
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
-  ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
   ctx.globalCompositeOperation="source-over";
 }
 
@@ -161,36 +169,38 @@ function toggle(){exploring=!exploring;status.innerText=exploring?"Exploring":"P
 function stop(){exploring=false;status.innerText="Stopped"}
 function center(){map.setView([lat,lng],17)}
 function menuToggle(){menu.classList.toggle("open")}
-function toggleMenu(){menu.classList.toggle("small")}
-function hideUI(){panel.classList.add("hidden");showBtn.classList.add("visible")}
-function showUI(){panel.classList.remove("hidden");showBtn.classList.remove("visible")}
+function menuSize(){menu.classList.toggle("small")}
+function hideUI(){panel.style.display="none";showBtn.style.display="block"}
+function showUI(){panel.style.display="block";showBtn.style.display="none"}
 
 function backup(){
-  navigator.clipboard.writeText(JSON.stringify({xp,cells,path},null,2));
-  toast("Backup saved");
+  navigator.clipboard.writeText(JSON.stringify({xp,cells,zones,path}));
+  toast("Saved");
 }
 
-function clearAll(){
-  if(prompt("Type DELETE")!=="DELETE")return;
-  localStorage.clear();
-  location.reload();
+function reset(){
+  if(prompt("DELETE?")!=="DELETE")return;
+  localStorage.clear();location.reload();
 }
 
-function toast(t){
-  toastEl.innerText=t;
-  toastEl.style.opacity=1;
-  setTimeout(()=>toastEl.style.opacity=0,2000);
-}
-
-/* UPDATE */
+/* GAME */
 function update(){
   cellsEl.innerText=Object.keys(cells).length;
   xpEl.innerText=xp;
   levelEl.innerText=Math.floor(xp/100)+1;
+  zonesEl.innerText=Object.keys(zones).length;
   bar.style.width=(xp%100)+"%";
 
   localStorage.xp=xp;
   localStorage.cells=JSON.stringify(cells);
+  localStorage.zones=JSON.stringify(zones);
+}
+
+/* TOAST */
+function toast(t){
+  toastEl.innerText=t;
+  toastEl.style.opacity=1;
+  setTimeout(()=>toastEl.style.opacity=0,2000);
 }
 
 /* GPS */
@@ -212,12 +222,22 @@ navigator.geolocation.watchPosition(pos=>{
   localStorage.path=JSON.stringify(path);
 
   if(exploring){
-    let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
-    if(!cells[key]){
-      cells[key]=true;
+    let cell=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+    let zone=Math.floor(lat*100)+"_"+Math.floor(lng*100);
+
+    if(!cells[cell]){
+      cells[cell]=true;
       xp+=10;
-      update();
+      flash();
     }
+
+    if(!zones[zone]){
+      zones[zone]=true;
+      xp+=50;
+      toast("🌍 New Zone!");
+    }
+
+    update();
   }
 
   ctx.clearRect(0,0,fog.width,fog.height);
@@ -225,18 +245,30 @@ navigator.geolocation.watchPosition(pos=>{
 
 },()=>alert("GPS error"),{enableHighAccuracy:true});
 
-update();
+/* FLASH */
+function flash(){
+  let f=document.createElement("div");
+  f.className="flash";
+  let p=map.latLngToContainerPoint([lat,lng]);
+  f.style.left=p.x+"px";
+  f.style.top=p.y+"px";
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(),700);
+}
 
 /* refs */
 let status=document.getElementById("status");
 let cellsEl=document.getElementById("cells");
 let xpEl=document.getElementById("xp");
 let levelEl=document.getElementById("level");
+let zonesEl=document.getElementById("zones");
 let bar=document.getElementById("bar");
-let panel=document.getElementById("panel");
 let menu=document.getElementById("menu");
+let panel=document.getElementById("panel");
 let showBtn=document.getElementById("showBtn");
 let toastEl=document.getElementById("toast");
+
+update();
 </script>
 
 </body>
