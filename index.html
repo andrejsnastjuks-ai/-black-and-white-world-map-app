@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>WanderGlow V18</title>
+<title>WanderGlow V19</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -24,39 +24,37 @@ html,body{
 
 /* PLAYER */
 .player{
-  width:20px;
-  height:20px;
+  width:22px;
+  height:22px;
   border-radius:50%;
   background:#7dffd0;
   border:3px solid #fff;
   position:relative;
-  box-shadow:0 0 12px #7dffd0;
+  box-shadow:0 0 15px #7dffd0;
 }
 
-/* точная точка */
 .player::before{
   content:"";
-  position:absolute;
   width:6px;
   height:6px;
-  background:#00251b;
+  background:#003328;
   border-radius:50%;
+  position:absolute;
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
 }
 
-/* пульс */
 .player::after{
   content:"";
-  position:absolute;
-  width:50px;
-  height:50px;
+  width:60px;
+  height:60px;
   border-radius:50%;
-  background:rgba(125,255,208,.2);
+  position:absolute;
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
+  background:rgba(125,255,208,.2);
   animation:pulse 2s infinite;
 }
 
@@ -68,26 +66,26 @@ html,body{
 /* LIGHT */
 .light{
   position:absolute;
-  width:280px;
-  height:280px;
+  width:300px;
+  height:300px;
   border-radius:50%;
   background:radial-gradient(circle,
-    rgba(125,255,208,.5) 0%,
-    rgba(125,255,208,.25) 40%,
+    rgba(255,255,255,.2),
+    rgba(125,255,208,.25),
     transparent 75%);
   pointer-events:none;
   transform:translate(-50%,-50%);
 }
 
-/* UI */
+/* PANEL */
 .panel{
   position:absolute;
   bottom:20px;
   left:10px;
   right:10px;
   padding:16px;
-  border-radius:20px;
-  background:rgba(30,30,30,.65);
+  border-radius:22px;
+  background:rgba(30,30,30,.7);
   backdrop-filter:blur(20px);
   color:white;
 }
@@ -96,7 +94,7 @@ html,body{
   display:none;
 }
 
-.showUI{
+.showBtn{
   position:absolute;
   bottom:20px;
   left:50%;
@@ -156,7 +154,6 @@ html,body{
   height:100%;
   width:0%;
   background:#7dffd0;
-  border-radius:6px;
 }
 
 /* TOAST */
@@ -180,7 +177,7 @@ html,body{
 <div id="light" class="light"></div>
 <div id="toast" class="toast"></div>
 
-<button id="showBtn" class="showUI" onclick="showUI()">Show UI</button>
+<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
 <div id="panel" class="panel">
 
@@ -193,8 +190,8 @@ html,body{
 </div>
 
 <div class="row">
-  <div class="stat"><div id="km">0</div><small>KM</small></div>
   <div class="stat"><div id="cells">0</div><small>Cells</small></div>
+  <div class="stat"><div id="xp">0</div><small>XP</small></div>
   <div class="stat"><div id="level">1</div><small>Level</small></div>
 </div>
 
@@ -212,7 +209,6 @@ html,body{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-
 let map = L.map('map').setView([56.95,24.1],15);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -223,13 +219,15 @@ let marker=null;
 let lat=0,lng=0;
 let lastCell=null;
 
+/* DATA */
 let xp=Number(localStorage.xp||0);
 let cells=Number(localStorage.cells||0);
+let path=JSON.parse(localStorage.path||"[]");
 
+/* LEVEL */
 let level=Math.floor(xp/100)+1;
 
-/* PATH */
-let path=JSON.parse(localStorage.path||"[]");
+/* LINE */
 let line=L.polyline(path,{color:'#7dffd0'}).addTo(map);
 
 /* UI */
@@ -262,13 +260,14 @@ function place(){
   toastMsg("⭐ Place saved");
 }
 
-/* UI UPDATE */
+/* UPDATE */
 function update(){
-  cellsEl.innerText=cells;
-  levelEl.innerText=level;
+  document.getElementById("cells").innerText=cells;
+  document.getElementById("xp").innerText=xp;
+  document.getElementById("level").innerText=level;
 
   let progress = xp % 100;
-  bar.style.width = progress + "%";
+  document.getElementById("bar").style.width = progress+"%";
 
   localStorage.xp=xp;
   localStorage.cells=cells;
@@ -308,7 +307,7 @@ navigator.geolocation.watchPosition(pos=>{
 
   /* PATH */
   path.push([lat,lng]);
-  if(path.length>500) path.shift();
+  if(path.length>600) path.shift();
   line.setLatLngs(path);
   localStorage.path=JSON.stringify(path);
 
@@ -318,12 +317,9 @@ navigator.geolocation.watchPosition(pos=>{
 
     if(cell!==lastCell){
       lastCell=cell;
-
       xp+=10;
       cells++;
-
       level=Math.floor(xp/100)+1;
-
       toastMsg("✨ +10 XP");
       update();
     }
