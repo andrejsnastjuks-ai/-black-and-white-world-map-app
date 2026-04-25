@@ -7,22 +7,188 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#000;color:white}
-#map{height:100vh;filter:grayscale(1) brightness(.25)}
-
-.panel{
-position:fixed;bottom:20px;left:10px;right:10px;
-padding:16px;border-radius:30px;
-background:rgba(255,255,255,.07);
-backdrop-filter:blur(20px);
+body{
+margin:0;
+background:#000;
+font-family:-apple-system;
+overflow:hidden;
+color:white;
 }
 
-button{padding:12px;border-radius:16px;border:0}
+#map{
+height:100vh;
+filter:grayscale(1) brightness(.22) contrast(.9);
+}
 
-.glow{box-shadow:0 0 20px #7dffd0}
+/* GLASS PANEL */
 
-.progress{height:6px;background:#333;border-radius:10px;overflow:hidden}
-.progress div{height:100%;background:#7dffd0}
+.panel{
+position:fixed;
+bottom:18px;
+left:12px;
+right:12px;
+padding:16px;
+border-radius:28px;
+background:rgba(255,255,255,.06);
+backdrop-filter:blur(24px);
+}
+
+.hidden{
+transform:translateY(120%);
+opacity:0;
+pointer-events:none;
+}
+
+/* TOP */
+
+.top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.title{
+font-size:20px;
+}
+
+.status{
+font-size:12px;
+opacity:.6;
+}
+
+/* BUTTON */
+
+.explore{
+padding:12px 16px;
+border-radius:20px;
+border:0;
+background:linear-gradient(135deg,#7dffd0,#dffff3);
+color:black;
+font-weight:bold;
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%{box-shadow:0 0 10px #7dffd0}
+50%{box-shadow:0 0 25px #7dffd0}
+100%{box-shadow:0 0 10px #7dffd0}
+}
+
+/* STATS */
+
+.stats{
+display:flex;
+margin-top:10px;
+}
+
+.box{
+flex:1;
+text-align:center;
+font-size:12px;
+}
+
+.progress{
+height:6px;
+background:#222;
+border-radius:10px;
+overflow:hidden;
+margin-top:10px;
+}
+
+.progress div{
+height:100%;
+background:#7dffd0;
+transition:.3s;
+}
+
+/* FLOAT BUTTONS */
+
+.fab{
+position:fixed;
+right:12px;
+top:60px;
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.btn{
+width:46px;
+height:46px;
+border-radius:50%;
+background:rgba(255,255,255,.1);
+border:0;
+color:white;
+}
+
+/* USER */
+
+.user{
+width:18px;
+height:18px;
+border-radius:50%;
+background:#7dffd0;
+border:3px solid white;
+box-shadow:0 0 20px #7dffd0;
+animation:pulse 2s infinite;
+}
+
+/* TRAIL */
+
+.trail{
+color:#7dffd0;
+}
+
+/* FLASH */
+
+.flash{
+position:fixed;
+width:140px;
+height:140px;
+border-radius:50%;
+background:radial-gradient(#7dffd0,transparent);
+transform:translate(-50%,-50%);
+pointer-events:none;
+animation:boom .7s forwards;
+}
+
+@keyframes boom{
+0%{opacity:1;transform:scale(.3)}
+100%{opacity:0;transform:scale(2)}
+}
+
+/* LEVEL UP */
+
+.levelup{
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:32px;
+background:rgba(0,0,0,.5);
+display:none;
+}
+
+/* MENU */
+
+.menu{
+position:fixed;
+bottom:18px;
+left:12px;
+right:12px;
+background:rgba(0,0,0,.9);
+border-radius:20px;
+padding:16px;
+display:none;
+}
+
+.card{
+background:#111;
+padding:12px;
+border-radius:12px;
+margin-top:8px;
+}
 </style>
 </head>
 
@@ -30,20 +196,38 @@ button{padding:12px;border-radius:16px;border:0}
 
 <div id="map"></div>
 
-<div class="panel">
-<h2>WanderGlow</h2>
-<div id="level">Explorer I</div>
+<div id="levelup" class="levelup">LEVEL UP</div>
 
-<div class="progress"><div id="bar" style="width:0%"></div></div>
+<div class="fab">
+<button class="btn" onclick="center()">📍</button>
+<button class="btn" onclick="toggleMenu()">☰</button>
+</div>
 
-<br>
+<div id="panel" class="panel">
 
-<button onclick="start()">Explore</button>
-<button onclick="stop()">Stop</button>
+<div class="top">
+<div>
+<div class="title">WanderGlow</div>
+<div id="status" class="status">Ready</div>
+</div>
 
-<div id="stats"></div>
-<div id="goal"></div>
+<button class="explore" onclick="start()">Explore</button>
+</div>
 
+<div class="stats">
+<div class="box">XP<br><b id="xp">0</b></div>
+<div class="box">Cells<br><b id="cells">0</b></div>
+<div class="box">Level<br><b id="lvl">1</b></div>
+</div>
+
+<div class="progress"><div id="bar"></div></div>
+
+</div>
+
+<div id="menu" class="menu">
+<div class="card" onclick="hideUI()">Hide UI</div>
+<div class="card" onclick="showUI()">Show UI</div>
+<div class="card" onclick="reset()">Reset</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -55,84 +239,114 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let opened=JSON.parse(localStorage.o||'{}');
 let xp=Number(localStorage.xp||0);
-let goal=1000;
+let level=Number(localStorage.lvl||1);
+
+let trailPoints=[];
 
 function key(lat,lng){
 return Math.floor(lat*2000)+'_'+Math.floor(lng*2000);
-}
-
-function level(){
-if(xp<20)return "Explorer I";
-if(xp<50)return "Explorer II";
-if(xp<100)return "Traveler";
-return "Master";
 }
 
 function draw(k){
 let p=k.split('_');
 let lat=p[0]/2000,lng=p[1]/2000;
 L.rectangle([[lat,lng],[lat+.0005,lng+.0005]],{
-color:'#7dffd0',fillOpacity:.4,stroke:false
+color:'#7dffd0',
+fillOpacity:.3,
+stroke:false
 }).addTo(map);
 }
 
 Object.keys(opened).forEach(draw);
 
 function update(){
-document.getElementById('stats').innerText=
-"XP: "+xp+" | Cells: "+Object.keys(opened).length;
+xpEl.innerText=xp;
+cells.innerText=Object.keys(opened).length;
+lvl.innerText=level;
 
-document.getElementById('level').innerText=level();
-
-document.getElementById('bar').style.width=(xp%100)+"%";
-
-document.getElementById('goal').innerText=
-"Daily goal: "+Math.floor(xp%goal)+" / "+goal;
+bar.style.width=(xp%100)+"%";
 }
 
 update();
 
-let watch,last;
+let watch,last,userMarker,trail;
 
 function start(){
 watch=navigator.geolocation.watchPosition(p=>{
 let lat=p.coords.latitude,lng=p.coords.longitude;
+
 map.setView([lat,lng],16);
 
+if(!userMarker){
+userMarker=L.marker([lat,lng],{
+icon:L.divIcon({html:'<div class="user"></div>'})
+}).addTo(map);
+}else{
+userMarker.setLatLng([lat,lng]);
+}
+
+/* TRAIL */
+trailPoints.push([lat,lng]);
+if(trail) map.removeLayer(trail);
+trail=L.polyline(trailPoints,{color:'#7dffd0'}).addTo(map);
+
+/* GRID */
 let k=key(lat,lng);
 
 if(!opened[k]){
 opened[k]=1;
 draw(k);
 
-xp+=1;
+xp++;
 
-if(navigator.vibrate)navigator.vibrate(30);
+if(xp%50===0){
+level++;
+levelup.style.display='flex';
+setTimeout(()=>levelup.style.display='none',800);
+}
 
-let flash=document.createElement('div');
-flash.style.position='fixed';
-flash.style.width='120px';
-flash.style.height='120px';
-flash.style.borderRadius='50%';
-flash.style.background='radial-gradient(#7dffd0,transparent)';
-flash.style.left='50%';
-flash.style.top='50%';
-flash.style.transform='translate(-50%,-50%)';
-document.body.appendChild(flash);
+if(navigator.vibrate)navigator.vibrate(20);
 
-setTimeout(()=>flash.remove(),500);
+let f=document.createElement('div');
+f.className='flash';
+f.style.left='50%';
+f.style.top='50%';
+document.body.appendChild(f);
+setTimeout(()=>f.remove(),700);
 }
 
 localStorage.o=JSON.stringify(opened);
 localStorage.xp=xp;
+localStorage.lvl=level;
 
 update();
 
 });
 }
 
-function stop(){
-navigator.geolocation.clearWatch(watch);
+function center(){
+if(userMarker){
+map.setView(userMarker.getLatLng(),16);
+}
+}
+
+function toggleMenu(){
+menu.style.display=menu.style.display==='block'?'none':'block';
+}
+
+function hideUI(){
+panel.classList.add('hidden');
+}
+
+function showUI(){
+panel.classList.remove('hidden');
+}
+
+function reset(){
+if(confirm("Delete all?")){
+localStorage.clear();
+location.reload();
+}
 }
 </script>
 
