@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V30</title>
+<title>WanderGlow FINAL</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -11,114 +11,97 @@
 html,body{
   margin:0;
   height:100%;
-  background:#000;
   overflow:hidden;
-  font-family:-apple-system,system-ui;
+  background:black;
+  font-family:-apple-system;
 }
 
-/* MAP */
 #map{
   height:100%;
   filter:grayscale(1) brightness(.6);
 }
 
-/* PLAYER */
+/* ЗЕЛЁНАЯ ТОЧКА */
 .player{
   width:14px;
   height:14px;
+  background:#00ff88;
   border-radius:50%;
-  background:#00ffb3;
   border:3px solid white;
-  box-shadow:0 0 18px #00ffb3;
+  box-shadow:0 0 15px #00ff88;
 }
 
-/* FOG */
-#fog{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:400;
-}
-
-/* PANEL */
+/* ПАНЕЛЬ */
 .panel{
   position:absolute;
-  bottom:12px;
+  bottom:10px;
   left:10px;
   right:10px;
-  background:rgba(25,25,25,.85);
+  background:rgba(40,40,40,.85);
   backdrop-filter:blur(20px);
   border-radius:20px;
   padding:14px;
   color:white;
-  z-index:1000;
-}
-
-/* BUTTONS */
-.btn{
-  flex:1;
-  padding:12px;
-  border:0;
-  border-radius:14px;
-  background:rgba(255,255,255,.1);
-  color:white;
-  font-weight:700;
-}
-
-.main{
-  background:#6ee7b7;
-  color:black;
 }
 
 .row{
   display:flex;
-  gap:8px;
-  margin-top:8px;
+  gap:10px;
+  margin-top:10px;
+}
+
+.btn{
+  flex:1;
+  padding:12px;
+  border-radius:12px;
+  border:0;
+  background:#333;
+  color:white;
+  font-weight:bold;
+}
+
+.main{
+  background:#00ff88;
+  color:black;
 }
 
 .stat{
   flex:1;
   text-align:center;
-  background:rgba(255,255,255,.08);
-  padding:8px;
+  background:#222;
+  padding:10px;
   border-radius:12px;
 }
 
-/* MENU MODAL */
+/* МЕНЮ */
 .menu{
   position:absolute;
   inset:0;
   background:rgba(0,0,0,.5);
   display:none;
-  align-items:center;
   justify-content:center;
-  z-index:2000;
+  align-items:center;
 }
 
-.menu.open{
-  display:flex;
+.menu.open{display:flex;}
+
+.box{
+  background:#222;
+  padding:20px;
+  border-radius:20px;
+  width:80%;
 }
 
-.menu-box{
-  width:90%;
-  max-width:320px;
-  background:rgba(40,40,40,.95);
-  padding:16px;
-  border-radius:18px;
-}
-
-/* TOAST */
 .toast{
   position:absolute;
   top:20px;
   left:10px;
   right:10px;
-  background:rgba(30,30,30,.9);
-  padding:12px;
-  border-radius:12px;
+  background:#222;
+  padding:10px;
+  border-radius:10px;
   opacity:0;
   transition:.3s;
-  z-index:3000;
 }
 </style>
 </head>
@@ -126,29 +109,23 @@ html,body{
 <body>
 
 <div id="map"></div>
-<canvas id="fog"></canvas>
 
 <div id="toast" class="toast"></div>
 
-<!-- MENU -->
 <div id="menu" class="menu">
-  <div class="menu-box">
+  <div class="box">
     <button class="btn" onclick="center()">📍 My location</button>
-    <button class="btn" onclick="backup()">⬇ Backup</button>
-    <button class="btn" onclick="importData()">⬆ Import</button>
-    <button class="btn" onclick="reset()">Delete all data</button>
+    <button class="btn" onclick="backup()">Backup</button>
+    <button class="btn" onclick="importData()">Import</button>
+    <button class="btn" onclick="reset()">Delete</button>
     <button class="btn" onclick="toggleMenu()">Close</button>
   </div>
 </div>
 
-<!-- PANEL -->
 <div class="panel">
-  <div style="display:flex;justify-content:space-between">
-    <div>
-      <b>WanderGlow</b><br>
-      <span id="status">Ready</span>
-    </div>
-    <button id="exploreBtn" class="btn main" onclick="toggleExplore()">Explore</button>
+  <div>
+    <b>WanderGlow</b><br>
+    <span id="status">Ready</span>
   </div>
 
   <div class="row">
@@ -158,7 +135,7 @@ html,body{
   </div>
 
   <div class="row">
-    <button class="btn" onclick="stop()">Stop</button>
+    <button id="explore" class="btn main">Explore</button>
     <button class="btn" onclick="toggleMenu()">Menu</button>
   </div>
 </div>
@@ -167,67 +144,25 @@ html,body{
 
 <script>
 const map=L.map('map').setView([56.95,24.1],15);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let lat,lng;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19
+}).addTo(map);
+
 let marker;
 let exploring=false;
 
 let xp=Number(localStorage.xp||0);
 let cells=JSON.parse(localStorage.cells||"{}");
 
-const fog=document.getElementById("fog");
-const ctx=fog.getContext("2d");
-fog.width=innerWidth;
-fog.height=innerHeight;
-
-function toast(text){
-  const t=document.getElementById("toast");
-  t.innerText=text;
-  t.style.opacity=1;
-  setTimeout(()=>t.style.opacity=0,2000);
+function toast(t){
+  let el=document.getElementById("toast");
+  el.innerText=t;
+  el.style.opacity=1;
+  setTimeout(()=>el.style.opacity=0,2000);
 }
 
-function drawPlayer(){
-  if(!marker){
-    marker=L.marker([lat,lng],{
-      icon:L.divIcon({html:'<div class="player"></div>'})
-    }).addTo(map);
-  }else{
-    marker.setLatLng([lat,lng]);
-  }
-}
-
-function reveal(x,y){
-  const g=ctx.createRadialGradient(x,y,0,x,y,150);
-  g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(1,"rgba(0,0,0,0)");
-
-  ctx.globalCompositeOperation="destination-out";
-  ctx.fillStyle=g;
-  ctx.beginPath();
-  ctx.arc(x,y,150,0,Math.PI*2);
-  ctx.fill();
-  ctx.globalCompositeOperation="source-over";
-}
-
-function drawFog(){
-  ctx.fillStyle="rgba(0,0,0,.45)";
-  ctx.fillRect(0,0,fog.width,fog.height);
-
-  Object.keys(cells).forEach(k=>{
-    let [a,b]=k.split("_");
-    let p=map.latLngToContainerPoint([a/1000,b/1000]);
-    reveal(p.x,p.y);
-  });
-
-  if(lat){
-    let p=map.latLngToContainerPoint([lat,lng]);
-    reveal(p.x,p.y);
-  }
-}
-
-function updateUI(){
+function update(){
   document.getElementById("xp").innerText=xp;
   document.getElementById("cells").innerText=Object.keys(cells).length;
   document.getElementById("level").innerText=Math.floor(xp/100)+1;
@@ -236,20 +171,12 @@ function updateUI(){
   localStorage.cells=JSON.stringify(cells);
 }
 
-function toggleExplore(){
-  exploring=!exploring;
-}
-
-function stop(){
-  exploring=false;
-}
-
 function toggleMenu(){
   document.getElementById("menu").classList.toggle("open");
 }
 
 function center(){
-  map.setView([lat,lng],16);
+  if(marker) map.setView(marker.getLatLng(),16);
 }
 
 function backup(){
@@ -259,10 +186,11 @@ function backup(){
 
 function importData(){
   let d=prompt("Paste backup");
+  if(!d)return;
   let data=JSON.parse(d);
   xp=data.xp;
   cells=data.cells;
-  updateUI();
+  update();
 }
 
 function reset(){
@@ -271,15 +199,32 @@ function reset(){
   location.reload();
 }
 
-navigator.geolocation.watchPosition(pos=>{
-  lat=pos.coords.latitude;
-  lng=pos.coords.longitude;
+document.getElementById("explore").onclick=()=>{
+  exploring=!exploring;
+};
 
-  drawPlayer();
+navigator.geolocation.watchPosition(pos=>{
+  let lat=pos.coords.latitude;
+  let lng=pos.coords.longitude;
+
+  // ГАРАНТИРОВАННАЯ ТОЧКА
+  if(!marker){
+    marker=L.marker([lat,lng],{
+      icon:L.divIcon({
+        html:'<div class="player"></div>',
+        className:"",
+        iconSize:[20,20]
+      })
+    }).addTo(map);
+  }else{
+    marker.setLatLng([lat,lng]);
+  }
+
   map.setView([lat,lng],16);
 
   if(exploring){
     let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+
     if(!cells[key]){
       cells[key]=1;
       xp+=10;
@@ -287,11 +232,15 @@ navigator.geolocation.watchPosition(pos=>{
     }
   }
 
-  ctx.clearRect(0,0,fog.width,fog.height);
-  drawFog();
-  updateUI();
+  update();
 
+},err=>{
+  toast("GPS error");
+},{
+  enableHighAccuracy:true
 });
+
+update();
 </script>
 
 </body>
