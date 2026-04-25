@@ -2,106 +2,137 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow FINAL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WanderGlow BASE</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 html,body{
   margin:0;
   height:100%;
   overflow:hidden;
-  background:black;
-  font-family:-apple-system;
+  background:#05080a;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 #map{
   height:100%;
-  filter:grayscale(1) brightness(.6);
+  filter:grayscale(1) brightness(.65) contrast(.95);
 }
 
-/* ЗЕЛЁНАЯ ТОЧКА */
-.player{
-  width:14px;
-  height:14px;
-  background:#00ff88;
+.userDot{
+  width:18px;
+  height:18px;
   border-radius:50%;
-  border:3px solid white;
-  box-shadow:0 0 15px #00ff88;
+  background:#00ff88;
+  border:4px solid white;
+  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
 }
 
-/* ПАНЕЛЬ */
 .panel{
   position:absolute;
-  bottom:10px;
-  left:10px;
-  right:10px;
-  background:rgba(40,40,40,.85);
-  backdrop-filter:blur(20px);
-  border-radius:20px;
-  padding:14px;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:9999;
+  padding:18px;
+  border-radius:28px;
+  background:rgba(70,70,70,.70);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
   color:white;
+}
+
+.title{
+  font-size:32px;
+  font-weight:900;
+}
+
+.status{
+  margin-top:4px;
+  color:rgba(255,255,255,.7);
+  font-size:16px;
 }
 
 .row{
   display:flex;
   gap:10px;
-  margin-top:10px;
-}
-
-.btn{
-  flex:1;
-  padding:12px;
-  border-radius:12px;
-  border:0;
-  background:#333;
-  color:white;
-  font-weight:bold;
-}
-
-.main{
-  background:#00ff88;
-  color:black;
+  margin-top:14px;
 }
 
 .stat{
   flex:1;
   text-align:center;
-  background:#222;
-  padding:10px;
-  border-radius:12px;
-}
-
-/* МЕНЮ */
-.menu{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.5);
-  display:none;
-  justify-content:center;
-  align-items:center;
-}
-
-.menu.open{display:flex;}
-
-.box{
-  background:#222;
-  padding:20px;
+  padding:14px 8px;
   border-radius:20px;
-  width:80%;
+  background:rgba(255,255,255,.10);
+}
+
+.stat b{
+  font-size:28px;
+}
+
+.stat small{
+  color:rgba(255,255,255,.65);
+}
+
+button{
+  border:0;
+  border-radius:18px;
+  padding:14px;
+  font-weight:900;
+  font-size:16px;
+  color:white;
+  background:rgba(255,255,255,.12);
+}
+
+button:active{
+  transform:scale(.94);
+}
+
+.main{
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.main.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
+}
+
+.menu{
+  display:none;
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:10000;
+  padding:20px;
+  border-radius:28px;
+  background:rgba(70,70,70,.82);
+  backdrop-filter:blur(26px);
+  -webkit-backdrop-filter:blur(26px);
+  color:white;
+}
+
+.menu.open{
+  display:block;
 }
 
 .toast{
   position:absolute;
-  top:20px;
-  left:10px;
-  right:10px;
-  background:#222;
-  padding:10px;
-  border-radius:10px;
+  top:22px;
+  left:18px;
+  right:18px;
+  z-index:12000;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(30,30,30,.85);
+  color:white;
   opacity:0;
-  transition:.3s;
+  transition:.25s;
+  font-weight:800;
 }
 </style>
 </head>
@@ -109,138 +140,181 @@ html,body{
 <body>
 
 <div id="map"></div>
-
 <div id="toast" class="toast"></div>
 
 <div id="menu" class="menu">
-  <div class="box">
-    <button class="btn" onclick="center()">📍 My location</button>
-    <button class="btn" onclick="backup()">Backup</button>
-    <button class="btn" onclick="importData()">Import</button>
-    <button class="btn" onclick="reset()">Delete</button>
-    <button class="btn" onclick="toggleMenu()">Close</button>
-  </div>
+  <button onclick="centerMe()" style="width:100%">📍 My location</button>
+  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
+  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset</button>
+  <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
 </div>
 
 <div class="panel">
-  <div>
-    <b>WanderGlow</b><br>
-    <span id="status">Ready</span>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div>
+      <div class="title">WanderGlow</div>
+      <div id="status" class="status">Waiting for GPS...</div>
+    </div>
+    <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
   </div>
 
   <div class="row">
-    <div class="stat"><b id="cells">0</b><br>Cells</div>
-    <div class="stat"><b id="xp">0</b><br>XP</div>
-    <div class="stat"><b id="level">1</b><br>Level</div>
+    <div class="stat"><b id="cellsView">0</b><br><small>Cells</small></div>
+    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
+    <div class="stat"><b id="levelView">1</b><br><small>Level</small></div>
   </div>
 
   <div class="row">
-    <button id="explore" class="btn main">Explore</button>
-    <button class="btn" onclick="toggleMenu()">Menu</button>
+    <button style="flex:1" onclick="centerMe()">📍</button>
+    <button style="flex:1" onclick="toggleMenu()">Menu</button>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map').setView([56.95,24.1],15);
+const map = L.map("map").setView([56.95,24.1],15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap"
 }).addTo(map);
 
-let marker;
-let exploring=false;
+let lat = null;
+let lng = null;
+let marker = null;
+let firstFix = true;
+let exploring = false;
 
-let xp=Number(localStorage.xp||0);
-let cells=JSON.parse(localStorage.cells||"{}");
+let xp = Number(localStorage.wg_base_xp || 0);
+let cells = JSON.parse(localStorage.wg_base_cells || "{}");
 
-function toast(t){
-  let el=document.getElementById("toast");
-  el.innerText=t;
-  el.style.opacity=1;
-  setTimeout(()=>el.style.opacity=0,2000);
+function cellKey(a,b){
+  return Math.floor(a * 1000) + "_" + Math.floor(b * 1000);
 }
 
-function update(){
-  document.getElementById("xp").innerText=xp;
-  document.getElementById("cells").innerText=Object.keys(cells).length;
-  document.getElementById("level").innerText=Math.floor(xp/100)+1;
+function level(){
+  return Math.floor(xp / 100) + 1;
+}
 
-  localStorage.xp=xp;
-  localStorage.cells=JSON.stringify(cells);
+function save(){
+  localStorage.wg_base_xp = xp;
+  localStorage.wg_base_cells = JSON.stringify(cells);
+}
+
+function updateUI(){
+  document.getElementById("xpView").innerText = xp;
+  document.getElementById("cellsView").innerText = Object.keys(cells).length;
+  document.getElementById("levelView").innerText = level();
+  save();
+}
+
+function toast(text){
+  const el = document.getElementById("toast");
+  el.innerText = text;
+  el.style.opacity = 1;
+  setTimeout(()=>el.style.opacity = 0, 2000);
+}
+
+function drawUser(){
+  const icon = L.divIcon({
+    html:'<div class="userDot"></div>',
+    className:'',
+    iconSize:[26,26],
+    iconAnchor:[13,13]
+  });
+
+  if(!marker){
+    marker = L.marker([lat,lng],{
+      icon:icon,
+      zIndexOffset:10000
+    }).addTo(map).bindPopup("Ты здесь");
+  }else{
+    marker.setLatLng([lat,lng]);
+  }
+}
+
+function toggleExplore(){
+  exploring = !exploring;
+  document.getElementById("exploreBtn").classList.toggle("active", exploring);
+  document.getElementById("exploreBtn").innerText = exploring ? "Exploring" : "Explore";
+  document.getElementById("status").innerText = exploring ? "Exploring..." : "Paused";
+}
+
+function centerMe(){
+  if(lat === null || lng === null){
+    toast("GPS ещё ищет локацию");
+    return;
+  }
+
+  map.setView([lat,lng],17);
+  document.getElementById("status").innerText = "Centered";
 }
 
 function toggleMenu(){
   document.getElementById("menu").classList.toggle("open");
 }
 
-function center(){
-  if(marker) map.setView(marker.getLatLng(),16);
-}
-
 function backup(){
-  navigator.clipboard.writeText(JSON.stringify({xp,cells}));
-  toast("Saved");
+  const data = {
+    xp: xp,
+    cells: cells,
+    exportedAt: new Date().toISOString()
+  };
+
+  const text = JSON.stringify(data,null,2);
+
+  navigator.clipboard.writeText(text)
+    .then(()=>toast("Backup copied"))
+    .catch(()=>prompt("Copy backup:", text));
 }
 
-function importData(){
-  let d=prompt("Paste backup");
-  if(!d)return;
-  let data=JSON.parse(d);
-  xp=data.xp;
-  cells=data.cells;
-  update();
-}
+function resetData(){
+  if(prompt("Для удаления напиши DELETE") !== "DELETE"){
+    toast("Cancelled");
+    return;
+  }
 
-function reset(){
-  if(prompt("Type DELETE")!=="DELETE")return;
-  localStorage.clear();
+  localStorage.removeItem("wg_base_xp");
+  localStorage.removeItem("wg_base_cells");
   location.reload();
 }
 
-document.getElementById("explore").onclick=()=>{
-  exploring=!exploring;
-};
-
 navigator.geolocation.watchPosition(pos=>{
-  let lat=pos.coords.latitude;
-  let lng=pos.coords.longitude;
+  lat = pos.coords.latitude;
+  lng = pos.coords.longitude;
 
-  // ГАРАНТИРОВАННАЯ ТОЧКА
-  if(!marker){
-    marker=L.marker([lat,lng],{
-      icon:L.divIcon({
-        html:'<div class="player"></div>',
-        className:"",
-        iconSize:[20,20]
-      })
-    }).addTo(map);
-  }else{
-    marker.setLatLng([lat,lng]);
+  drawUser();
+
+  if(firstFix){
+    map.setView([lat,lng],17);
+    firstFix = false;
   }
 
-  map.setView([lat,lng],16);
+  document.getElementById("status").innerText = exploring ? "Exploring..." : "GPS ready";
 
   if(exploring){
-    let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+    const key = cellKey(lat,lng);
 
     if(!cells[key]){
-      cells[key]=1;
-      xp+=10;
+      cells[key] = true;
+      xp += 10;
       toast("+10 XP");
     }
   }
 
-  update();
+  updateUI();
 
 },err=>{
-  toast("GPS error");
+  document.getElementById("status").innerText = "GPS error";
+  toast("Разреши доступ к геолокации");
 },{
-  enableHighAccuracy:true
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
 });
 
-update();
+updateUI();
 </script>
 
 </body>
