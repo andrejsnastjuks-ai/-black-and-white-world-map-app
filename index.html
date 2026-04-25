@@ -1,150 +1,144 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<title>WanderGlow PRO</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{
+html, body {
   margin:0;
+  padding:0;
   height:100%;
-  background:#05080a;
-  font-family:-apple-system,system-ui;
-  overflow:hidden;
-  color:white;
+  background:#000;
+  font-family:-apple-system, BlinkMacSystemFont;
 }
 
-#map{height:100%}
-
-/* карта затемнена */
-.leaflet-tile-pane{
-  filter:grayscale(1) brightness(.25);
+/* MAP */
+#map {
+  height:100%;
+  width:100%;
+  filter: grayscale(100%) brightness(0.35);
 }
 
-/* пользователь */
-.user{
-  width:18px;
-  height:18px;
+/* LIGHT REVEAL */
+.reveal {
+  position:absolute;
+  pointer-events:none;
+  width:300px;
+  height:300px;
   border-radius:50%;
-  background:#7dffd0;
-  border:3px solid white;
-  box-shadow:0 0 20px #7dffd0;
-  animation:pulse 1.6s infinite;
-}
-@keyframes pulse{
-  0%{box-shadow:0 0 0px #7dffd0}
-  50%{box-shadow:0 0 30px #7dffd0}
-  100%{box-shadow:0 0 0px #7dffd0}
+  background: radial-gradient(circle, rgba(120,255,200,0.35) 0%, transparent 70%);
+  transform:translate(-50%,-50%);
+  transition:0.2s;
 }
 
-/* панель */
-.panel{
-  position:fixed;
-  bottom:18px;
-  left:12px;
-  right:12px;
+/* USER DOT */
+.user-dot {
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#78ffc8;
+  box-shadow:0 0 12px #78ffc8;
+}
+
+.user-pulse {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:rgba(120,255,200,0.15);
+  position:absolute;
+  top:-13px;
+  left:-13px;
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {transform:scale(0.5);opacity:0.7;}
+  100% {transform:scale(2);opacity:0;}
+}
+
+/* PANEL */
+.panel {
+  position:absolute;
+  bottom:20px;
+  left:10px;
+  right:10px;
   padding:16px;
-  border-radius:26px;
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(26px);
-}
-
-/* верх */
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-/* кнопка explore */
-.explore{
-  padding:12px 18px;
-  border-radius:18px;
-  border:none;
-  font-weight:bold;
-  background:linear-gradient(135deg,#7dffd0,#eafff7);
-  color:#042015;
-  transition:.2s;
-}
-.explore.active{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  border-radius:20px;
+  backdrop-filter:blur(20px);
+  background:rgba(40,40,40,0.65);
   color:white;
 }
 
-/* stats */
-.stats{
-  display:flex;
-  gap:8px;
-  margin-top:12px;
-}
-.stat{
-  flex:1;
-  text-align:center;
-  background:rgba(255,255,255,.08);
-  padding:10px;
-  border-radius:16px;
+/* BUTTON */
+.btn {
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  font-size:16px;
+  background:#2f2f2f;
+  color:white;
+  transition:0.15s;
 }
 
-/* прогресс */
-.progress{
-  margin-top:10px;
-  height:8px;
-  background:#222;
-  border-radius:10px;
-  overflow:hidden;
+.btn:active {
+  transform:scale(0.93);
+  background:#444;
 }
-.bar{
+
+/* MAIN BUTTON */
+.btn-main {
+  background:linear-gradient(90deg,#78ffc8,#b6ffd9);
+  color:#000;
+  font-weight:600;
+  box-shadow:0 0 12px rgba(120,255,200,0.5);
+}
+
+.row {
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.stat {
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  padding:10px;
+  border-radius:12px;
+  text-align:center;
+}
+
+.progress {
+  height:6px;
+  background:#333;
+  border-radius:4px;
+  overflow:hidden;
+  margin-top:10px;
+}
+
+.progress-bar {
   height:100%;
   width:0%;
-  background:linear-gradient(90deg,#7dffd0,#4d96ff);
+  background:#78ffc8;
+  transition:0.3s;
 }
 
-/* кнопки */
-.actions{
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-button{
-  flex:1;
-  padding:12px;
-  border-radius:16px;
-  border:none;
-  background:#333;
-  color:white;
-  font-weight:600;
-  transition:.15s;
-}
-
-/* эффект нажатия */
-button:active{
-  transform:scale(.9);
-  filter:brightness(1.6);
-}
-
-/* синяя кнопка */
-.blue{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
-}
-
-/* уведомление */
-.toast{
-  position:fixed;
+/* TOAST */
+.toast {
+  position:absolute;
   top:20px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(255,255,255,0.12);
-  padding:12px 18px;
-  border-radius:20px;
-  backdrop-filter:blur(20px);
+  background:rgba(60,60,60,0.9);
+  padding:10px 16px;
+  border-radius:12px;
+  color:white;
   opacity:0;
-  transition:.4s;
-}
-.toast.show{
-  opacity:1;
+  transition:0.3s;
 }
 </style>
 </head>
@@ -152,165 +146,114 @@ button:active{
 <body>
 
 <div id="map"></div>
-
-<div class="toast" id="toast"></div>
+<div id="reveal" class="reveal"></div>
+<div id="toast" class="toast"></div>
 
 <div class="panel">
-  <div class="top">
+
+  <div style="display:flex;justify-content:space-between;">
     <div>
-      <b>WanderGlow</b><br>
-      <small id="status">Ready</small>
+      <div style="font-size:20px;font-weight:600;">WanderGlow</div>
+      <div id="status">Ready</div>
     </div>
-    <button id="exploreBtn" class="explore" onclick="start()">Explore</button>
+    <button class="btn btn-main" onclick="toggleExplore()">Explore</button>
   </div>
 
-  <div class="stats">
-    <div class="stat"><b id="km">0.00</b><br>KM</div>
-    <div class="stat"><b id="cells">0</b><br>Cells</div>
-    <div class="stat"><b id="xp">0</b><br>XP</div>
+  <div class="row">
+    <div class="stat"><div id="km">0.00</div><small>KM</small></div>
+    <div class="stat"><div id="cells">0</div><small>Cells</small></div>
+    <div class="stat"><div id="xp">0</div><small>XP</small></div>
   </div>
 
-  <div class="progress"><div id="bar" class="bar"></div></div>
-
-  <div class="actions">
-    <button onclick="stop()">Stop</button>
-    <button class="blue">Place</button>
-    <button onclick="centerMe()">📍</button>
+  <div class="progress">
+    <div id="progress" class="progress-bar"></div>
   </div>
+
+  <div class="row">
+    <button class="btn" onclick="stop()">Stop</button>
+    <button class="btn btn-main" onclick="place()">Place</button>
+    <button class="btn" onclick="center()">📍</button>
+  </div>
+
 </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map').setView([56.95,24.1],14);
+let map = L.map('map').setView([56.95,24.1], 15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-/* ДАННЫЕ */
-let watch=null;
-let current=null;
-let last=null;
+let exploring = false;
+let userMarker = null;
+let lat = 0;
+let lng = 0;
 
-let total=+localStorage.total||0;
-let xpVal=+localStorage.xp||0;
-let opened=JSON.parse(localStorage.opened||"{}");
+let xp = 0;
+let cells = 0;
 
-let userMarker;
-
-/* ВОССТАНОВЛЕНИЕ */
-Object.keys(opened).forEach(k=>{
-  let [lat,lng]=k.split("_").map(Number);
-  reveal([lat,lng]);
-});
-
-/* ОТКРЫТИЕ КАРТЫ */
-function reveal(pos){
-
-  L.circle(pos,{
-    radius:40,
-    fillColor:"#fff",
-    fillOpacity:0.15,
-    stroke:false
-  }).addTo(map);
-
-  L.circle(pos,{
-    radius:80,
-    fillColor:"#7dffd0",
-    fillOpacity:0.06,
-    stroke:false
-  }).addTo(map);
+function toggleExplore(){
+  exploring = !exploring;
+  document.getElementById("status").innerText = exploring ? "Exploring..." : "Ready";
 }
 
-/* GPS */
-function start(){
-  if(watch)return;
-
-  exploreBtn.classList.add("active");
-  status.innerText="Exploring";
-
-  watch=navigator.geolocation.watchPosition(p=>{
-    let lat=p.coords.latitude;
-    let lng=p.coords.longitude;
-    current=[lat,lng];
-
-    if(!userMarker){
-      userMarker=L.marker(current,{
-        icon:L.divIcon({html:'<div class="user"></div>'})
-      }).addTo(map);
-    }else userMarker.setLatLng(current);
-
-    map.setView(current,17);
-
-    /* дистанция */
-    if(last){
-      let d=map.distance(last,current);
-      if(d<1000) total+=d;
-    }
-    last=current;
-
-    /* клетки */
-    let key=Math.round(lat*1000)/1000+"_"+Math.round(lng*1000)/1000;
-
-    if(!opened[key]){
-      opened[key]=true;
-      reveal(current);
-
-      xpVal+=10;
-
-      showToast("✨ +10 XP");
-    }
-
-    save();
-    updateUI();
-
-  },e=>alert(e.message),{
-    enableHighAccuracy:true,
-    maximumAge:0,
-    timeout:5000
-  });
-}
-
-/* STOP */
 function stop(){
-  if(watch){
-    navigator.geolocation.clearWatch(watch);
-    watch=null;
-  }
-  exploreBtn.classList.remove("active");
-  status.innerText="Stopped";
+  exploring = false;
+  document.getElementById("status").innerText = "Stopped";
 }
 
-/* ЦЕНТР */
-function centerMe(){
-  if(current) map.setView(current,17);
+function center(){
+  if(lat) map.setView([lat,lng],17);
 }
 
-/* UI */
-function updateUI(){
-  km.innerText=(total/1000).toFixed(2);
-  cells.innerText=Object.keys(opened).length;
-  xp.innerText=xpVal;
-
-  bar.style.width=Math.min(100,Object.keys(opened).length)+"%";
+function place(){
+  showToast("📍 Place saved");
 }
 
-/* TOAST */
 function showToast(text){
-  toast.innerText=text;
-  toast.classList.add("show");
-  setTimeout(()=>toast.classList.remove("show"),1500);
+  let t = document.getElementById("toast");
+  t.innerText = text;
+  t.style.opacity = 1;
+  setTimeout(()=>t.style.opacity=0,2000);
 }
 
-/* SAVE */
-function save(){
-  localStorage.total=total;
-  localStorage.xp=xpVal;
-  localStorage.opened=JSON.stringify(opened);
+function updateStats(){
+  document.getElementById("cells").innerText = cells;
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("progress").style.width = (cells%10)*10+"%";
 }
 
-updateUI();
+navigator.geolocation.watchPosition(pos=>{
+  lat = pos.coords.latitude;
+  lng = pos.coords.longitude;
+
+  if(!userMarker){
+    let icon = L.divIcon({
+      className:'',
+      html:'<div class="user-dot"><div class="user-pulse"></div></div>',
+      iconSize:[20,20]
+    });
+
+    userMarker = L.marker([lat,lng],{icon}).addTo(map);
+  } else {
+    userMarker.setLatLng([lat,lng]);
+  }
+
+  map.setView([lat,lng],16);
+
+  let point = map.latLngToContainerPoint([lat,lng]);
+  let reveal = document.getElementById("reveal");
+  reveal.style.left = point.x+"px";
+  reveal.style.top = point.y+"px";
+
+  if(exploring){
+    cells++;
+    xp += 10;
+    updateStats();
+    showToast("✨ +10 XP");
+  }
+
+});
 </script>
 
 </body>
