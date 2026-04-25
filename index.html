@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>WanderGlow V17</title>
+<title>WanderGlow V18</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -16,49 +16,48 @@ html,body{
   font-family:-apple-system;
 }
 
+/* MAP */
 #map{
   height:100%;
-  filter:grayscale(1) brightness(.35);
+  filter:grayscale(1) brightness(.3);
 }
 
-/* USER MARKER */
-.user{
-  width:18px;
-  height:18px;
+/* PLAYER */
+.player{
+  width:20px;
+  height:20px;
   border-radius:50%;
   background:#7dffd0;
-  box-shadow:0 0 12px #7dffd0;
+  border:3px solid #fff;
   position:relative;
-  border:3px solid white;
+  box-shadow:0 0 12px #7dffd0;
 }
 
-/* точное место */
-.user::before{
+/* точная точка */
+.player::before{
   content:"";
   position:absolute;
+  width:6px;
+  height:6px;
+  background:#00251b;
+  border-radius:50%;
   left:50%;
   top:50%;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#00251b;
   transform:translate(-50%,-50%);
-  z-index:3;
 }
 
 /* пульс */
-.user::after{
+.player::after{
   content:"";
   position:absolute;
-  width:44px;
-  height:44px;
+  width:50px;
+  height:50px;
   border-radius:50%;
   background:rgba(125,255,208,.2);
   left:50%;
   top:50%;
-  transform:translate(-50%,-50%) scale(.5);
+  transform:translate(-50%,-50%);
   animation:pulse 2s infinite;
-  z-index:-1;
 }
 
 @keyframes pulse{
@@ -69,13 +68,15 @@ html,body{
 /* LIGHT */
 .light{
   position:absolute;
-  width:260px;
-  height:260px;
+  width:280px;
+  height:280px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(125,255,208,.35), transparent 70%);
+  background:radial-gradient(circle,
+    rgba(125,255,208,.5) 0%,
+    rgba(125,255,208,.25) 40%,
+    transparent 75%);
   pointer-events:none;
   transform:translate(-50%,-50%);
-  z-index:500;
 }
 
 /* UI */
@@ -86,12 +87,28 @@ html,body{
   right:10px;
   padding:16px;
   border-radius:20px;
-  background:rgba(30,30,30,.6);
+  background:rgba(30,30,30,.65);
   backdrop-filter:blur(20px);
   color:white;
-  z-index:1000;
 }
 
+.hidden{
+  display:none;
+}
+
+.showUI{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  color:white;
+  padding:10px 16px;
+  border-radius:12px;
+  display:none;
+}
+
+/* BUTTON */
 .btn{
   padding:12px;
   border-radius:12px;
@@ -112,6 +129,7 @@ html,body{
   font-weight:700;
 }
 
+/* ROW */
 .row{
   display:flex;
   gap:10px;
@@ -126,18 +144,32 @@ html,body{
   border-radius:10px;
 }
 
+/* PROGRESS */
+.progress{
+  height:6px;
+  background:#222;
+  border-radius:6px;
+  margin-top:10px;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  background:#7dffd0;
+  border-radius:6px;
+}
+
+/* TOAST */
 .toast{
   position:absolute;
   top:20px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(50,50,50,.9);
-  color:white;
   padding:10px 15px;
   border-radius:10px;
   opacity:0;
   transition:.3s;
-  z-index:2000;
 }
 </style>
 </head>
@@ -148,48 +180,70 @@ html,body{
 <div id="light" class="light"></div>
 <div id="toast" class="toast"></div>
 
-<div class="panel">
+<button id="showBtn" class="showUI" onclick="showUI()">Show UI</button>
 
-  <div style="display:flex;justify-content:space-between;">
-    <div>
-      <b>WanderGlow</b><br>
-      <span id="status">Ready</span>
-    </div>
-    <button class="btn main" onclick="toggle()">Explore</button>
-  </div>
+<div id="panel" class="panel">
 
-  <div class="row">
-    <div class="stat"><div id="km">0</div><small>KM</small></div>
-    <div class="stat"><div id="cells">0</div><small>Cells</small></div>
-    <div class="stat"><div id="xp">0</div><small>XP</small></div>
+<div style="display:flex;justify-content:space-between;">
+  <div>
+    <b>WanderGlow</b><br>
+    <span id="status">Ready</span>
   </div>
+  <button class="btn main" onclick="toggle()">Explore</button>
+</div>
 
-  <div class="row">
-    <button class="btn" onclick="stop()">Stop</button>
-    <button class="btn main" onclick="place()">Place</button>
-    <button class="btn" onclick="center()">📍</button>
-  </div>
+<div class="row">
+  <div class="stat"><div id="km">0</div><small>KM</small></div>
+  <div class="stat"><div id="cells">0</div><small>Cells</small></div>
+  <div class="stat"><div id="level">1</div><small>Level</small></div>
+</div>
+
+<div class="progress"><div id="bar" class="bar"></div></div>
+
+<div class="row">
+  <button class="btn" onclick="stop()">Stop</button>
+  <button class="btn main" onclick="place()">Place</button>
+  <button class="btn" onclick="center()">📍</button>
+  <button class="btn" onclick="hideUI()">Hide</button>
+</div>
 
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
 let map = L.map('map').setView([56.95,24.1],15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,
-  attribution:'© OpenStreetMap contributors'
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+/* STATE */
 let exploring=false;
 let marker=null;
 let lat=0,lng=0;
 let lastCell=null;
 
-let cells=Number(localStorage.wg_cells||0);
-let xp=Number(localStorage.wg_xp||0);
+let xp=Number(localStorage.xp||0);
+let cells=Number(localStorage.cells||0);
 
+let level=Math.floor(xp/100)+1;
+
+/* PATH */
+let path=JSON.parse(localStorage.path||"[]");
+let line=L.polyline(path,{color:'#7dffd0'}).addTo(map);
+
+/* UI */
+function hideUI(){
+  panel.classList.add("hidden");
+  showBtn.style.display="block";
+}
+
+function showUI(){
+  panel.classList.remove("hidden");
+  showBtn.style.display="none";
+}
+
+/* GAME */
 function toggle(){
   exploring=!exploring;
   status.innerText = exploring ? "Exploring..." : "Paused";
@@ -208,25 +262,26 @@ function place(){
   toastMsg("⭐ Place saved");
 }
 
+/* UI UPDATE */
+function update(){
+  cellsEl.innerText=cells;
+  levelEl.innerText=level;
+
+  let progress = xp % 100;
+  bar.style.width = progress + "%";
+
+  localStorage.xp=xp;
+  localStorage.cells=cells;
+}
+
+/* TOAST */
 function toastMsg(t){
-  let el=toast;
-  el.innerText=t;
-  el.style.opacity=1;
-  setTimeout(()=>el.style.opacity=0,2000);
+  toast.innerText=t;
+  toast.style.opacity=1;
+  setTimeout(()=>toast.style.opacity=0,2000);
 }
 
-function updateUI(){
-  document.getElementById("cells").innerText=cells;
-  document.getElementById("xp").innerText=xp;
-}
-
-function save(){
-  localStorage.wg_cells=cells;
-  localStorage.wg_xp=xp;
-}
-
-updateUI();
-
+/* GPS */
 navigator.geolocation.watchPosition(pos=>{
 
   lat=pos.coords.latitude;
@@ -235,12 +290,10 @@ navigator.geolocation.watchPosition(pos=>{
   if(!marker){
     marker=L.marker([lat,lng],{
       icon:L.divIcon({
-        html:'<div class="user"></div>',
+        html:'<div class="player"></div>',
         className:'',
-        iconSize:[24,24],
-        iconAnchor:[12,12]
-      }),
-      zIndexOffset:10000
+        iconSize:[24,24]
+      })
     }).addTo(map);
   }else{
     marker.setLatLng([lat,lng]);
@@ -248,25 +301,38 @@ navigator.geolocation.watchPosition(pos=>{
 
   map.setView([lat,lng],16);
 
+  /* LIGHT */
   let p=map.latLngToContainerPoint([lat,lng]);
   light.style.left=p.x+"px";
   light.style.top=p.y+"px";
 
+  /* PATH */
+  path.push([lat,lng]);
+  if(path.length>500) path.shift();
+  line.setLatLngs(path);
+  localStorage.path=JSON.stringify(path);
+
+  /* GAME */
   if(exploring){
-    let cell = Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+    let cell=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
 
     if(cell!==lastCell){
       lastCell=cell;
-      cells++;
-      xp+=10;
 
-      save();
+      xp+=10;
+      cells++;
+
+      level=Math.floor(xp/100)+1;
+
       toastMsg("✨ +10 XP");
-      updateUI();
+      update();
     }
   }
 
 },()=>alert("GPS error"),{enableHighAccuracy:true});
+
+update();
+
 </script>
 
 </body>
