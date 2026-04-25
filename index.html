@@ -8,63 +8,118 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-body {
+html,body{
   margin:0;
-  font-family:sans-serif;
+  height:100%;
+  overflow:hidden;
+  font-family:-apple-system,system-ui;
   background:#05080a;
   color:white;
 }
-#map {
-  height:100vh;
+
+#map{height:100%}
+
+.leaflet-tile-pane{
+  filter:grayscale(1) brightness(.28);
 }
 
-/* карта темная */
-.leaflet-tile-pane {
-  filter:grayscale(1) brightness(0.3);
-}
-
-/* пользователь */
-.user {
-  width:18px;
-  height:18px;
+/* USER */
+.user{
+  width:20px;
+  height:20px;
   border-radius:50%;
   background:#7dffd0;
-  border:3px solid white;
-  box-shadow:0 0 15px #7dffd0;
+  border:4px solid white;
+  box-shadow:0 0 25px #7dffd0;
   animation:pulse 1.5s infinite;
 }
-@keyframes pulse {
+@keyframes pulse{
   0%{box-shadow:0 0 0px #7dffd0}
-  50%{box-shadow:0 0 20px #7dffd0}
+  50%{box-shadow:0 0 35px #7dffd0}
   100%{box-shadow:0 0 0px #7dffd0}
 }
 
-/* панель */
-.panel {
+/* PANEL */
+.panel{
   position:fixed;
   bottom:20px;
-  left:20px;
-  right:20px;
-  padding:15px;
-  border-radius:20px;
+  left:14px;
+  right:14px;
+  padding:16px;
+  border-radius:28px;
   background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(20px);
+  backdrop-filter:blur(28px);
 }
 
-/* кнопки */
-button {
-  padding:10px 14px;
-  border:none;
-  border-radius:15px;
-  margin:5px;
-  background:#222;
-  color:white;
-  font-size:16px;
-  transition:0.15s;
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-button:active {
-  transform:scale(0.9);
+
+.explore{
+  padding:14px 18px;
+  border-radius:20px;
+  border:0;
+  font-weight:bold;
+  background:linear-gradient(135deg,#7dffd0,#eafff7);
+  color:#042015;
+}
+
+.explore.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
+}
+
+.stats{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+
+.stat{
+  flex:1;
+  text-align:center;
+  background:rgba(255,255,255,.08);
+  padding:10px;
+  border-radius:18px;
+}
+
+.progress{
+  margin-top:10px;
+  height:8px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+}
+.bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#7dffd0,#4d96ff);
+}
+
+/* BUTTONS */
+.actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+button{
+  flex:1;
+  padding:12px;
+  border-radius:18px;
+  border:none;
+  background:#333;
+  color:white;
+  font-weight:600;
+  transition:.15s;
+}
+button:active{
+  transform:scale(.92);
   filter:brightness(1.5);
+}
+.blue{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
 }
 </style>
 </head>
@@ -74,127 +129,136 @@ button:active {
 <div id="map"></div>
 
 <div class="panel">
-  <button onclick="start()">Explore</button>
-  <button onclick="stop()">Stop</button>
-  <button onclick="centerMe()">📍</button>
+  <div class="top">
+    <div>
+      <b>WanderGlow</b><br>
+      <small id="status">Ready</small>
+    </div>
+    <button id="exploreBtn" class="explore" onclick="start()">Explore</button>
+  </div>
 
-  <div>XP: <span id="xp">0</span></div>
-  <div>Cells: <span id="cells">0</span></div>
+  <div class="stats">
+    <div class="stat"><b id="km">0.00</b><br>KM</div>
+    <div class="stat"><b id="cells">0</b><br>Cells</div>
+    <div class="stat"><b id="xp">0</b><br>XP</div>
+  </div>
+
+  <div class="progress"><div id="bar" class="bar"></div></div>
+
+  <div class="actions">
+    <button onclick="stop()">Stop</button>
+    <button class="blue">Place</button>
+    <button onclick="centerMe()">📍</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-const map = L.map('map').setView([56.95,24.1],15);
+const map=L.map('map').setView([56.95,24.1],14);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,
-  attribution:'© OpenStreetMap contributors'
+  maxZoom:19
 }).addTo(map);
 
-let watch = null;
-let current = null;
-let userMarker = null;
+/* DATA */
+let watch=null,current=null,last=null;
+let total=+localStorage.total||0;
+let xpVal=+localStorage.xp||0;
+let opened=JSON.parse(localStorage.opened||"{}");
 
-let opened = JSON.parse(localStorage.opened || "{}");
-let xp = Number(localStorage.xp || 0);
+let userMarker;
 
-/* отрисовка открытых зон */
-function drawAll() {
-  for (let key in opened) {
-    let [lat,lng] = key.split("_").map(Number);
+/* RESTORE */
+Object.keys(opened).forEach(k=>{
+  let [lat,lng]=k.split("_").map(Number);
+  reveal([lat,lng]);
+});
 
-    L.circle([lat,lng],{
-      radius:25,
-      fillColor:"#fff",
-      fillOpacity:0.15,
-      stroke:false
-    }).addTo(map);
+/* REVEAL */
+function reveal(pos){
+  L.circle(pos,{
+    radius:28,
+    fillColor:"#fff",
+    fillOpacity:0.15,
+    stroke:false
+  }).addTo(map);
 
-    L.circle([lat,lng],{
-      radius:40,
-      fillColor:"#7dffd0",
-      fillOpacity:0.05,
-      stroke:false
-    }).addTo(map);
-  }
+  L.circle(pos,{
+    radius:45,
+    fillColor:"#7dffd0",
+    fillOpacity:0.06,
+    stroke:false
+  }).addTo(map);
 }
-drawAll();
 
 /* GPS */
-function start() {
-  if (watch) return;
+function start(){
+  if(watch)return;
 
-  watch = navigator.geolocation.watchPosition(pos=>{
-    let lat = pos.coords.latitude;
-    let lng = pos.coords.longitude;
+  exploreBtn.classList.add("active");
+  status.innerText="Exploring";
 
-    current = [lat,lng];
+  watch=navigator.geolocation.watchPosition(p=>{
+    let lat=p.coords.latitude;
+    let lng=p.coords.longitude;
+    current=[lat,lng];
 
-    if (!userMarker) {
-      userMarker = L.marker(current,{
-        icon:L.divIcon({
-          className:"",
-          html:'<div class="user"></div>'
-        })
+    if(!userMarker){
+      userMarker=L.marker(current,{
+        icon:L.divIcon({html:'<div class="user"></div>'})
       }).addTo(map);
-    } else {
-      userMarker.setLatLng(current);
-    }
+    }else userMarker.setLatLng(current);
 
     map.setView(current,17);
 
-    let key = lat.toFixed(5)+"_"+lng.toFixed(5);
+    if(last){
+      let d=map.distance(last,current);
+      if(d<1000) total+=d;
+    }
+    last=current;
 
-    if (!opened[key]) {
-      opened[key] = true;
+    let key=lat.toFixed(5)+"_"+lng.toFixed(5);
 
-      L.circle(current,{
-        radius:25,
-        fillColor:"#fff",
-        fillOpacity:0.2,
-        stroke:false
-      }).addTo(map);
-
-      L.circle(current,{
-        radius:40,
-        fillColor:"#7dffd0",
-        fillOpacity:0.05,
-        stroke:false
-      }).addTo(map);
-
-      xp += 10;
-
-      localStorage.opened = JSON.stringify(opened);
-      localStorage.xp = xp;
-
-      document.getElementById("xp").innerText = xp;
-      document.getElementById("cells").innerText = Object.keys(opened).length;
+    if(!opened[key]){
+      opened[key]=true;
+      reveal(current);
+      xpVal+=10;
     }
 
-  },{
-    enableHighAccuracy:true
-  });
+    save();
+    ui();
+
+  },e=>alert(e.message),{enableHighAccuracy:true});
 }
 
-/* стоп */
-function stop() {
-  if (watch) {
-    navigator.geolocation.clearWatch(watch);
-    watch = null;
-  }
+function stop(){
+  if(watch)navigator.geolocation.clearWatch(watch);
+  watch=null;
+  exploreBtn.classList.remove("active");
+  status.innerText="Stopped";
 }
 
-/* центр */
-function centerMe() {
-  if (current) {
-    map.setView(current,17);
-  }
+function centerMe(){
+  if(current)map.setView(current,17);
 }
 
 /* UI */
-document.getElementById("xp").innerText = xp;
-document.getElementById("cells").innerText = Object.keys(opened).length;
+function ui(){
+  km.innerText=(total/1000).toFixed(2);
+  cells.innerText=Object.keys(opened).length;
+  xp.innerText=xpVal;
+
+  bar.style.width=Math.min(100,Object.keys(opened).length)+"%";
+}
+
+function save(){
+  localStorage.total=total;
+  localStorage.xp=xpVal;
+  localStorage.opened=JSON.stringify(opened);
+}
+
+ui();
 </script>
 
 </body>
