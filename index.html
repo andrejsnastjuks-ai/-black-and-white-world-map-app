@@ -1,26 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Black Map</title>
+<title>Black World Map</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
-body { margin:0; background:black; color:white; font-family:sans-serif;}
-#btn { position:fixed; bottom:20px; left:20px; right:20px; padding:15px; font-size:18px;}
+body {
+  margin:0;
+  background:black;
+  color:white;
+  font-family:sans-serif;
+}
+
+#map {
+  height:100vh;
+  width:100%;
+  filter: grayscale(1) brightness(0.4);
+}
+
+#panel {
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  right:20px;
+  background:rgba(0,0,0,0.8);
+  padding:15px;
+  border-radius:15px;
+}
+
+button {
+  width:100%;
+  padding:15px;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+}
 </style>
 </head>
+
 <body>
 
-<h2 style="padding:20px;">Black World Map</h2>
-<p style="padding:20px;">Start и иди гулять</p>
+<div id="map"></div>
 
-<button id="btn">Start</button>
+<div id="panel">
+  <h3>Black World Map</h3>
+  <button onclick="start()">Start</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-document.getElementById("btn").onclick = () => {
+const map = L.map('map').setView([56.95, 24.1], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+const path = L.polyline([], {color:'lime'}).addTo(map);
+
+function start() {
   navigator.geolocation.watchPosition(pos => {
-    document.body.innerHTML += "<p>" + pos.coords.latitude + "," + pos.coords.longitude + "</p>";
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    const point = [lat, lng];
+
+    path.addLatLng(point);
+    map.setView(point, 16);
+
+    L.circle(point, {
+      radius: 30,
+      color: 'white',
+      fillOpacity: 0.3
+    }).addTo(map);
+
+  }, err => {
+    alert("Ошибка GPS: " + err.message);
+  }, {
+    enableHighAccuracy: true
   });
-};
+}
 </script>
 
 </body>
