@@ -2,77 +2,221 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V22</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WanderGlow V23.1</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:-apple-system}
-#map{height:100%;filter:grayscale(1) brightness(.35)}
-#fog{position:absolute;inset:0;pointer-events:none}
-
-.player{
-  width:30px;height:30px;border-radius:50%;
-  background:#7dffd0;border:4px solid #fff;
-  box-shadow:0 0 0 8px rgba(125,255,208,.3),0 0 30px #7dffd0;
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#05080a;
+  color:white;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-.panel,.menu,.toast,.showBtn{
-  background:rgba(20,20,20,.75);
-  backdrop-filter:blur(20px);
+#map{
+  height:100%;
+  filter:grayscale(1) brightness(.55) contrast(.9);
+}
+
+#fog{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:500;
+}
+
+.player{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#7dffd0;
+  border:3px solid white;
+  box-shadow:0 0 0 6px rgba(125,255,208,.22),0 0 18px #7dffd0;
+}
+
+.panel,.menu,.toast,.showBtn,.levelBox{
+  background:rgba(20,20,20,.76);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 .panel{
-  position:absolute;bottom:20px;left:10px;right:10px;
-  padding:14px;border-radius:16px;
+  position:absolute;
+  bottom:20px;
+  left:10px;
+  right:10px;
+  z-index:1000;
+  padding:14px;
+  border-radius:22px;
 }
 
 .menu{
-  position:absolute;top:70px;right:10px;
-  padding:10px;border-radius:12px;
-  display:none;width:180px;
+  position:absolute;
+  top:70px;
+  right:10px;
+  z-index:1000;
+  padding:14px;
+  border-radius:20px;
+  display:none;
+  width:210px;
 }
-.menu.open{display:block}
-.menu.small{width:60px}
-.menu.small .body{display:none}
 
-.row{display:flex;gap:8px;margin-top:8px}
-.stat{flex:1;text-align:center;background:#222;padding:8px;border-radius:10px}
+.menu.open{display:block}
+.menu.small{width:64px}
+.menu.small .menuBody{display:none}
+
+.row{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+.stat{
+  flex:1;
+  text-align:center;
+  background:rgba(255,255,255,.075);
+  padding:8px;
+  border-radius:12px;
+}
+
+.stat b{font-size:20px}
+.stat small{color:rgba(255,255,255,.65)}
 
 .btn{
-  flex:1;padding:10px;border-radius:10px;
-  background:#333;color:#fff;border:0;
+  flex:1;
+  padding:11px;
+  border-radius:14px;
+  border:0;
+  background:rgba(255,255,255,.09);
+  color:white;
+  font-weight:800;
+  transition:.15s;
 }
-.btn:active{transform:scale(.9)}
-.main{background:#7dffd0;color:#000}
 
-.barWrap{height:6px;background:#222;border-radius:6px;margin-top:8px}
-.bar{height:100%;width:0%;background:#7dffd0}
+.btn:active{
+  transform:scale(.92);
+  filter:brightness(1.45);
+}
+
+.main{
+  background:linear-gradient(90deg,#7dffd0,#baffea);
+  color:#041a13;
+  font-weight:900;
+}
+
+.main.active{
+  background:linear-gradient(90deg,#4d96ff,#9bd8ff);
+  color:white;
+}
+
+.progress{
+  height:8px;
+  background:#222;
+  border-radius:8px;
+  margin-top:10px;
+  overflow:hidden;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#7dffd0,#75bbff);
+  transition:.25s;
+}
 
 .toast{
-  position:absolute;top:20px;left:50%;
-  transform:translateX(-50%);
-  padding:8px 12px;border-radius:8px;
-  opacity:0;transition:.3s;
+  position:absolute;
+  top:22px;
+  left:18px;
+  right:18px;
+  z-index:2000;
+  padding:12px 15px;
+  border-radius:16px;
+  opacity:0;
+  transition:.25s;
+  font-weight:800;
 }
 
 .showBtn{
-  position:absolute;bottom:20px;left:50%;
+  position:absolute;
+  bottom:20px;
+  left:50%;
   transform:translateX(-50%);
   display:none;
+  z-index:1000;
+  color:white;
+  border:0;
+  padding:11px 18px;
+  border-radius:16px;
+}
+
+.showBtn.visible{display:block}
+.hidden{display:none!important}
+
+.levelUp{
+  position:absolute;
+  z-index:3000;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) scale(.8);
+  padding:24px 28px;
+  border-radius:26px;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:.35s;
+}
+
+.levelUp.show{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+}
+
+.levelUp h1{
+  margin:0;
+  font-size:34px;
+}
+
+.levelUp p{
+  margin:8px 0 0;
+  color:rgba(255,255,255,.75);
 }
 
 .flash{
-  position:absolute;width:160px;height:160px;
+  position:absolute;
+  width:180px;
+  height:180px;
   border-radius:50%;
-  background:radial-gradient(circle,rgba(125,255,208,.5),transparent);
   pointer-events:none;
-  animation:flash .7s forwards;
+  z-index:900;
+  background:radial-gradient(circle,rgba(125,255,208,.35),transparent 70%);
+  transform:translate(-50%,-50%) scale(.2);
+  animation:flash .8s forwards;
 }
 
 @keyframes flash{
-  to{transform:scale(2);opacity:0}
+  to{opacity:0;transform:translate(-50%,-50%) scale(2.3)}
+}
+
+.title{
+  font-size:24px;
+  font-weight:900;
+}
+
+.status{
+  color:rgba(255,255,255,.65);
+  font-size:14px;
+}
+
+.goal{
+  margin-top:8px;
+  font-size:13px;
+  color:rgba(255,255,255,.7);
 }
 </style>
 </head>
@@ -83,192 +227,411 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-f
 <canvas id="fog"></canvas>
 
 <div id="toast" class="toast"></div>
-<button id="showBtn" class="showBtn btn" onclick="showUI()">Show UI</button>
+
+<div id="levelUpBox" class="levelUp">
+  <h1>LEVEL UP</h1>
+  <p id="levelUpText">Level 2</p>
+</div>
+
+<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
 <div id="menu" class="menu">
-  <button class="btn main" onclick="menuSize()">☰</button>
-  <div class="body">
-    <button class="btn" onclick="center()">📍</button>
-    <button class="btn" onclick="hideUI()">Hide</button>
-    <button class="btn" onclick="backup()">Backup</button>
-    <button class="btn" onclick="reset()">Reset</button>
+  <button class="btn main" style="width:100%" onclick="menuSize()">☰</button>
+
+  <div class="menuBody">
+    <div class="row">
+      <button class="btn" onclick="center()">📍</button>
+      <button class="btn" onclick="hideUI()">Hide</button>
+    </div>
+
+    <div class="row">
+      <button class="btn" onclick="toggleFollow()">Follow</button>
+    </div>
+
+    <div class="row">
+      <button class="btn" onclick="savePlace()">Place</button>
+    </div>
+
+    <div class="row">
+      <button class="btn" onclick="backup()">Backup</button>
+    </div>
+
+    <div class="row">
+      <button class="btn" onclick="reset()">Reset</button>
+    </div>
   </div>
 </div>
 
 <div id="panel" class="panel">
-  <div style="display:flex;justify-content:space-between">
+  <div style="display:flex;justify-content:space-between;align-items:center">
     <div>
-      <b>WanderGlow</b><br>
-      <span id="status">Ready</span>
+      <div class="title">WanderGlow</div>
+      <div id="status" class="status">Ready</div>
     </div>
-    <button id="exploreBtn" class="btn main" onclick="toggle()">Explore</button>
+    <button id="exploreBtn" class="btn main" onclick="toggleExplore()">Explore</button>
   </div>
 
   <div class="row">
-    <div class="stat"><b id="cells">0</b><br>Cells</div>
-    <div class="stat"><b id="xp">0</b><br>XP</div>
-    <div class="stat"><b id="level">1</b><br>Level</div>
-    <div class="stat"><b id="zones">0</b><br>Zones</div>
+    <div class="stat"><b id="cellsView">0</b><br><small>Cells</small></div>
+    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
+    <div class="stat"><b id="levelView">1</b><br><small>Level</small></div>
+    <div class="stat"><b id="zonesView">0</b><br><small>Zones</small></div>
   </div>
 
-  <div class="barWrap"><div id="bar" class="bar"></div></div>
+  <div class="progress">
+    <div id="bar" class="bar"></div>
+  </div>
+
+  <div id="goalView" class="goal">Goal: open 10 cells</div>
 
   <div class="row">
-    <button class="btn" onclick="stop()">Stop</button>
+    <button class="btn" onclick="stopExplore()">Stop</button>
     <button class="btn" onclick="center()">📍</button>
-    <button class="btn" onclick="menuToggle()">Menu</button>
+    <button class="btn" onclick="openMenu()">Menu</button>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-let map=L.map('map').setView([56.95,24.1],15);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const map = L.map("map").setView([56.95,24.1],15);
 
-let exploring=false,marker=null,lat=0,lng=0;
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap contributors"
+}).addTo(map);
 
-let xp=Number(localStorage.xp||0);
-let cells=JSON.parse(localStorage.cells||"{}");
-let zones=JSON.parse(localStorage.zones||"{}");
-let path=JSON.parse(localStorage.path||"[]");
+const fog = document.getElementById("fog");
+const ctx = fog.getContext("2d");
 
-let line=L.polyline(path,{color:'#7dffd0'}).addTo(map);
+const statusEl = document.getElementById("status");
+const exploreBtn = document.getElementById("exploreBtn");
+const cellsView = document.getElementById("cellsView");
+const xpView = document.getElementById("xpView");
+const levelView = document.getElementById("levelView");
+const zonesView = document.getElementById("zonesView");
+const bar = document.getElementById("bar");
+const goalView = document.getElementById("goalView");
+const panel = document.getElementById("panel");
+const menu = document.getElementById("menu");
+const showBtn = document.getElementById("showBtn");
+const toastBox = document.getElementById("toast");
+const levelUpBox = document.getElementById("levelUpBox");
+const levelUpText = document.getElementById("levelUpText");
 
-let fog=document.getElementById("fog");
-let ctx=fog.getContext("2d");
-fog.width=innerWidth;fog.height=innerHeight;
+let exploring=false;
+let follow=true;
+let marker=null;
+let lat=null;
+let lng=null;
+let firstFix=true;
 
-/* FOG */
+let xp=Number(localStorage.wg_xp||0);
+let cells=JSON.parse(localStorage.wg_cells||"{}");
+let zones=JSON.parse(localStorage.wg_zones||"{}");
+let path=JSON.parse(localStorage.wg_path||"[]");
+let places=JSON.parse(localStorage.wg_places||"[]");
+let achievements=JSON.parse(localStorage.wg_achievements||"{}");
+let lastLevel=Number(localStorage.wg_lastLevel||1);
+
+let route=L.polyline(path,{
+  color:"#7dffd0",
+  weight:4,
+  opacity:.65
+}).addTo(map);
+
+function resizeFog(){
+  fog.width=window.innerWidth;
+  fog.height=window.innerHeight;
+  drawFog();
+}
+
+window.addEventListener("resize",resizeFog);
+map.on("move zoom",drawFog);
+
+map.on("dragstart",()=>{
+  follow=false;
+  statusEl.innerText=exploring ? "Exploring · Free map" : "Free map";
+});
+
+resizeFog();
+
+function level(){
+  return Math.floor(xp/100)+1;
+}
+
+function cellKey(a,b){
+  return Math.floor(a*1000)+"_"+Math.floor(b*1000);
+}
+
+function zoneKey(a,b){
+  return Math.floor(a*100)+"_"+Math.floor(b*100);
+}
+
 function reveal(x,y,r){
-  let g=ctx.createRadialGradient(x,y,0,x,y,r);
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
+  g.addColorStop(.4,"rgba(0,0,0,.72)");
   g.addColorStop(1,"rgba(0,0,0,0)");
+
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
-  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill();
   ctx.globalCompositeOperation="source-over";
 }
 
 function drawFog(){
-  ctx.fillStyle="rgba(0,0,0,.65)";
+  ctx.clearRect(0,0,fog.width,fog.height);
+  ctx.fillStyle="rgba(0,0,0,.54)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  Object.keys(cells).forEach(k=>{
-    let p=k.split("_");
-    let pt=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
-    reveal(pt.x,pt.y,80);
+  Object.keys(cells).forEach(key=>{
+    const p=key.split("_");
+    const point=map.latLngToContainerPoint([Number(p[0])/1000,Number(p[1])/1000]);
+    reveal(point.x,point.y,96);
   });
 
-  let pt=map.latLngToContainerPoint([lat,lng]);
-  reveal(pt.x,pt.y,120);
+  if(lat!==null && lng!==null){
+    const point=map.latLngToContainerPoint([lat,lng]);
+    reveal(point.x,point.y,145);
+  }
 }
 
-/* UI */
-function toggle(){exploring=!exploring;status.innerText=exploring?"Exploring":"Paused"}
-function stop(){exploring=false;status.innerText="Stopped"}
-function center(){map.setView([lat,lng],17)}
-function menuToggle(){menu.classList.toggle("open")}
-function menuSize(){menu.classList.toggle("small")}
-function hideUI(){panel.style.display="none";showBtn.style.display="block"}
-function showUI(){panel.style.display="block";showBtn.style.display="none"}
+function save(){
+  localStorage.wg_xp=xp;
+  localStorage.wg_cells=JSON.stringify(cells);
+  localStorage.wg_zones=JSON.stringify(zones);
+  localStorage.wg_path=JSON.stringify(path.slice(-1000));
+  localStorage.wg_places=JSON.stringify(places);
+  localStorage.wg_achievements=JSON.stringify(achievements);
+  localStorage.wg_lastLevel=lastLevel;
+}
+
+function updateUI(){
+  const cellCount=Object.keys(cells).length;
+  const zoneCount=Object.keys(zones).length;
+  const lvl=level();
+
+  cellsView.innerText=cellCount;
+  xpView.innerText=xp;
+  levelView.innerText=lvl;
+  zonesView.innerText=zoneCount;
+  bar.style.width=(xp%100)+"%";
+
+  if(cellCount<10) goalView.innerText="Goal: open 10 cells";
+  else if(zoneCount<3) goalView.innerText="Goal: discover 3 zones";
+  else if(lvl<5) goalView.innerText="Goal: reach Level 5";
+  else goalView.innerText="Goal: explore more of the world";
+
+  if(lvl>lastLevel){
+    lastLevel=lvl;
+    showLevelUp(lvl);
+  }
+
+  checkAchievements();
+  save();
+}
+
+function checkAchievements(){
+  const cellCount=Object.keys(cells).length;
+  const zoneCount=Object.keys(zones).length;
+
+  if(cellCount>=10 && !achievements.cells10){
+    achievements.cells10=true;
+    toast("🏆 Achievement: First Explorer");
+  }
+
+  if(cellCount>=50 && !achievements.cells50){
+    achievements.cells50=true;
+    toast("🏆 Achievement: City Walker");
+  }
+
+  if(zoneCount>=3 && !achievements.zones3){
+    achievements.zones3=true;
+    toast("🏆 Achievement: District Hunter");
+  }
+}
+
+function toast(text){
+  toastBox.innerText=text;
+  toastBox.style.opacity=1;
+  setTimeout(()=>toastBox.style.opacity=0,2200);
+}
+
+function showLevelUp(lvl){
+  levelUpText.innerText="Level "+lvl;
+  levelUpBox.classList.add("show");
+  setTimeout(()=>levelUpBox.classList.remove("show"),1600);
+}
+
+function toggleExplore(){
+  exploring=!exploring;
+  exploreBtn.classList.toggle("active",exploring);
+  statusEl.innerText=exploring ? (follow ? "Exploring · Follow" : "Exploring · Free map") : "Paused";
+}
+
+function stopExplore(){
+  exploring=false;
+  exploreBtn.classList.remove("active");
+  statusEl.innerText="Stopped";
+}
+
+function center(){
+  if(lat===null || lng===null){
+    toast("Finding location...");
+    return;
+  }
+
+  follow=true;
+  map.setView([lat,lng],17);
+  statusEl.innerText=exploring ? "Exploring · Follow" : "Following";
+}
+
+function toggleFollow(){
+  follow=!follow;
+  statusEl.innerText=follow ? "Follow mode on" : "Free map";
+  if(follow)center();
+}
+
+function openMenu(){
+  menu.classList.toggle("open");
+}
+
+function menuSize(){
+  menu.classList.toggle("small");
+}
+
+function hideUI(){
+  panel.classList.add("hidden");
+  menu.classList.remove("open");
+  showBtn.classList.add("visible");
+}
+
+function showUI(){
+  panel.classList.remove("hidden");
+  showBtn.classList.remove("visible");
+}
+
+function savePlace(){
+  if(lat===null || lng===null){
+    toast("Сначала найди локацию");
+    return;
+  }
+
+  const name=prompt("Название места");
+  if(!name)return;
+
+  places.push({
+    name,
+    lat,
+    lng,
+    date:new Date().toLocaleDateString()
+  });
+
+  save();
+  toast("⭐ Place saved");
+}
 
 function backup(){
-  navigator.clipboard.writeText(JSON.stringify({xp,cells,zones,path}));
-  toast("Saved");
+  const data={xp,cells,zones,path,places,achievements};
+  navigator.clipboard.writeText(JSON.stringify(data,null,2));
+  toast("Backup copied");
 }
 
 function reset(){
-  if(prompt("DELETE?")!=="DELETE")return;
-  localStorage.clear();location.reload();
+  const a=prompt("Для удаления напиши DELETE");
+  if(a!=="DELETE"){
+    toast("Cancelled");
+    return;
+  }
+
+  const b=prompt("Подтверди: CONFIRM DELETE");
+  if(b!=="CONFIRM DELETE"){
+    toast("Cancelled");
+    return;
+  }
+
+  localStorage.clear();
+  location.reload();
 }
 
-/* GAME */
-function update(){
-  cellsEl.innerText=Object.keys(cells).length;
-  xpEl.innerText=xp;
-  levelEl.innerText=Math.floor(xp/100)+1;
-  zonesEl.innerText=Object.keys(zones).length;
-  bar.style.width=(xp%100)+"%";
+function flashAtCurrent(){
+  if(lat===null || lng===null)return;
 
-  localStorage.xp=xp;
-  localStorage.cells=JSON.stringify(cells);
-  localStorage.zones=JSON.stringify(zones);
+  const p=map.latLngToContainerPoint([lat,lng]);
+  const f=document.createElement("div");
+  f.className="flash";
+  f.style.left=p.x+"px";
+  f.style.top=p.y+"px";
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(),800);
 }
 
-/* TOAST */
-function toast(t){
-  toastEl.innerText=t;
-  toastEl.style.opacity=1;
-  setTimeout(()=>toastEl.style.opacity=0,2000);
-}
-
-/* GPS */
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
   if(!marker){
     marker=L.marker([lat,lng],{
-      icon:L.divIcon({html:'<div class="player"></div>'})
-    }).addTo(map);
-  }else marker.setLatLng([lat,lng]);
-
-  map.setView([lat,lng],16);
-
-  path.push([lat,lng]);
-  if(path.length>600)path.shift();
-  line.setLatLngs(path);
-  localStorage.path=JSON.stringify(path);
-
-  if(exploring){
-    let cell=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
-    let zone=Math.floor(lat*100)+"_"+Math.floor(lng*100);
-
-    if(!cells[cell]){
-      cells[cell]=true;
-      xp+=10;
-      flash();
-    }
-
-    if(!zones[zone]){
-      zones[zone]=true;
-      xp+=50;
-      toast("🌍 New Zone!");
-    }
-
-    update();
+      icon:L.divIcon({
+        html:'<div class="player"></div>',
+        className:"",
+        iconSize:[20,20],
+        iconAnchor:[10,10]
+      }),
+      zIndexOffset:10000
+    }).addTo(map).bindPopup("Ты здесь");
+  }else{
+    marker.setLatLng([lat,lng]);
   }
 
-  ctx.clearRect(0,0,fog.width,fog.height);
+  if(firstFix){
+    map.setView([lat,lng],16);
+    firstFix=false;
+  }
+
+  if(follow){
+    map.setView([lat,lng],16);
+  }
+
+  path.push([lat,lng]);
+  if(path.length>1000)path.shift();
+  route.setLatLngs(path);
+
+  if(exploring){
+    const ck=cellKey(lat,lng);
+    const zk=zoneKey(lat,lng);
+
+    if(!cells[ck]){
+      cells[ck]=true;
+      xp+=10;
+      toast("✨ New area +10 XP");
+      flashAtCurrent();
+    }
+
+    if(!zones[zk]){
+      zones[zk]=true;
+      xp+=50;
+      toast("🌍 New District +50 XP");
+      flashAtCurrent();
+    }
+  }
+
+  updateUI();
   drawFog();
 
-},()=>alert("GPS error"),{enableHighAccuracy:true});
+},()=>{
+  toast("GPS error");
+},{
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
+});
 
-/* FLASH */
-function flash(){
-  let f=document.createElement("div");
-  f.className="flash";
-  let p=map.latLngToContainerPoint([lat,lng]);
-  f.style.left=p.x+"px";
-  f.style.top=p.y+"px";
-  document.body.appendChild(f);
-  setTimeout(()=>f.remove(),700);
-}
-
-/* refs */
-let status=document.getElementById("status");
-let cellsEl=document.getElementById("cells");
-let xpEl=document.getElementById("xp");
-let levelEl=document.getElementById("level");
-let zonesEl=document.getElementById("zones");
-let bar=document.getElementById("bar");
-let menu=document.getElementById("menu");
-let panel=document.getElementById("panel");
-let showBtn=document.getElementById("showBtn");
-let toastEl=document.getElementById("toast");
-
-update();
+updateUI();
+drawFog();
 </script>
 
 </body>
