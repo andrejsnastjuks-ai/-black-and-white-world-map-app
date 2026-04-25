@@ -3,107 +3,125 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Black World Map</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
-body{margin:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
-#map{height:100vh;filter:grayscale(1) brightness(.42);}
-.panel{position:fixed;left:14px;right:14px;bottom:18px;background:rgba(0,0,0,.88);color:white;border-radius:24px;padding:16px;z-index:9999}
-.row{display:flex;gap:8px;margin-top:10px}
-button{flex:1;padding:14px;border:0;border-radius:16px;font-size:16px;font-weight:700}
-.green{background:#00ff99}.dark{background:#222;color:white}.blue{background:#1a73e8;color:white}.red{background:#700;color:white}
-.stat{display:flex;gap:10px}.box{flex:1;background:#222;border-radius:16px;padding:10px;text-align:center}
-.modal{display:none;position:fixed;inset:0;background:#000;color:white;z-index:10000;padding:20px;overflow:auto}
-.place{background:#151515;margin:8px 0;padding:12px;border-radius:14px}
+body{margin:0;background:#000;font-family:sans-serif;}
+#map{height:100vh;filter:grayscale(1) brightness(.45);}
+
+.panel{
+ position:fixed;
+ bottom:20px;
+ left:20px;
+ right:20px;
+ background:rgba(0,0,0,.9);
+ color:white;
+ padding:15px;
+ border-radius:20px;
+}
+
+.row{display:flex;gap:10px;margin-top:10px;}
+button{flex:1;padding:15px;border-radius:12px;border:0;font-size:16px;}
+.green{background:#00ff99;}
+.dark{background:#222;color:white;}
+.blue{background:#1a73e8;color:white;}
+
+.modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:black;
+ color:white;
+ padding:20px;
+ z-index:9999;
+}
 </style>
 </head>
+
 <body>
 
 <div id="map"></div>
 
 <div class="panel">
-  <h2>Black World Map</h2>
-  <div id="status">Готово</div>
-  <div class="stat">
-    <div class="box"><b id="km">0.00</b><br>км</div>
-    <div class="box"><b id="zones">0</b><br>зон</div>
-    <div class="box"><b id="placesCount">0</b><br>мест</div>
-  </div>
+  <h3>Black World Map</h3>
+
   <div class="row">
     <button class="green" onclick="start()">Start</button>
     <button class="dark" onclick="stop()">Stop</button>
   </div>
+
   <div class="row">
-    <button class="blue" onclick="addPlace()">⭐ Add place</button>
+    <button class="blue" onclick="addPlace()">⭐ Place</button>
     <button class="dark" onclick="openMenu()">☰ Menu</button>
   </div>
 </div>
 
 <div id="menu" class="modal">
   <h2>Menu</h2>
-  <button class="dark" onclick="showPlaces()">⭐ Favorite places</button>
-  <button class="dark" onclick="centerMe()">📍 My location</button>
-  <button class="red" onclick="deleteAll()">Delete all data</button>
-  <button class="dark" onclick="closeMenu()">Close</button>
-  <div id="placesList"></div>
+  <button onclick="showPlaces()">⭐ My places</button>
+  <button onclick="closeMenu()">Close</button>
+  <div id="list"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 const map=L.map('map').setView([56.95,24.1],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let watch=null,last=null,total=Number(localStorage.total||0);
-let zones=JSON.parse(localStorage.zones||'[]');
-let places=JSON.parse(localStorage.places||'[]');
-let path=L.polyline([], {color:'#00ff99',weight:5}).addTo(map);
+let watch=null;
 let current=null;
+let places=JSON.parse(localStorage.places||'[]');
 
-function save(){localStorage.zones=JSON.stringify(zones);localStorage.places=JSON.stringify(places);localStorage.total=total;}
-function ui(){km.innerText=(total/1000).toFixed(2);document.getElementById('zones').innerText=zones.length;placesCount.innerText=places.length;}
-
-function drawZone(p){L.circle(p,{radius:45,color:'white',fillOpacity:.35}).addTo(map);}
-function drawPlace(p){L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+p.name);}
-zones.forEach(drawZone); places.forEach(drawPlace); ui();
+places.forEach(p=>{
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup(p.name);
+});
 
 function start(){
- status.innerText="GPS работает...";
  watch=navigator.geolocation.watchPosition(pos=>{
   current=[pos.coords.latitude,pos.coords.longitude];
-  map.setView(current,16); path.addLatLng(current);
-  if(last){let d=map.distance(last,current); if(d>3&&d<1000) total+=d;}
-  last=current;
-  let fresh=!zones.some(z=>map.distance(z,current)<35);
-  if(fresh){zones.push(current);drawZone(current);}
-  save();ui();
- },e=>status.innerText="GPS ошибка: "+e.message,{enableHighAccuracy:true});
-}
-
-function stop(){if(watch)navigator.geolocation.clearWatch(watch);status.innerText="Остановлено";}
-
-function addPlace(){
- if(!current){alert("Сначала нажми Start и дождись GPS");return;}
- let name=prompt("Название места:");
- if(!name)return;
- let p={name:name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
- places.push(p);drawPlace(p);save();ui();
-}
-
-function openMenu(){menu.style.display='block';}
-function closeMenu(){menu.style.display='none';}
-function centerMe(){if(current)map.setView(current,16);else alert("GPS ещё не найден");}
-
-function showPlaces(){
- placesList.innerHTML="<h3>Favorite places</h3>";
- places.forEach((p,i)=>{
-  placesList.innerHTML+=`<div class="place"><b>${p.name}</b><br>${p.date}<br>
-  <button onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
+  map.setView(current,16);
  });
 }
 
-function deleteAll(){
- let t=prompt("Для удаления напиши DELETE");
- if(t==="DELETE"){localStorage.clear();location.reload();}
+function stop(){
+ if(watch)navigator.geolocation.clearWatch(watch);
+}
+
+function addPlace(){
+ if(!current){alert("Нажми Start");return;}
+ let name=prompt("Название места");
+ if(!name)return;
+
+ let p={name:name,lat:current[0],lng:current[1]};
+ places.push(p);
+ localStorage.places=JSON.stringify(places);
+
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup(name);
+}
+
+function openMenu(){
+ document.getElementById('menu').style.display='block';
+}
+
+function closeMenu(){
+ document.getElementById('menu').style.display='none';
+}
+
+function showPlaces(){
+ let list=document.getElementById('list');
+ list.innerHTML="";
+
+ places.forEach(p=>{
+  list.innerHTML+=`
+  <div style="margin:10px 0;">
+    <b>${p.name}</b><br>
+    <button onclick="map.setView([${p.lat},${p.lng}],17)">Go</button>
+  </div>`;
+ });
 }
 </script>
+
 </body>
 </html>
