@@ -1,144 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>WanderGlow PRO</title>
+<title>WanderGlow V17</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html, body {
+html,body{
   margin:0;
-  padding:0;
   height:100%;
   background:#000;
-  font-family:-apple-system, BlinkMacSystemFont;
+  font-family:-apple-system;
 }
 
-/* MAP */
-#map {
+#map{
   height:100%;
-  width:100%;
-  filter: grayscale(100%) brightness(0.35);
+  filter:grayscale(1) brightness(.35);
 }
 
-/* LIGHT REVEAL */
-.reveal {
-  position:absolute;
-  pointer-events:none;
-  width:300px;
-  height:300px;
+/* USER MARKER */
+.user{
+  width:18px;
+  height:18px;
   border-radius:50%;
-  background: radial-gradient(circle, rgba(120,255,200,0.35) 0%, transparent 70%);
+  background:#7dffd0;
+  box-shadow:0 0 12px #7dffd0;
+  position:relative;
+  border:3px solid white;
+}
+
+/* точное место */
+.user::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#00251b;
   transform:translate(-50%,-50%);
-  transition:0.2s;
+  z-index:3;
 }
 
-/* USER DOT */
-.user-dot {
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  background:#78ffc8;
-  box-shadow:0 0 12px #78ffc8;
-}
-
-.user-pulse {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:rgba(120,255,200,0.15);
+/* пульс */
+.user::after{
+  content:"";
   position:absolute;
-  top:-13px;
-  left:-13px;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:rgba(125,255,208,.2);
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%) scale(.5);
   animation:pulse 2s infinite;
+  z-index:-1;
 }
 
-@keyframes pulse {
-  0% {transform:scale(0.5);opacity:0.7;}
-  100% {transform:scale(2);opacity:0;}
+@keyframes pulse{
+  0%{transform:translate(-50%,-50%) scale(.5);opacity:.7}
+  100%{transform:translate(-50%,-50%) scale(2);opacity:0}
 }
 
-/* PANEL */
-.panel {
+/* LIGHT */
+.light{
+  position:absolute;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(125,255,208,.35), transparent 70%);
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  z-index:500;
+}
+
+/* UI */
+.panel{
   position:absolute;
   bottom:20px;
   left:10px;
   right:10px;
   padding:16px;
   border-radius:20px;
+  background:rgba(30,30,30,.6);
   backdrop-filter:blur(20px);
-  background:rgba(40,40,40,0.65);
   color:white;
+  z-index:1000;
 }
 
-/* BUTTON */
-.btn {
+.btn{
   padding:12px;
-  border-radius:14px;
+  border-radius:12px;
   border:none;
-  font-size:16px;
-  background:#2f2f2f;
+  background:#333;
   color:white;
-  transition:0.15s;
+  transition:.15s;
 }
 
-.btn:active {
-  transform:scale(0.93);
-  background:#444;
+.btn:active{
+  transform:scale(.9);
+  background:#555;
 }
 
-/* MAIN BUTTON */
-.btn-main {
-  background:linear-gradient(90deg,#78ffc8,#b6ffd9);
-  color:#000;
-  font-weight:600;
-  box-shadow:0 0 12px rgba(120,255,200,0.5);
+.main{
+  background:linear-gradient(90deg,#7dffd0,#baffea);
+  color:black;
+  font-weight:700;
 }
 
-.row {
+.row{
   display:flex;
   gap:10px;
   margin-top:10px;
 }
 
-.stat {
+.stat{
   flex:1;
-  background:rgba(255,255,255,0.05);
-  padding:10px;
-  border-radius:12px;
   text-align:center;
+  background:rgba(255,255,255,.05);
+  padding:10px;
+  border-radius:10px;
 }
 
-.progress {
-  height:6px;
-  background:#333;
-  border-radius:4px;
-  overflow:hidden;
-  margin-top:10px;
-}
-
-.progress-bar {
-  height:100%;
-  width:0%;
-  background:#78ffc8;
-  transition:0.3s;
-}
-
-/* TOAST */
-.toast {
+.toast{
   position:absolute;
   top:20px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(60,60,60,0.9);
-  padding:10px 16px;
-  border-radius:12px;
+  background:rgba(50,50,50,.9);
   color:white;
+  padding:10px 15px;
+  border-radius:10px;
   opacity:0;
-  transition:0.3s;
+  transition:.3s;
+  z-index:2000;
 }
 </style>
 </head>
@@ -146,32 +145,28 @@ html, body {
 <body>
 
 <div id="map"></div>
-<div id="reveal" class="reveal"></div>
+<div id="light" class="light"></div>
 <div id="toast" class="toast"></div>
 
 <div class="panel">
 
   <div style="display:flex;justify-content:space-between;">
     <div>
-      <div style="font-size:20px;font-weight:600;">WanderGlow</div>
-      <div id="status">Ready</div>
+      <b>WanderGlow</b><br>
+      <span id="status">Ready</span>
     </div>
-    <button class="btn btn-main" onclick="toggleExplore()">Explore</button>
+    <button class="btn main" onclick="toggle()">Explore</button>
   </div>
 
   <div class="row">
-    <div class="stat"><div id="km">0.00</div><small>KM</small></div>
+    <div class="stat"><div id="km">0</div><small>KM</small></div>
     <div class="stat"><div id="cells">0</div><small>Cells</small></div>
     <div class="stat"><div id="xp">0</div><small>XP</small></div>
   </div>
 
-  <div class="progress">
-    <div id="progress" class="progress-bar"></div>
-  </div>
-
   <div class="row">
     <button class="btn" onclick="stop()">Stop</button>
-    <button class="btn btn-main" onclick="place()">Place</button>
+    <button class="btn main" onclick="place()">Place</button>
     <button class="btn" onclick="center()">📍</button>
   </div>
 
@@ -180,26 +175,29 @@ html, body {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-let map = L.map('map').setView([56.95,24.1], 15);
+let map = L.map('map').setView([56.95,24.1],15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'© OpenStreetMap contributors'
+}).addTo(map);
 
-let exploring = false;
-let userMarker = null;
-let lat = 0;
-let lng = 0;
+let exploring=false;
+let marker=null;
+let lat=0,lng=0;
+let lastCell=null;
 
-let xp = 0;
-let cells = 0;
+let cells=Number(localStorage.wg_cells||0);
+let xp=Number(localStorage.wg_xp||0);
 
-function toggleExplore(){
-  exploring = !exploring;
-  document.getElementById("status").innerText = exploring ? "Exploring..." : "Ready";
+function toggle(){
+  exploring=!exploring;
+  status.innerText = exploring ? "Exploring..." : "Paused";
 }
 
 function stop(){
-  exploring = false;
-  document.getElementById("status").innerText = "Stopped";
+  exploring=false;
+  status.innerText="Stopped";
 }
 
 function center(){
@@ -207,53 +205,68 @@ function center(){
 }
 
 function place(){
-  showToast("📍 Place saved");
+  toastMsg("⭐ Place saved");
 }
 
-function showToast(text){
-  let t = document.getElementById("toast");
-  t.innerText = text;
-  t.style.opacity = 1;
-  setTimeout(()=>t.style.opacity=0,2000);
+function toastMsg(t){
+  let el=toast;
+  el.innerText=t;
+  el.style.opacity=1;
+  setTimeout(()=>el.style.opacity=0,2000);
 }
 
-function updateStats(){
-  document.getElementById("cells").innerText = cells;
-  document.getElementById("xp").innerText = xp;
-  document.getElementById("progress").style.width = (cells%10)*10+"%";
+function updateUI(){
+  document.getElementById("cells").innerText=cells;
+  document.getElementById("xp").innerText=xp;
 }
+
+function save(){
+  localStorage.wg_cells=cells;
+  localStorage.wg_xp=xp;
+}
+
+updateUI();
 
 navigator.geolocation.watchPosition(pos=>{
-  lat = pos.coords.latitude;
-  lng = pos.coords.longitude;
 
-  if(!userMarker){
-    let icon = L.divIcon({
-      className:'',
-      html:'<div class="user-dot"><div class="user-pulse"></div></div>',
-      iconSize:[20,20]
-    });
+  lat=pos.coords.latitude;
+  lng=pos.coords.longitude;
 
-    userMarker = L.marker([lat,lng],{icon}).addTo(map);
-  } else {
-    userMarker.setLatLng([lat,lng]);
+  if(!marker){
+    marker=L.marker([lat,lng],{
+      icon:L.divIcon({
+        html:'<div class="user"></div>',
+        className:'',
+        iconSize:[24,24],
+        iconAnchor:[12,12]
+      }),
+      zIndexOffset:10000
+    }).addTo(map);
+  }else{
+    marker.setLatLng([lat,lng]);
   }
 
   map.setView([lat,lng],16);
 
-  let point = map.latLngToContainerPoint([lat,lng]);
-  let reveal = document.getElementById("reveal");
-  reveal.style.left = point.x+"px";
-  reveal.style.top = point.y+"px";
+  let p=map.latLngToContainerPoint([lat,lng]);
+  light.style.left=p.x+"px";
+  light.style.top=p.y+"px";
 
   if(exploring){
-    cells++;
-    xp += 10;
-    updateStats();
-    showToast("✨ +10 XP");
+    let cell = Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+
+    if(cell!==lastCell){
+      lastCell=cell;
+      cells++;
+      xp+=10;
+
+      save();
+      toastMsg("✨ +10 XP");
+      updateUI();
+    }
   }
 
-});
+},()=>alert("GPS error"),{enableHighAccuracy:true});
 </script>
 
 </body>
