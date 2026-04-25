@@ -3,203 +3,154 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WanderGlow</title>
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
 <style>
-body { margin:0; font-family:-apple-system, sans-serif; }
-#map { height:100vh; filter:grayscale(1) brightness(.5); }
-
-/* нижняя панель */
-.bar {
- position:fixed;
- bottom:20px;
- left:14px;
- right:14px;
- background:rgba(0,0,0,0.6);
- backdrop-filter:blur(10px);
- color:white;
- padding:12px;
- border-radius:20px;
- display:flex;
- align-items:center;
- justify-content:space-between;
- z-index:9999;
-}
-
-/* кнопки */
-.btn {
- padding:10px 14px;
- border-radius:12px;
- border:none;
- font-size:14px;
- font-weight:600;
-}
-
-.green { background:#00ff99; }
-.dark { background:#222; color:white; }
-
-/* плавающие кнопки */
-.fab {
- position:fixed;
- right:20px;
- bottom:90px;
- display:flex;
- flex-direction:column;
- gap:10px;
-}
-
-.circle {
- width:50px;
- height:50px;
- border-radius:50%;
- border:none;
- font-size:18px;
-}
-
-.blue { background:#1a73e8; color:white; }
-.black { background:#222; color:white; }
-
-/* меню */
-.modal {
- display:none;
- position:fixed;
- inset:0;
- background:black;
- color:white;
- padding:20px;
- z-index:10000;
-}
-.place {
- background:#111;
- margin:10px 0;
- padding:12px;
- border-radius:12px;
-}
+body{margin:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+#map{height:100vh;filter:grayscale(1) brightness(.48)}
+.sheet{position:fixed;left:12px;right:12px;bottom:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(16px);color:white;border-radius:22px;padding:12px;z-index:9999;box-shadow:0 12px 35px #000}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand b{font-size:20px}.brand small{opacity:.75}
+.miniStats{display:flex;gap:8px;margin-top:10px}
+.box{flex:1;background:rgba(255,255,255,.1);border-radius:14px;padding:8px;text-align:center}
+.box b{font-size:18px}.box span{font-size:11px;opacity:.7}
+.actions{display:flex;gap:8px;margin-top:10px}
+button{border:0;border-radius:14px;padding:13px;font-size:15px;font-weight:800}
+.green{background:#00ff99;color:#00180e}.dark{background:#202020;color:white}.blue{background:#1a73e8;color:white}.red{background:#650000;color:white}
+.mainBtn{min-width:95px}.hidden{display:none}
+.fab{position:fixed;right:16px;bottom:132px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.circle{width:52px;height:52px;border-radius:50%;font-size:20px;box-shadow:0 8px 25px #000}
+.modal{display:none;position:fixed;inset:0;background:#000;color:white;z-index:10000;padding:22px;overflow:auto}
+.place{background:#151515;margin:10px 0;padding:13px;border-radius:14px}
+.leaflet-control-attribution{display:none}
 </style>
 </head>
-
 <body>
 
 <div id="map"></div>
 
-<!-- нижняя панель -->
-<div class="bar">
-  <div>
-    <b>WanderGlow</b><br>
-    <small id="km">0.00 км</small>
-  </div>
-  <div>
-    <button class="btn green" onclick="start()">Start</button>
-    <button class="btn dark" onclick="stop()">Stop</button>
-  </div>
-</div>
-
-<!-- плавающие кнопки -->
 <div class="fab">
   <button class="circle blue" onclick="addPlace()">⭐</button>
-  <button class="circle black" onclick="openMenu()">☰</button>
+  <button class="circle dark" onclick="openMenu()">☰</button>
 </div>
 
-<!-- меню -->
+<div class="sheet" id="sheet">
+  <div class="top" onclick="toggleSheet()">
+    <div class="brand">
+      <b>WanderGlow</b><br>
+      <small id="status">Ready to explore</small>
+    </div>
+    <button id="startBtn" class="green mainBtn" onclick="event.stopPropagation();start()">Start</button>
+  </div>
+
+  <div class="miniStats">
+    <div class="box"><b id="km">0.00</b><br><span>км</span></div>
+    <div class="box"><b id="zones">0</b><br><span>зон</span></div>
+    <div class="box"><b id="placesCount">0</b><br><span>мест</span></div>
+  </div>
+
+  <div class="actions hidden" id="moreActions">
+    <button class="dark" onclick="stop()">Stop</button>
+    <button class="blue" onclick="addPlace()">⭐ Place</button>
+    <button class="dark" onclick="openMenu()">Menu</button>
+  </div>
+</div>
+
 <div id="menu" class="modal">
   <h2>WanderGlow</h2>
+  <p>Твои маршруты, открытые зоны и любимые места.</p>
 
-  <button onclick="showPlaces()">⭐ My places</button>
-  <button onclick="centerMe()">📍 My location</button>
-  <button onclick="deleteAll()">Delete all</button>
-  <button onclick="closeMenu()">Close</button>
+  <button class="dark" onclick="showPlaces()">⭐ My places</button>
+  <button class="dark" onclick="centerMe()">📍 My location</button>
+  <button class="red" onclick="deleteAll()">Delete all data</button>
+  <button class="dark" onclick="closeMenu()">Close</button>
 
   <div id="list"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
 const map=L.map('map').setView([56.95,24.1],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-let watch=null,current=null,last=null,total=Number(localStorage.total||0);
-let places=JSON.parse(localStorage.places||'[]');
+let watch=null,current=null,last=null;
+let total=Number(localStorage.total||0);
 let route=JSON.parse(localStorage.route||'[]');
+let zonesData=JSON.parse(localStorage.zones||'[]');
+let places=JSON.parse(localStorage.places||'[]');
 
 const path=L.polyline(route,{color:'#00ff99',weight:5}).addTo(map);
+const zonesLayer=L.layerGroup().addTo(map);
 
 function save(){
  localStorage.total=total;
- localStorage.places=JSON.stringify(places);
  localStorage.route=JSON.stringify(route);
+ localStorage.zones=JSON.stringify(zonesData);
+ localStorage.places=JSON.stringify(places);
 }
-
-function update(){
- km.innerText=(total/1000).toFixed(2)+" км";
+function ui(){
+ km.innerText=(total/1000).toFixed(2);
+ zones.innerText=zonesData.length;
+ placesCount.innerText=places.length;
 }
-
+function drawZone(p){L.circle(p,{radius:45,color:'white',fillColor:'white',fillOpacity:.32,weight:1}).addTo(zonesLayer)}
+function drawPlace(p){L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+p.name)}
+function restore(){
+ zonesData.forEach(drawZone);
+ places.forEach(drawPlace);
+ if(route.length){map.setView(route[route.length-1],16)}
+ ui();
+}
+function toggleSheet(){moreActions.classList.toggle('hidden')}
 function start(){
+ if(!navigator.geolocation){status.innerText="GPS not supported";return}
+ status.innerText="Looking for GPS...";
  watch=navigator.geolocation.watchPosition(pos=>{
   current=[pos.coords.latitude,pos.coords.longitude];
   map.setView(current,16);
-
   route.push(current);
   path.addLatLng(current);
 
   if(last){
-   let d=map.distance(last,current);
-   if(d>3&&d<1000) total+=d;
+    let d=map.distance(last,current);
+    if(d>3&&d<1000) total+=d;
+  }
+  last=current;
+
+  if(!zonesData.some(z=>map.distance(z,current)<35)){
+    zonesData.push(current);
+    drawZone(current);
   }
 
-  last=current;
-  save();
-  update();
- });
+  status.innerText="Exploring...";
+  save();ui();
+ },e=>status.innerText="GPS error: "+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
-
 function stop(){
  if(watch)navigator.geolocation.clearWatch(watch);
+ watch=null;
+ status.innerText="Saved";
 }
-
 function addPlace(){
- if(!current){alert("Start first");return;}
- let name=prompt("Place name:");
+ if(!current){alert("Нажми Start и дождись GPS");return}
+ let name=prompt("Название места:");
  if(!name)return;
-
- let p={name,lat:current[0],lng:current[1]};
- places.push(p);
-
- L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+name);
-
- save();
+ let p={name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
+ places.push(p);drawPlace(p);save();ui();
 }
-
-function openMenu(){menu.style.display='block';}
-function closeMenu(){menu.style.display='none';}
-
+function openMenu(){menu.style.display='block'}
+function closeMenu(){menu.style.display='none'}
+function centerMe(){if(current)map.setView(current,16);else alert("GPS ещё не найден")}
 function showPlaces(){
- list.innerHTML="";
+ list.innerHTML="<h3>My places</h3>";
  places.forEach(p=>{
-  list.innerHTML+=`
-   <div class="place">
-    <b>${p.name}</b><br>
-    <button onclick="map.setView([${p.lat},${p.lng}],17)">Go</button>
-   </div>`;
+  list.innerHTML+=`<div class="place"><b>⭐ ${p.name}</b><br>${p.date}<br><button onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
  });
 }
-
-function centerMe(){
- if(current) map.setView(current,16);
-}
-
 function deleteAll(){
- let t=prompt("Type DELETE");
- if(t==="DELETE"){
-  localStorage.clear();
-  location.reload();
- }
+ let t=prompt("Для удаления всех данных напиши DELETE");
+ if(t==="DELETE"){localStorage.clear();location.reload()}else alert("Отмена");
 }
-
-update();
+restore();
 </script>
-
 </body>
 </html>
