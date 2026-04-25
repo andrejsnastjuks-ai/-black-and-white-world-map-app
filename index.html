@@ -26,7 +26,7 @@ body {
   bottom:20px;
   left:20px;
   right:20px;
-  background:rgba(0,0,0,0.8);
+  background:rgba(0,0,0,0.85);
   padding:15px;
   border-radius:15px;
 }
@@ -61,6 +61,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const path = L.polyline([], {color:'lime'}).addTo(map);
 
+let visited = [];
+
 function start() {
   navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
@@ -68,17 +70,34 @@ function start() {
 
     const point = [lat, lng];
 
-    path.addLatLng(point);
     map.setView(point, 16);
 
-    L.circle(point, {
-      radius: 30,
-      color: 'white',
-      fillOpacity: 0.3
-    }).addTo(map);
+    // линия маршрута
+    path.addLatLng(point);
+
+    // проверка новой зоны
+    let isNew = true;
+
+    for (let p of visited) {
+      const dist = map.distance(p, point);
+      if (dist < 30) {
+        isNew = false;
+        break;
+      }
+    }
+
+    if (isNew) {
+      visited.push(point);
+
+      L.circle(point, {
+        radius: 40,
+        color: 'white',
+        fillOpacity: 0.4
+      }).addTo(map);
+    }
 
   }, err => {
-    alert("Ошибка GPS: " + err.message);
+    alert("GPS ошибка: " + err.message);
   }, {
     enableHighAccuracy: true
   });
