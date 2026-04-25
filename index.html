@@ -5,55 +5,17 @@
 <title>WanderGlow</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-:root{
- --glass:rgba(12,18,24,.58);
- --glass2:rgba(255,255,255,.10);
- --text:#f7fbff;
- --muted:rgba(247,251,255,.72);
- --mint:#28f5a7;
- --blue:#5aa7ff;
- --danger:#b02b2b;
-}
 body{margin:0;background:#071015;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-#map{
- height:100vh;
- filter:grayscale(.55) brightness(.58) contrast(1.08) sepia(.12) hue-rotate(155deg);
-}
-.sheet{
- position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;
- background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
- color:var(--text);border:1px solid rgba(255,255,255,.12);
- border-radius:26px;padding:14px;box-shadow:0 18px 45px rgba(0,0,0,.45)
-}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand b{font-size:21px;letter-spacing:.2px}.brand small{color:var(--muted)}
-.pillStats{display:flex;gap:8px;margin-top:12px}
-.box{flex:1;background:var(--glass2);border-radius:18px;padding:9px;text-align:center}
-.box b{font-size:18px}.box span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
-.actions{display:flex;gap:8px;margin-top:12px}
-button{border:0;border-radius:16px;padding:13px;font-size:15px;font-weight:800}
-.green{background:linear-gradient(135deg,#28f5a7,#7dffd0);color:#022015}
-.dark{background:rgba(255,255,255,.10);color:white}
-.blue{background:linear-gradient(135deg,#418cff,#73c3ff);color:white}
-.red{background:rgba(176,43,43,.88);color:white}
-.mainBtn{min-width:96px}.hidden{display:none}
-.fab{position:fixed;right:16px;bottom:136px;display:flex;flex-direction:column;gap:10px;z-index:9999}
-.circle{
- width:52px;height:52px;border-radius:50%;font-size:20px;
- background:var(--glass);color:white;border:1px solid rgba(255,255,255,.14);
- backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
- box-shadow:0 12px 32px rgba(0,0,0,.42)
-}
-.modal{
- display:none;position:fixed;left:0;right:0;bottom:0;top:18%;
- background:rgba(9,14,20,.78);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
- color:white;z-index:10000;padding:20px;border-radius:30px 30px 0 0;
- border:1px solid rgba(255,255,255,.12);overflow:auto
-}
-.handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
-.menuGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
-.menuBtn{background:rgba(255,255,255,.10);color:white;text-align:left;padding:16px;border-radius:20px}
-.place{background:rgba(255,255,255,.09);margin:10px 0;padding:13px;border-radius:16px}
+#map{height:100vh}
+#fog{position:fixed;inset:0;z-index:500;pointer-events:none}
+.sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;background:rgba(12,18,24,.58);backdrop-filter:blur(22px);color:white;border-radius:26px;padding:14px;border:1px solid rgba(255,255,255,.12)}
+.top{display:flex;justify-content:space-between;align-items:center}
+button{border:0;border-radius:16px;padding:13px;font-weight:800}
+.green{background:#28f5a7;color:#022015}.dark{background:rgba(255,255,255,.12);color:white}
+.stats{display:flex;gap:8px;margin-top:10px}.box{flex:1;background:rgba(255,255,255,.1);border-radius:14px;padding:9px;text-align:center}
+.fab{position:fixed;right:16px;bottom:132px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.circle{width:52px;height:52px;border-radius:50%;background:rgba(12,18,24,.65);color:white;border:1px solid rgba(255,255,255,.15)}
+.modal{display:none;position:fixed;inset:0;background:rgba(9,14,20,.9);color:white;z-index:10000;padding:22px}
 .leaflet-control-attribution{display:none}
 </style>
 </head>
@@ -61,47 +23,43 @@ button{border:0;border-radius:16px;padding:13px;font-size:15px;font-weight:800}
 
 <div id="map"></div>
 
+<svg id="fog">
+  <defs>
+    <mask id="fogMask">
+      <rect width="100%" height="100%" fill="white"/>
+      <g id="holes"></g>
+    </mask>
+  </defs>
+  <rect width="100%" height="100%" fill="rgba(25,28,30,0.78)" mask="url(#fogMask)"/>
+</svg>
+
 <div class="fab">
- <button class="circle" onclick="addPlace()">⭐</button>
- <button class="circle" onclick="openMenu()">☰</button>
+  <button class="circle" onclick="addPlace()">⭐</button>
+  <button class="circle" onclick="openMenu()">☰</button>
 </div>
 
 <div class="sheet">
- <div class="top" onclick="toggleSheet()">
-  <div class="brand">
-   <b>WanderGlow</b><br>
-   <small id="status">Ready to explore</small>
+  <div class="top">
+    <div>
+      <b style="font-size:21px">WanderGlow</b><br>
+      <small id="status">Ready to explore</small>
+    </div>
+    <button class="green" onclick="start()">Start</button>
   </div>
-  <button id="startBtn" class="green mainBtn" onclick="event.stopPropagation();start()">Start</button>
- </div>
 
- <div class="pillStats">
-  <div class="box"><b id="km">0.00</b><br><span>km</span></div>
-  <div class="box"><b id="zones">0</b><br><span>zones</span></div>
-  <div class="box"><b id="placesCount">0</b><br><span>places</span></div>
- </div>
-
- <div class="actions hidden" id="moreActions">
-  <button class="dark" onclick="stop()">Stop</button>
-  <button class="blue" onclick="addPlace()">⭐ Place</button>
-  <button class="dark" onclick="openMenu()">Menu</button>
- </div>
+  <div class="stats">
+    <div class="box"><b id="km">0.00</b><br><small>km</small></div>
+    <div class="box"><b id="zones">0</b><br><small>zones</small></div>
+    <div class="box"><b id="placesCount">0</b><br><small>places</small></div>
+  </div>
 </div>
 
 <div id="menu" class="modal">
- <div class="handle"></div>
- <h2>WanderGlow</h2>
- <p style="color:var(--muted)">Your personal travel map, favorite places and discovered paths.</p>
-
- <div class="menuGrid">
-  <button class="menuBtn" onclick="showPlaces()">⭐<br>My places</button>
-  <button class="menuBtn" onclick="centerMe()">📍<br>My location</button>
-  <button class="menuBtn" onclick="toggleSheet()">✨<br>Travel panel</button>
-  <button class="menuBtn" onclick="closeMenu()">✕<br>Close</button>
- </div>
-
- <button class="red" style="width:100%;margin-top:8px" onclick="deleteAll()">Delete all data</button>
- <div id="list"></div>
+  <h2>WanderGlow</h2>
+  <button class="dark" onclick="centerMe()">📍 My location</button>
+  <button class="dark" onclick="closeMenu()">Close</button>
+  <button class="dark" onclick="deleteAll()">Delete all data</button>
+  <div id="list"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -111,50 +69,97 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).a
 
 let watch=null,current=null,last=null;
 let total=Number(localStorage.total||0);
-let route=JSON.parse(localStorage.route||'[]');
 let zonesData=JSON.parse(localStorage.zones||'[]');
 let places=JSON.parse(localStorage.places||'[]');
 
-const path=L.polyline(route,{color:'#28f5a7',weight:5}).addTo(map);
-const zonesLayer=L.layerGroup().addTo(map);
+function save(){
+ localStorage.total=total;
+ localStorage.zones=JSON.stringify(zonesData);
+ localStorage.places=JSON.stringify(places);
+}
 
-function save(){localStorage.total=total;localStorage.route=JSON.stringify(route);localStorage.zones=JSON.stringify(zonesData);localStorage.places=JSON.stringify(places)}
-function ui(){km.innerText=(total/1000).toFixed(2);zones.innerText=zonesData.length;placesCount.innerText=places.length}
-function drawZone(p){L.circle(p,{radius:46,color:'#dffff4',fillColor:'#28f5a7',fillOpacity:.26,weight:1}).addTo(zonesLayer)}
-function drawPlace(p){L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+p.name)}
-function restore(){zonesData.forEach(drawZone);places.forEach(drawPlace);if(route.length)map.setView(route[route.length-1],16);ui()}
-function toggleSheet(){moreActions.classList.toggle('hidden')}
+function ui(){
+ km.innerText=(total/1000).toFixed(2);
+ zones.innerText=zonesData.length;
+ placesCount.innerText=places.length;
+}
+
+function metersToPixels(latlng,meters){
+ const p1=map.latLngToContainerPoint(latlng);
+ const lat=latlng[0];
+ const lng=latlng[1]+meters/(111320*Math.cos(lat*Math.PI/180));
+ const p2=map.latLngToContainerPoint([lat,lng]);
+ return Math.max(10,Math.min(70,Math.abs(p2.x-p1.x)));
+}
+
+function drawFog(){
+ const holes=document.getElementById('holes');
+ holes.innerHTML='';
+ zonesData.forEach(z=>{
+  const p=map.latLngToContainerPoint(z);
+  const r=metersToPixels(z,22);
+  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+  c.setAttribute("cx",p.x);
+  c.setAttribute("cy",p.y);
+  c.setAttribute("r",r);
+  c.setAttribute("fill","black");
+  holes.appendChild(c);
+ });
+}
+
+function drawPlace(p){
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+p.name);
+}
+
+places.forEach(drawPlace);
+ui();
+drawFog();
+
+map.on('move zoom resize',drawFog);
+
 function start(){
  if(!navigator.geolocation){status.innerText="GPS not supported";return}
  status.innerText="Finding GPS...";
  watch=navigator.geolocation.watchPosition(pos=>{
-  current=[pos.coords.latitude,pos.coords.longitude];map.setView(current,16);
-  route.push(current);path.addLatLng(current);
-  if(last){let d=map.distance(last,current);if(d>3&&d<1000)total+=d}
+  current=[pos.coords.latitude,pos.coords.longitude];
+  map.setView(current,16);
+
+  if(last){
+   let d=map.distance(last,current);
+   if(d>3&&d<1000) total+=d;
+  }
+
   last=current;
-  if(!zonesData.some(z=>map.distance(z,current)<35)){zonesData.push(current);drawZone(current)}
-  status.innerText="Exploring...";save();ui();
+
+  if(!zonesData.some(z=>map.distance(z,current)<20)){
+   zonesData.push(current);
+   drawFog();
+  }
+
+  status.innerText="Exploring...";
+  save();
+  ui();
  },e=>status.innerText="GPS error: "+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
-function stop(){if(watch)navigator.geolocation.clearWatch(watch);watch=null;status.innerText="Saved"}
+
 function addPlace(){
  if(!current){alert("Нажми Start и дождись GPS");return}
- let name=prompt("Название места:");if(!name)return;
- let p={name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
- places.push(p);drawPlace(p);save();ui();
+ let name=prompt("Название места:");
+ if(!name)return;
+ let p={name,lat:current[0],lng:current[1]};
+ places.push(p);
+ drawPlace(p);
+ save();
+ ui();
 }
+
 function openMenu(){menu.style.display='block'}
 function closeMenu(){menu.style.display='none'}
-function centerMe(){if(current)map.setView(current,16);else alert("GPS ещё не найден")}
-function showPlaces(){
- list.innerHTML="<h3>My places</h3>";
- places.forEach(p=>{list.innerHTML+=`<div class="place"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show on map</button></div>`})
-}
+function centerMe(){if(current)map.setView(current,16)}
 function deleteAll(){
  let t=prompt("Для удаления всех данных напиши DELETE");
- if(t==="DELETE"){localStorage.clear();location.reload()}else alert("Отмена");
+ if(t==="DELETE"){localStorage.clear();location.reload()}
 }
-restore();
 </script>
 </body>
 </html>
