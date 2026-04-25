@@ -1,114 +1,30 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Black World Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: black;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  overflow: hidden;
-}
-
-#map {
-  height: 100vh;
-  width: 100vw;
-  filter: grayscale(1) brightness(0.38);
-}
+body { margin:0; background:black; color:white; font-family:sans-serif;}
+#map { height:100vh; filter: grayscale(1) brightness(0.4); }
 
 #panel {
-  position: fixed;
-  left: 14px;
-  right: 14px;
-  bottom: 18px;
-  z-index: 9999;
-  background: rgba(0,0,0,0.86);
-  color: white;
-  border-radius: 22px;
-  padding: 16px;
-  box-shadow: 0 12px 35px rgba(0,0,0,0.55);
-}
-
-h2 {
-  margin: 0 0 8px;
-  font-size: 24px;
-}
-
-#status {
-  opacity: 0.8;
-  font-size: 14px;
-  margin-bottom: 12px;
-}
-
-.stats {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.stat {
-  flex: 1;
-  background: rgba(255,255,255,0.09);
-  border-radius: 14px;
-  padding: 10px;
-  text-align: center;
-}
-
-.stat strong {
-  display: block;
-  font-size: 19px;
-}
-
-.stat span {
-  font-size: 12px;
-  opacity: 0.75;
-}
-
-.buttons {
-  display: flex;
-  gap: 8px;
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  right:20px;
+  background:rgba(0,0,0,0.8);
+  padding:15px;
+  border-radius:15px;
 }
 
 button {
-  flex: 1;
-  padding: 14px;
-  border: none;
-  border-radius: 15px;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-#startBtn {
-  background: #00ff99;
-  color: #00170e;
-}
-
-#stopBtn {
-  background: #222;
-  color: white;
-}
-
-#resetBtn {
-  background: #4b0000;
-  color: white;
-}
-
-button:disabled {
-  opacity: 0.45;
-}
-
-.leaflet-control-attribution {
-  display: none;
+  width:100%;
+  padding:15px;
+  font-size:18px;
+  margin-top:10px;
 }
 </style>
 </head>
@@ -118,178 +34,70 @@ button:disabled {
 <div id="map"></div>
 
 <div id="panel">
-  <h2>Black World Map</h2>
-  <div id="status">Готово. Нажми Start и начни движение.</div>
+  <h3>Black World Map</h3>
+  <button onclick="start()">Start</button>
+  <button onclick="openSettings()">⚙️ Settings</button>
+</div>
 
-  <div class="stats">
-    <div class="stat">
-      <strong id="km">0.00</strong>
-      <span>км</span>
-    </div>
-    <div class="stat">
-      <strong id="opened">0</strong>
-      <span>открыто зон</span>
-    </div>
-  </div>
-
-  <div class="buttons">
-    <button id="startBtn" onclick="start()">Start</button>
-    <button id="stopBtn" onclick="stop()" disabled>Stop</button>
-    <button id="resetBtn" onclick="resetMap()">Reset</button>
-  </div>
+<div id="settings" style="display:none; position:fixed; inset:0; background:black; padding:20px;">
+  <h2>Settings</h2>
+  <p>Удаление данных защищено</p>
+  <button onclick="deleteData()" style="background:red;">Delete all</button>
+  <button onclick="closeSettings()">Close</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map = L.map('map', { zoomControl: true }).setView([56.9496, 24.1052], 13);
+const map = L.map('map').setView([56.95,24.1],13);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const path = L.polyline([], {
-  color: '#00ff99',
-  weight: 5
-}).addTo(map);
+let visited = JSON.parse(localStorage.getItem('zones')||'[]');
 
-const openedLayer = L.layerGroup().addTo(map);
+visited.forEach(p=>{
+  L.circle(p,{radius:40,color:'white',fillOpacity:0.4}).addTo(map);
+});
 
-let watchId = null;
-let points = JSON.parse(localStorage.getItem('bwm_points') || '[]');
-let openedZones = JSON.parse(localStorage.getItem('bwm_opened_zones') || '[]');
-let totalMeters = Number(localStorage.getItem('bwm_total_meters') || '0');
+function start(){
+ navigator.geolocation.watchPosition(pos=>{
+   const p=[pos.coords.latitude,pos.coords.longitude];
 
-const kmEl = document.getElementById('km');
-const openedEl = document.getElementById('opened');
-const statusEl = document.getElementById('status');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
+   map.setView(p,16);
 
-function save() {
-  localStorage.setItem('bwm_points', JSON.stringify(points));
-  localStorage.setItem('bwm_opened_zones', JSON.stringify(openedZones));
-  localStorage.setItem('bwm_total_meters', String(totalMeters));
+   let newZone=true;
+   visited.forEach(v=>{
+     if(map.distance(v,p)<30) newZone=false;
+   });
+
+   if(newZone){
+     visited.push(p);
+     localStorage.setItem('zones',JSON.stringify(visited));
+     L.circle(p,{radius:40,color:'white',fillOpacity:0.4}).addTo(map);
+   }
+
+ });
 }
 
-function updateStats() {
-  kmEl.textContent = (totalMeters / 1000).toFixed(2);
-  openedEl.textContent = openedZones.length;
+function openSettings(){
+ document.getElementById('settings').style.display='block';
 }
 
-function drawOpenedZone(point) {
-  L.circle(point, {
-    radius: 45,
-    color: 'white',
-    weight: 1,
-    fillColor: 'white',
-    fillOpacity: 0.36
-  }).addTo(openedLayer);
+function closeSettings(){
+ document.getElementById('settings').style.display='none';
 }
 
-function restore() {
-  if (points.length > 1) {
-    path.setLatLngs(points);
-    map.setView(points[points.length - 1], 16);
-  }
+function deleteData(){
+ let confirmText=prompt("Напиши DELETE");
 
-  openedZones.forEach(drawOpenedZone);
-  updateStats();
+ if(confirmText==="DELETE"){
+   localStorage.clear();
+   alert("Удалено");
+   location.reload();
+ } else {
+   alert("Отмена");
+ }
 }
-
-function isNewZone(point) {
-  for (const p of openedZones) {
-    if (map.distance(p, point) < 35) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function distance(a, b) {
-  return map.distance(a, b);
-}
-
-function start() {
-  if (!navigator.geolocation) {
-    statusEl.textContent = 'GPS не поддерживается этим браузером.';
-    return;
-  }
-
-  statusEl.textContent = 'Ожидание GPS...';
-
-  watchId = navigator.geolocation.watchPosition(position => {
-    const point = [
-      position.coords.latitude,
-      position.coords.longitude
-    ];
-
-    if (points.length > 0) {
-      const last = points[points.length - 1];
-      const d = distance(last, point);
-
-      if (d < 3 || d > 1200) {
-        return;
-      }
-
-      totalMeters += d;
-    }
-
-    points.push(point);
-    path.addLatLng(point);
-    map.setView(point, 16);
-
-    if (isNewZone(point)) {
-      openedZones.push(point);
-      drawOpenedZone(point);
-    }
-
-    statusEl.textContent = 'Идёт запись маршрута...';
-    updateStats();
-    save();
-
-  }, error => {
-    statusEl.textContent = 'GPS ошибка: ' + error.message;
-  }, {
-    enableHighAccuracy: true,
-    maximumAge: 0,
-    timeout: 15000
-  });
-
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-}
-
-function stop() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-  statusEl.textContent = 'Остановлено. Маршрут сохранён.';
-}
-
-function resetMap() {
-  if (!confirm('Очистить маршрут и открытые зоны?')) return;
-
-  localStorage.removeItem('bwm_points');
-  localStorage.removeItem('bwm_opened_zones');
-  localStorage.removeItem('bwm_total_meters');
-
-  points = [];
-  openedZones = [];
-  totalMeters = 0;
-
-  path.setLatLngs([]);
-  openedLayer.clearLayers();
-
-  updateStats();
-  statusEl.textContent = 'Карта очищена.';
-}
-
-restore();
 </script>
 
 </body>
