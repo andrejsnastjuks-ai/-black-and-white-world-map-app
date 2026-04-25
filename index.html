@@ -6,50 +6,41 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{
- --glass:rgba(255,255,255,.075);
- --glass-border:rgba(255,255,255,.18);
+ --glass:rgba(255,255,255,.065);
+ --glass2:rgba(255,255,255,.09);
  --text:#f7fbff;
- --muted:rgba(247,251,255,.68);
- --mint:#6fffc5;
- --blue:#76b7ff;
+ --muted:rgba(247,251,255,.65);
+ --mint:#7dffd0;
+ --blue:#7bbcff;
 }
-html,body{margin:0;height:100%;overflow:hidden;background:#020609;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.36) contrast(.9) saturate(.25)}
-body.day #map{filter:grayscale(.75) brightness(.55) contrast(.92) saturate(.35)}
-.glass{
- background:var(--glass);
- backdrop-filter:blur(28px) saturate(1.4);
- -webkit-backdrop-filter:blur(28px) saturate(1.4);
- border:1px solid var(--glass-border);
- box-shadow:0 18px 45px rgba(0,0,0,.38);
-}
-.sheet{
- position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;
- color:var(--text);border-radius:30px;padding:14px;
-}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand b{font-size:22px;letter-spacing:.2px}
-.brand small{color:var(--muted)}
+html,body{margin:0;height:100%;overflow:hidden;background:#010305;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.28) contrast(.86) saturate(.18)}
+body.day #map{filter:grayscale(.85) brightness(.42) contrast(.9) saturate(.25)}
+.glass{background:var(--glass);backdrop-filter:blur(30px) saturate(1.35);-webkit-backdrop-filter:blur(30px) saturate(1.35);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 45px rgba(0,0,0,.35)}
+.sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;color:white;border-radius:30px;padding:14px;transition:.25s}
+.sheet.hiddenPanel{transform:translateY(120%);opacity:0;pointer-events:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand b{font-size:22px}.brand small{color:var(--muted)}
 .stats{display:flex;gap:8px;margin-top:12px}
-.box{flex:1;background:rgba(255,255,255,.075);border-radius:18px;padding:9px;text-align:center}
-.box b{font-size:18px}.box span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-button{border:0;border-radius:16px;padding:13px 14px;font-weight:800;font-size:15px}
-.start{background:linear-gradient(135deg,#6fffc5,#d5ffef);color:#031c13;min-width:96px}
+.box{flex:1;background:var(--glass2);border-radius:18px;padding:9px;text-align:center}
+.box b{font-size:18px}.box span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase}
+button{border:0;border-radius:16px;padding:13px 14px;font-size:15px;font-weight:800}
+.start{background:linear-gradient(135deg,#7dffd0,#d9fff0);color:#031c13;min-width:96px}
 .dark{background:rgba(255,255,255,.10);color:white}
 .blue{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
 .red{background:rgba(120,20,20,.78);color:white}
-.fab{position:fixed;right:16px;bottom:138px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.fabTop{position:fixed;right:16px;top:58px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.fabBottom{position:fixed;right:16px;bottom:92px;display:flex;flex-direction:column;gap:10px;z-index:9999}
 .circle{width:52px;height:52px;border-radius:50%;font-size:20px;color:white}
-.modal{
- display:none;position:fixed;left:0;right:0;bottom:0;top:18%;z-index:10000;
- color:white;padding:20px;border-radius:30px 30px 0 0;overflow:auto;
-}
-.handle{width:46px;height:5px;background:rgba(255,255,255,.32);border-radius:99px;margin:0 auto 16px}
+.peek{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;width:62px;height:42px;border-radius:24px;font-size:22px;color:white;display:none}
+.peek.show{display:block}
+.modal{display:none;position:fixed;left:12px;right:12px;bottom:18px;z-index:10000;color:white;padding:18px;border-radius:28px;max-height:62vh;overflow:auto}
+.handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.menuBtn{background:rgba(255,255,255,.085);color:white;text-align:left;padding:16px;border-radius:20px}
-.item{background:rgba(255,255,255,.085);margin:10px 0;padding:13px;border-radius:16px}
-.progressBar{height:8px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;margin-top:10px}
-.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#6fffc5,#76b7ff)}
+.menuBtn{background:rgba(255,255,255,.09);color:white;text-align:left;padding:16px;border-radius:20px}
+.item{background:rgba(255,255,255,.09);margin:10px 0;padding:13px;border-radius:16px}
+.progressBar{height:8px;background:rgba(255,255,255,.10);border-radius:99px;overflow:hidden;margin-top:10px}
+.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#7bbcff)}
 .leaflet-control-attribution{display:none}
 </style>
 </head>
@@ -57,12 +48,18 @@ button{border:0;border-radius:16px;padding:13px 14px;font-weight:800;font-size:1
 
 <div id="map"></div>
 
-<div class="fab">
- <button class="circle glass" onclick="addPlace()">⭐</button>
+<div class="fabTop">
+ <button class="circle glass" onclick="togglePanel()">⌄</button>
  <button class="circle glass" onclick="openMenu()">☰</button>
 </div>
 
-<div class="sheet glass">
+<div class="fabBottom">
+ <button class="circle glass" onclick="addPlace()">⭐</button>
+</div>
+
+<button id="peekBtn" class="peek glass" onclick="togglePanel()">⌃</button>
+
+<div id="sheet" class="sheet glass">
  <div class="top">
   <div class="brand">
    <b>WanderGlow</b><br>
@@ -78,22 +75,28 @@ button{border:0;border-radius:16px;padding:13px 14px;font-weight:800;font-size:1
  </div>
 
  <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
+
+ <div style="display:flex;gap:8px;margin-top:12px">
+  <button class="dark" style="flex:1" onclick="stop()">Stop</button>
+  <button class="dark" style="flex:1" onclick="togglePanel()">Hide</button>
+ </div>
 </div>
 
 <div id="menu" class="modal glass">
  <div class="handle"></div>
- <h2>WanderGlow Premium</h2>
- <p style="color:var(--muted)">Открывай мир вокруг себя. Карта остаётся тёмной, а места, где ты был, мягко подсвечиваются.</p>
+ <h2>WanderGlow</h2>
+ <p style="color:var(--muted)">Открывай город, сохраняй любимые места и смотри прогресс путешествий.</p>
 
  <div class="grid">
   <button class="menuBtn" onclick="toggleMode()">🌙<br>Day / Night</button>
   <button class="menuBtn" onclick="centerMe()">📍<br>My location</button>
   <button class="menuBtn" onclick="showPlaces()">⭐<br>My places</button>
-  <button class="menuBtn" onclick="closeMenu()">✕<br>Close</button>
+  <button class="menuBtn" onclick="togglePanel();closeMenu()">👁️<br>Show / hide panel</button>
  </div>
 
  <br>
  <button class="red" style="width:100%" onclick="deleteAll()">Delete all data</button>
+ <button class="dark" style="width:100%;margin-top:10px" onclick="closeMenu()">Close</button>
  <div id="list"></div>
 </div>
 
@@ -107,6 +110,8 @@ let total=Number(localStorage.total||0);
 let zones=JSON.parse(localStorage.zones||'[]');
 let places=JSON.parse(localStorage.places||'[]');
 let mode=localStorage.mode||'night';
+let panelHidden=localStorage.panelHidden==='true';
+
 if(mode==='day')document.body.classList.add('day');
 
 function save(){
@@ -114,12 +119,12 @@ function save(){
  localStorage.zones=JSON.stringify(zones);
  localStorage.places=JSON.stringify(places);
  localStorage.mode=mode;
+ localStorage.panelHidden=panelHidden;
 }
 
 function ui(){
  km.innerText=(total/1000).toFixed(2);
  document.getElementById('zones').innerText=zones.length;
-
  const openedArea=zones.length*Math.PI*25*25;
  const localArea=Math.PI*2000*2000;
  const pct=Math.min(100,(openedArea/localArea)*100);
@@ -128,21 +133,28 @@ function ui(){
 }
 
 function drawZone(p){
- L.circle(p,{
-  radius:25,
-  stroke:false,
-  fillColor:'#6fffc5',
-  fillOpacity:.38
- }).addTo(map);
+ L.circle(p,{radius:25,stroke:false,fillColor:'#7dffd0',fillOpacity:.34}).addTo(map);
 }
 
 function drawPlace(p){
  L.marker([p.lat,p.lng]).addTo(map).bindPopup('⭐ '+p.name);
 }
 
+function applyPanel(){
+ sheet.classList.toggle('hiddenPanel',panelHidden);
+ peekBtn.classList.toggle('show',panelHidden);
+}
+
+function togglePanel(){
+ panelHidden=!panelHidden;
+ applyPanel();
+ save();
+}
+
 zones.forEach(drawZone);
 places.forEach(drawPlace);
 ui();
+applyPanel();
 
 function start(){
  if(!navigator.geolocation){status.innerText='GPS not supported';return}
@@ -166,6 +178,12 @@ function start(){
   status.innerText='Exploring...';
   save();ui();
  },e=>status.innerText='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+}
+
+function stop(){
+ if(watch)navigator.geolocation.clearWatch(watch);
+ watch=null;
+ status.innerText='Saved';
 }
 
 function addPlace(){
