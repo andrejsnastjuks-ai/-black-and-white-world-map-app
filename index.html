@@ -2,192 +2,437 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WanderGlow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>WanderGlow V6</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body{
-margin:0;
-background:#000;
-font-family:-apple-system;
-overflow:hidden;
-color:white;
+:root{
+  --mint:#7dffd0;
+  --mint2:#e2fff5;
+  --blue:#8cc9ff;
+  --red:#9b2929;
+  --muted:rgba(247,251,255,.65);
+  --line:rgba(255,255,255,.16);
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#010305;
+  color:white;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 #map{
-height:100vh;
-filter:grayscale(1) brightness(.22) contrast(.9);
+  height:100vh;
+  width:100vw;
 }
 
-/* GLASS PANEL */
+/* ВАЖНО: затемняем только карту, НЕ маркеры */
+.leaflet-tile-pane{
+  filter:grayscale(1) brightness(.25) contrast(.9) saturate(.18);
+}
+
+.glass{
+  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.04));
+  backdrop-filter:blur(34px) saturate(1.45);
+  -webkit-backdrop-filter:blur(34px) saturate(1.45);
+  border:1px solid var(--line);
+  box-shadow:
+    0 22px 55px rgba(0,0,0,.35),
+    inset 0 0 38px rgba(125,255,208,.045);
+}
+
+button,.card{
+  transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease,filter .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+
+button:active,.card:active{
+  transform:scale(.93);
+  opacity:.78;
+  box-shadow:0 0 26px rgba(125,255,208,.4);
+}
+
+.tap-flash{
+  animation:tapFlash .28s ease;
+}
+
+@keyframes tapFlash{
+  0%{filter:brightness(1)}
+  50%{filter:brightness(1.75)}
+  100%{filter:brightness(1)}
+}
+
+button{
+  border:0;
+  font-weight:900;
+  font-size:15px;
+}
 
 .panel{
-position:fixed;
-bottom:18px;
-left:12px;
-right:12px;
-padding:16px;
-border-radius:28px;
-background:rgba(255,255,255,.06);
-backdrop-filter:blur(24px);
+  position:fixed;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:9999;
+  color:white;
+  border-radius:34px;
+  padding:16px;
+  transition:.28s ease;
 }
 
-.hidden{
-transform:translateY(120%);
-opacity:0;
-pointer-events:none;
+.panel.hidden{
+  transform:translateY(125%);
+  opacity:0;
+  pointer-events:none;
 }
 
-/* TOP */
+.showPanel{
+  display:none;
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:9999;
+  width:78px;
+  height:46px;
+  border-radius:99px;
+  color:white;
+  font-size:24px;
+}
+
+.showPanel.visible{
+  display:block;
+}
+
+.hideHandle{
+  width:48px;
+  height:5px;
+  border-radius:99px;
+  background:rgba(255,255,255,.32);
+  margin:0 auto 14px;
+}
 
 .top{
-display:flex;
-justify-content:space-between;
-align-items:center;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
 }
 
-.title{
-font-size:20px;
+.brand b{
+  font-size:23px;
 }
 
-.status{
-font-size:12px;
-opacity:.6;
+.brand small{
+  color:var(--muted);
+  font-size:14px;
 }
-
-/* BUTTON */
 
 .explore{
-padding:12px 16px;
-border-radius:20px;
-border:0;
-background:linear-gradient(135deg,#7dffd0,#dffff3);
-color:black;
-font-weight:bold;
-animation:pulse 2s infinite;
+  min-width:110px;
+  padding:14px 18px;
+  border-radius:22px;
+  background:linear-gradient(135deg,var(--mint),var(--mint2));
+  color:#031c13;
+  box-shadow:0 0 30px rgba(125,255,208,.42);
+  animation:explorePulse 2.4s infinite;
 }
 
-@keyframes pulse{
-0%{box-shadow:0 0 10px #7dffd0}
-50%{box-shadow:0 0 25px #7dffd0}
-100%{box-shadow:0 0 10px #7dffd0}
+.explore.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
+  box-shadow:0 0 30px rgba(77,150,255,.45);
 }
 
-/* STATS */
+@keyframes explorePulse{
+  0%{box-shadow:0 0 18px rgba(125,255,208,.25)}
+  50%{box-shadow:0 0 38px rgba(125,255,208,.5)}
+  100%{box-shadow:0 0 18px rgba(125,255,208,.25)}
+}
 
 .stats{
-display:flex;
-margin-top:10px;
+  display:flex;
+  gap:10px;
+  margin-top:14px;
 }
 
-.box{
-flex:1;
-text-align:center;
-font-size:12px;
+.stat{
+  flex:1;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  padding:11px 8px;
+  text-align:center;
 }
 
-.progress{
-height:6px;
-background:#222;
-border-radius:10px;
-overflow:hidden;
-margin-top:10px;
+.stat b{
+  font-size:20px;
 }
 
-.progress div{
-height:100%;
-background:#7dffd0;
-transition:.3s;
+.stat span{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.7px;
 }
 
-/* FLOAT BUTTONS */
-
-.fab{
-position:fixed;
-right:12px;
-top:60px;
-display:flex;
-flex-direction:column;
-gap:8px;
+.levelBox{
+  margin-top:12px;
+  background:rgba(255,255,255,.06);
+  border-radius:20px;
+  padding:11px 12px;
 }
 
-.btn{
-width:46px;
-height:46px;
-border-radius:50%;
-background:rgba(255,255,255,.1);
-border:0;
-color:white;
+.levelTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:white;
+  font-size:14px;
 }
 
-/* USER */
-
-.user{
-width:18px;
-height:18px;
-border-radius:50%;
-background:#7dffd0;
-border:3px solid white;
-box-shadow:0 0 20px #7dffd0;
-animation:pulse 2s infinite;
+.progressBar{
+  height:9px;
+  margin-top:9px;
+  border-radius:99px;
+  background:rgba(255,255,255,.09);
+  overflow:hidden;
 }
 
-/* TRAIL */
-
-.trail{
-color:#7dffd0;
+.progressFill{
+  height:100%;
+  width:0%;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--mint),var(--blue));
+  box-shadow:0 0 20px rgba(125,255,208,.65);
+  transition:width .45s ease;
 }
 
-/* FLASH */
-
-.flash{
-position:fixed;
-width:140px;
-height:140px;
-border-radius:50%;
-background:radial-gradient(#7dffd0,transparent);
-transform:translate(-50%,-50%);
-pointer-events:none;
-animation:boom .7s forwards;
+.goal{
+  margin-top:10px;
+  font-size:13px;
+  color:var(--muted);
 }
 
-@keyframes boom{
-0%{opacity:1;transform:scale(.3)}
-100%{opacity:0;transform:scale(2)}
+.actions{
+  display:flex;
+  gap:9px;
+  margin-top:13px;
 }
 
-/* LEVEL UP */
-
-.levelup{
-position:fixed;
-inset:0;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:32px;
-background:rgba(0,0,0,.5);
-display:none;
+.action{
+  flex:1;
+  padding:13px;
+  border-radius:20px;
+  color:white;
+  background:rgba(255,255,255,.08);
 }
 
-/* MENU */
+.action.blue{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+}
 
-.menu{
-position:fixed;
-bottom:18px;
-left:12px;
-right:12px;
-background:rgba(0,0,0,.9);
-border-radius:20px;
-padding:16px;
-display:none;
+.capsule{
+  position:fixed;
+  right:16px;
+  top:62px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:8px;
+  border-radius:34px;
+}
+
+.capsule.hidden{
+  display:none;
+}
+
+.circle{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  color:white;
+  font-size:20px;
+  background:rgba(255,255,255,.075);
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:18px;
+  z-index:10000;
+  color:white;
+  padding:22px 20px 20px;
+  border-radius:34px;
+  max-height:72vh;
+  overflow:auto;
+}
+
+.handle{
+  width:48px;
+  height:5px;
+  border-radius:99px;
+  background:rgba(255,255,255,.32);
+  margin:0 auto 18px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
 }
 
 .card{
-background:#111;
-padding:12px;
-border-radius:12px;
-margin-top:8px;
+  min-height:86px;
+  border-radius:24px;
+  background:rgba(255,255,255,.075);
+  color:white;
+  text-align:left;
+  padding:16px;
+  box-sizing:border-box;
+  font-weight:800;
+}
+
+.card.primary{
+  background:linear-gradient(135deg,rgba(77,150,255,.6),rgba(125,255,208,.22));
+}
+
+.card strong{
+  display:block;
+  font-size:16px;
+  margin-top:6px;
+}
+
+.card small{
+  color:var(--muted);
+}
+
+.item{
+  background:rgba(255,255,255,.075);
+  border-radius:22px;
+  padding:14px;
+  margin-top:10px;
+}
+
+.red{
+  background:rgba(155,41,41,.82);
+  color:white;
+}
+
+.user-dot{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:var(--mint);
+  border:4px solid white;
+  box-shadow:0 0 0 9px rgba(125,255,208,.24),0 0 34px rgba(125,255,208,1);
+  animation:userPulse 1.55s infinite;
+}
+
+.user-person{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:15px;
+}
+
+@keyframes userPulse{
+  0%{box-shadow:0 0 0 5px rgba(125,255,208,.42),0 0 28px rgba(125,255,208,1)}
+  70%{box-shadow:0 0 0 25px rgba(125,255,208,0),0 0 34px rgba(125,255,208,1)}
+  100%{box-shadow:0 0 0 5px rgba(125,255,208,0),0 0 28px rgba(125,255,208,1)}
+}
+
+.unlock-flash{
+  position:fixed;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:9998;
+  background:radial-gradient(circle,rgba(125,255,208,.72),rgba(125,255,208,.24),rgba(125,255,208,0));
+  transform:translate(-50%,-50%) scale(.2);
+  animation:unlock .95s ease-out forwards;
+}
+
+@keyframes unlock{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}
+  80%{opacity:.75;transform:translate(-50%,-50%) scale(1.9)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.35)}
+}
+
+.toast{
+  position:fixed;
+  left:18px;
+  right:18px;
+  top:58px;
+  z-index:10001;
+  color:white;
+  padding:14px 16px;
+  border-radius:24px;
+  display:none;
+  font-weight:900;
+}
+
+.levelUp{
+  position:fixed;
+  inset:0;
+  z-index:10002;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  pointer-events:none;
+}
+
+.levelCard{
+  padding:28px;
+  border-radius:34px;
+  text-align:center;
+  transform:scale(.85);
+  animation:levelPop 1.4s ease forwards;
+}
+
+.levelCard h1{
+  margin:0;
+  font-size:34px;
+}
+
+.levelCard p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:18px;
+}
+
+@keyframes levelPop{
+  0%{opacity:0;transform:scale(.75)}
+  25%{opacity:1;transform:scale(1.05)}
+  70%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(.92)}
+}
+
+input,textarea,select{
+  width:100%;
+  box-sizing:border-box;
+  padding:14px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.08);
+  color:white;
+  font-size:16px;
+}
+
+.leaflet-control-attribution{
+  font-size:10px;
 }
 </style>
 </head>
@@ -195,158 +440,500 @@ margin-top:8px;
 <body>
 
 <div id="map"></div>
+<div id="toast" class="toast glass"></div>
 
-<div id="levelup" class="levelup">LEVEL UP</div>
-
-<div class="fab">
-<button class="btn" onclick="center()">📍</button>
-<button class="btn" onclick="toggleMenu()">☰</button>
+<div id="levelUp" class="levelUp">
+  <div class="levelCard glass">
+    <h1>LEVEL UP</h1>
+    <p id="levelUpText">Explorer II</p>
+  </div>
 </div>
 
-<div id="panel" class="panel">
-
-<div class="top">
-<div>
-<div class="title">WanderGlow</div>
-<div id="status" class="status">Ready</div>
+<div id="capsule" class="capsule glass">
+  <button class="circle" onclick="centerMe()">📍</button>
+  <button class="circle" onclick="openPlaceEditor()">⭐</button>
+  <button class="circle" onclick="openMenu()">☰</button>
 </div>
 
-<button class="explore" onclick="start()">Explore</button>
+<button id="showPanelBtn" class="showPanel glass" onclick="showPanel()">⌃</button>
+
+<div id="panel" class="panel glass">
+  <div class="hideHandle" onclick="hidePanel()"></div>
+
+  <div class="top">
+    <div class="brand">
+      <b>WanderGlow</b><br>
+      <small id="status">Ready to explore</small>
+    </div>
+    <button id="exploreBtn" class="explore" onclick="start()">Explore</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="km">0.00</b><span>km</span></div>
+    <div class="stat"><b id="cells">0</b><span>cells</span></div>
+    <div class="stat"><b id="xp">0</b><span>XP</span></div>
+  </div>
+
+  <div class="levelBox">
+    <div class="levelTop">
+      <b id="levelName">Explorer I</b>
+      <span id="levelNeed">0 / 10 cells</span>
+    </div>
+    <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
+    <div id="dailyGoal" class="goal">Daily goal: 0 / 10 XP</div>
+  </div>
+
+  <div class="actions">
+    <button class="action" onclick="stop()">Stop</button>
+    <button class="action blue" onclick="openPlaceEditor()">Place</button>
+    <button class="action" onclick="openMenu()">Menu</button>
+  </div>
 </div>
 
-<div class="stats">
-<div class="box">XP<br><b id="xp">0</b></div>
-<div class="box">Cells<br><b id="cells">0</b></div>
-<div class="box">Level<br><b id="lvl">1</b></div>
+<div id="menu" class="modal glass">
+  <div class="handle" onclick="closeMenu()"></div>
+  <h2>WanderGlow</h2>
+  <p style="color:var(--muted)">Открывай город шаг за шагом. Каждая новая клетка даёт XP, уровень и прогресс.</p>
+
+  <div class="grid">
+    <div class="card primary" onclick="centerMe()">📍<strong>My location</strong><small>Вернуться к себе</small></div>
+    <div class="card primary" onclick="showPlaces()">⭐<strong>My places</strong><small>Сохранённые места</small></div>
+    <div class="card" onclick="hideAllUI()">👁️<strong>Hide UI</strong><small>Чистая карта</small></div>
+    <div class="card" onclick="showAllUI()">✨<strong>Show UI</strong><small>Вернуть интерфейс</small></div>
+    <div class="card" onclick="exportData()">⬇️<strong>Backup</strong><small>Сохранить данные</small></div>
+    <div class="card" onclick="openImport()">⬆️<strong>Import</strong><small>Восстановить</small></div>
+  </div>
+
+  <br>
+  <button class="red" style="width:100%;padding:14px;border-radius:22px" onclick="deleteAll()">Delete all data</button>
+  <button class="action" style="width:100%;margin-top:10px" onclick="closeMenu()">Close</button>
+
+  <div id="list"></div>
 </div>
 
-<div class="progress"><div id="bar"></div></div>
+<div id="placeModal" class="modal glass">
+  <div class="handle" onclick="closePlaceEditor()"></div>
+  <h2>Save place</h2>
 
+  <input id="placeName" placeholder="Название места">
+  <br><br>
+  <select id="placeCategory">
+    <option value="⭐">⭐ Избранное</option>
+    <option value="🏨">🏨 Отель</option>
+    <option value="🍽️">🍽️ Еда</option>
+    <option value="📸">📸 Фото</option>
+    <option value="🌳">🌳 Природа</option>
+    <option value="📍">📍 Другое</option>
+  </select>
+
+  <br><br>
+  <button class="action blue" style="width:100%" onclick="savePlaceFromEditor()">Save place</button>
+  <button class="action" style="width:100%;margin-top:10px" onclick="closePlaceEditor()">Close</button>
 </div>
 
-<div id="menu" class="menu">
-<div class="card" onclick="hideUI()">Hide UI</div>
-<div class="card" onclick="showUI()">Show UI</div>
-<div class="card" onclick="reset()">Reset</div>
+<div id="importModal" class="modal glass">
+  <div class="handle" onclick="closeImport()"></div>
+  <h2>Import data</h2>
+  <textarea id="importText" rows="8" placeholder="Paste backup JSON here"></textarea>
+  <br><br>
+  <button class="action blue" style="width:100%" onclick="importData()">Import</button>
+  <button class="action" style="width:100%;margin-top:10px" onclick="closeImport()">Close</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map('map').setView([56.95,24.1],13);
+const map=L.map('map',{attributionControl:true}).setView([56.9496,24.1052],13);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-let opened=JSON.parse(localStorage.o||'{}');
-let xp=Number(localStorage.xp||0);
-let level=Number(localStorage.lvl||1);
-
-let trailPoints=[];
-
-function key(lat,lng){
-return Math.floor(lat*2000)+'_'+Math.floor(lng*2000);
-}
-
-function draw(k){
-let p=k.split('_');
-let lat=p[0]/2000,lng=p[1]/2000;
-L.rectangle([[lat,lng],[lat+.0005,lng+.0005]],{
-color:'#7dffd0',
-fillOpacity:.3,
-stroke:false
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'© OpenStreetMap contributors'
 }).addTo(map);
+
+let watch=null,current=null,last=null,userMarker=null,trail=null;
+let follow=true;
+let total=Number(localStorage.wg_total||0);
+let xpValue=Number(localStorage.wg_xp||0);
+let dailyXP=Number(localStorage.wg_dailyXP||0);
+let dailyDate=localStorage.wg_dailyDate||new Date().toDateString();
+let opened=JSON.parse(localStorage.wg_opened||'{}');
+let places=JSON.parse(localStorage.wg_places||'[]');
+let trailPoints=JSON.parse(localStorage.wg_trail||'[]');
+let lastLevel=localStorage.wg_lastLevel||'Explorer I';
+
+if(dailyDate!==new Date().toDateString()){
+  dailyDate=new Date().toDateString();
+  dailyXP=0;
 }
 
-Object.keys(opened).forEach(draw);
+map.on('dragstart',()=>{follow=false;status.innerText='Free map'});
+map.on('zoomstart',()=>{follow=false});
 
-function update(){
-xpEl.innerText=xp;
-cells.innerText=Object.keys(opened).length;
-lvl.innerText=level;
+document.addEventListener('click', e=>{
+  const el=e.target.closest('button,.card');
+  if(!el)return;
+  el.classList.add('tap-flash');
+  setTimeout(()=>el.classList.remove('tap-flash'),280);
+  if(navigator.vibrate)navigator.vibrate(12);
+});
 
-bar.style.width=(xp%100)+"%";
+function gridKey(lat,lng){
+  const size=0.00025;
+  return Math.floor(lat/size)+'_'+Math.floor(lng/size);
 }
 
-update();
+function save(){
+  localStorage.wg_total=total;
+  localStorage.wg_xp=xpValue;
+  localStorage.wg_dailyXP=dailyXP;
+  localStorage.wg_dailyDate=dailyDate;
+  localStorage.wg_opened=JSON.stringify(opened);
+  localStorage.wg_places=JSON.stringify(places);
+  localStorage.wg_trail=JSON.stringify(trailPoints.slice(-900));
+  localStorage.wg_lastLevel=lastLevel;
+}
 
-let watch,last,userMarker,trail;
+function drawCell(key){
+  const size=0.00025;
+  const parts=key.split('_');
+  const lat=Number(parts[0])*size;
+  const lng=Number(parts[1])*size;
+
+  L.rectangle([[lat,lng],[lat+size,lng+size]],{
+    stroke:false,
+    fillColor:'#7dffd0',
+    fillOpacity:.34
+  }).addTo(map);
+}
+
+function drawTrail(){
+  if(trail)map.removeLayer(trail);
+  if(trailPoints.length>1){
+    trail=L.polyline(trailPoints,{
+      color:'#7dffd0',
+      weight:4,
+      opacity:.58
+    }).addTo(map);
+  }
+}
+
+function drawPlace(p){
+  const icon=L.divIcon({
+    html:`<div style="font-size:24px">${p.cat||'⭐'}</div>`,
+    className:'',
+    iconSize:[28,28],
+    iconAnchor:[14,14]
+  });
+
+  L.marker([p.lat,p.lng],{icon}).addTo(map)
+    .bindPopup(`<b>${p.cat||'⭐'} ${p.name}</b><br><small>${p.date||''}</small>`);
+}
+
+function drawUser(p){
+  const icon=L.divIcon({
+    html:'<div class="user-dot"><span class="user-person">●</span></div>',
+    className:'',
+    iconSize:[34,34],
+    iconAnchor:[17,17]
+  });
+
+  if(userMarker){
+    userMarker.setLatLng(p);
+  }else{
+    userMarker=L.marker(p,{icon,zIndexOffset:10000}).addTo(map).bindPopup('Ты здесь');
+  }
+}
+
+function getLevel(count){
+  if(count < 10) return {name:'Explorer I', next:10, prev:0};
+  if(count < 25) return {name:'Explorer II', next:25, prev:10};
+  if(count < 50) return {name:'Traveler I', next:50, prev:25};
+  if(count < 100) return {name:'Traveler II', next:100, prev:50};
+  if(count < 200) return {name:'City Seeker', next:200, prev:100};
+  if(count < 400) return {name:'World Seeker', next:400, prev:200};
+  return {name:'Map Master', next:Math.max(count,401), prev:400};
+}
+
+function ui(){
+  const count=Object.keys(opened).length;
+  km.innerText=(total/1000).toFixed(2);
+  cells.innerText=count;
+  xp.innerText=xpValue;
+
+  const lvl=getLevel(count);
+  levelName.innerText=lvl.name;
+  levelNeed.innerText=count+' / '+lvl.next+' cells';
+
+  const levelPct=Math.min(100,((count-lvl.prev)/(lvl.next-lvl.prev))*100);
+  progressFill.style.width=levelPct+'%';
+
+  dailyGoal.innerText='Daily goal: '+dailyXP+' / 100 XP';
+
+  if(lvl.name!==lastLevel){
+    showLevelUp(lvl.name);
+    lastLevel=lvl.name;
+    save();
+  }
+}
+
+function showToast(text){
+  toast.innerText=text;
+  toast.style.display='block';
+  setTimeout(()=>toast.style.display='none',2400);
+}
+
+function unlockFlash(latlng){
+  const p=map.latLngToContainerPoint(latlng);
+  const el=document.createElement('div');
+  el.className='unlock-flash';
+  el.style.left=p.x+'px';
+  el.style.top=p.y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function showLevelUp(name){
+  levelUpText.innerText=name;
+  levelUp.style.display='flex';
+  if(navigator.vibrate)navigator.vibrate([40,60,40]);
+  setTimeout(()=>levelUp.style.display='none',1450);
+}
+
+Object.keys(opened).forEach(drawCell);
+places.forEach(drawPlace);
+drawTrail();
+ui();
 
 function start(){
-watch=navigator.geolocation.watchPosition(p=>{
-let lat=p.coords.latitude,lng=p.coords.longitude;
+  if(!navigator.geolocation){
+    status.innerText='GPS not supported';
+    return;
+  }
 
-map.setView([lat,lng],16);
+  if(navigator.vibrate)navigator.vibrate(40);
 
-if(!userMarker){
-userMarker=L.marker([lat,lng],{
-icon:L.divIcon({html:'<div class="user"></div>'})
-}).addTo(map);
-}else{
-userMarker.setLatLng([lat,lng]);
+  exploreBtn.innerText='Exploring';
+  exploreBtn.classList.add('active');
+  status.innerText='Finding GPS...';
+
+  if(watch!==null){
+    status.innerText='Already exploring';
+    return;
+  }
+
+  watch=navigator.geolocation.watchPosition(pos=>{
+    current=[pos.coords.latitude,pos.coords.longitude];
+    drawUser(current);
+
+    if(follow){
+      map.setView(current,16);
+    }
+
+    if(last){
+      const d=map.distance(last,current);
+      if(d>3&&d<1000)total+=d;
+    }
+
+    last=current;
+
+    trailPoints.push(current);
+    if(trailPoints.length>900)trailPoints.shift();
+    drawTrail();
+
+    const key=gridKey(current[0],current[1]);
+
+    if(!opened[key]){
+      opened[key]=true;
+      xpValue+=10;
+      dailyXP+=10;
+
+      drawCell(key);
+      unlockFlash(current);
+
+      if(navigator.vibrate)navigator.vibrate([10,25,10]);
+
+      const count=Object.keys(opened).length;
+      const lvl=getLevel(count);
+
+      showToast('✨ New area +10 XP · '+lvl.name);
+    }
+
+    status.innerText=follow?'Exploring':'Free map';
+    save();
+    ui();
+
+  },e=>{
+    status.innerText='GPS error: '+e.message;
+    exploreBtn.innerText='Explore';
+    exploreBtn.classList.remove('active');
+  },{
+    enableHighAccuracy:true,
+    maximumAge:0,
+    timeout:15000
+  });
 }
 
-/* TRAIL */
-trailPoints.push([lat,lng]);
-if(trail) map.removeLayer(trail);
-trail=L.polyline(trailPoints,{color:'#7dffd0'}).addTo(map);
-
-/* GRID */
-let k=key(lat,lng);
-
-if(!opened[k]){
-opened[k]=1;
-draw(k);
-
-xp++;
-
-if(xp%50===0){
-level++;
-levelup.style.display='flex';
-setTimeout(()=>levelup.style.display='none',800);
+function stop(){
+  if(watch!==null)navigator.geolocation.clearWatch(watch);
+  watch=null;
+  exploreBtn.innerText='Explore';
+  exploreBtn.classList.remove('active');
+  status.innerText='Saved';
 }
 
-if(navigator.vibrate)navigator.vibrate(20);
-
-let f=document.createElement('div');
-f.className='flash';
-f.style.left='50%';
-f.style.top='50%';
-document.body.appendChild(f);
-setTimeout(()=>f.remove(),700);
+function centerMe(){
+  if(current){
+    follow=true;
+    map.setView(current,17);
+    drawUser(current);
+    status.innerText='Following';
+    showToast('📍 Centered on you');
+  }else{
+    alert('Нажми Explore и дождись GPS');
+  }
 }
 
-localStorage.o=JSON.stringify(opened);
-localStorage.xp=xp;
-localStorage.lvl=level;
-
-update();
-
-});
+function hidePanel(){
+  panel.classList.add('hidden');
+  showPanelBtn.classList.add('visible');
 }
 
-function center(){
-if(userMarker){
-map.setView(userMarker.getLatLng(),16);
-}
-}
-
-function toggleMenu(){
-menu.style.display=menu.style.display==='block'?'none':'block';
+function showPanel(){
+  panel.classList.remove('hidden');
+  showPanelBtn.classList.remove('visible');
 }
 
-function hideUI(){
-panel.classList.add('hidden');
+function hideAllUI(){
+  closeMenu();
+  panel.classList.add('hidden');
+  capsule.classList.add('hidden');
+  showPanelBtn.classList.add('visible');
 }
 
-function showUI(){
-panel.classList.remove('hidden');
+function showAllUI(){
+  panel.classList.remove('hidden');
+  capsule.classList.remove('hidden');
+  showPanelBtn.classList.remove('visible');
 }
 
-function reset(){
-if(confirm("Delete all?")){
-localStorage.clear();
-location.reload();
+function openMenu(){menu.style.display='block'}
+function closeMenu(){menu.style.display='none'}
+
+function openPlaceEditor(){
+  if(!current){
+    alert('Нажми Explore и дождись GPS');
+    return;
+  }
+
+  placeName.value='';
+  placeCategory.value='⭐';
+  placeModal.style.display='block';
 }
+
+function closePlaceEditor(){placeModal.style.display='none'}
+
+function savePlaceFromEditor(){
+  const name=placeName.value.trim();
+
+  if(!name){
+    alert('Введите название');
+    return;
+  }
+
+  const p={
+    name,
+    cat:placeCategory.value,
+    lat:current[0],
+    lng:current[1],
+    date:new Date().toLocaleDateString()
+  };
+
+  places.push(p);
+  drawPlace(p);
+  save();
+  closePlaceEditor();
+  showToast('⭐ Place saved');
+}
+
+function showPlaces(){
+  list.innerHTML='<h3>My places</h3>';
+
+  if(!places.length){
+    list.innerHTML+='<div class="item">Пока нет сохранённых мест.</div>';
+    return;
+  }
+
+  places.forEach((p,i)=>{
+    list.innerHTML+=`
+      <div class="item">
+        <b>${p.cat||'⭐'} ${p.name}</b><br>
+        <small>${p.date||''}</small><br><br>
+        <button class="action blue" onclick="map.setView([${p.lat},${p.lng}],17);follow=false;closeMenu()">Show</button>
+        <button class="red" onclick="removePlace(${i})">Delete</button>
+      </div>`;
+  });
+}
+
+function removePlace(i){
+  if(!confirm('Удалить это место?'))return;
+  places.splice(i,1);
+  save();
+  location.reload();
+}
+
+function exportData(){
+  const data={
+    total,
+    xpValue,
+    dailyXP,
+    opened,
+    places,
+    trailPoints,
+    exportedAt:new Date().toISOString()
+  };
+
+  const text=JSON.stringify(data,null,2);
+
+  navigator.clipboard.writeText(text)
+    .then(()=>alert('Backup copied'))
+    .catch(()=>prompt('Copy backup:',text));
+}
+
+function openImport(){importModal.style.display='block'}
+function closeImport(){importModal.style.display='none'}
+
+function importData(){
+  try{
+    const data=JSON.parse(importText.value);
+
+    if(!data.opened||!data.places){
+      throw new Error('Bad data');
+    }
+
+    localStorage.wg_total=Number(data.total||0);
+    localStorage.wg_xp=Number(data.xpValue||0);
+    localStorage.wg_dailyXP=Number(data.dailyXP||0);
+    localStorage.wg_opened=JSON.stringify(data.opened||{});
+    localStorage.wg_places=JSON.stringify(data.places||[]);
+    localStorage.wg_trail=JSON.stringify(data.trailPoints||[]);
+
+    alert('Imported. App will reload.');
+    location.reload();
+
+  }catch(e){
+    alert('Import error. Проверь JSON.');
+  }
+}
+
+function deleteAll(){
+  const t=prompt('Для удаления всех данных напиши DELETE');
+
+  if(t==='DELETE'){
+    localStorage.clear();
+    location.reload();
+  }else{
+    alert('Отмена');
+  }
 }
 </script>
 
