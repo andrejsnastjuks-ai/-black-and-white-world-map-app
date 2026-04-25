@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V26</title>
+<title>WanderGlow V28 PRO</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -18,22 +18,24 @@ html,body{
 
 #map{
   height:100%;
-  filter:grayscale(1) brightness(.6);
+  filter:grayscale(1) brightness(.65);
 }
 
 #fog{
   position:absolute;
   inset:0;
   pointer-events:none;
+  z-index:400;
 }
 
 /* 🔵 PLAYER */
 .player{
-  width:10px;
-  height:10px;
+  width:12px;
+  height:12px;
   background:#00ffb3;
   border-radius:50%;
-  box-shadow:0 0 10px #00ffb3;
+  border:2px solid white;
+  box-shadow:0 0 12px #00ffb3;
 }
 
 /* UI */
@@ -42,32 +44,33 @@ html,body{
   bottom:10px;
   left:10px;
   right:10px;
-  background:#111;
+  background:rgba(20,20,20,.85);
   padding:10px;
-  border-radius:10px;
-  color:white;
+  border-radius:12px;
+  z-index:1000;
 }
 
 .menu{
   position:absolute;
   top:80px;
   right:10px;
-  background:#111;
+  background:rgba(20,20,20,.9);
   padding:10px;
   border-radius:10px;
   display:none;
+  z-index:1100;
 }
 
 .menu.open{display:block}
 
 button{
   width:100%;
-  margin-top:5px;
-  padding:8px;
+  margin-top:6px;
+  padding:10px;
   border:0;
   background:#333;
   color:white;
-  border-radius:6px;
+  border-radius:8px;
 }
 
 button:active{
@@ -90,6 +93,7 @@ button:active{
 <div id="menu" class="menu">
   <button onclick="center()">📍 Center</button>
   <button onclick="toggleFollow()">Follow</button>
+  <button onclick="toggleRoute()">Route</button>
 </div>
 
 <div class="panel">
@@ -109,6 +113,9 @@ let follow=true;
 let exploring=false;
 
 let cells={};
+let path=[];
+
+let route=L.polyline(path,{color:"#00ffb3"}).addTo(map);
 
 let fog=document.getElementById("fog");
 let ctx=fog.getContext("2d");
@@ -146,17 +153,17 @@ function reveal(x,y,r){
 }
 
 function drawFog(){
-  ctx.fillStyle="rgba(0,0,0,.5)";
+  ctx.fillStyle="rgba(0,0,0,.45)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
   Object.keys(cells).forEach(k=>{
     let p=k.split("_");
     let pt=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
-    reveal(pt.x,pt.y,80);
+    reveal(pt.x,pt.y,100);
   });
 
   let pt=map.latLngToContainerPoint([lat,lng]);
-  reveal(pt.x,pt.y,120);
+  reveal(pt.x,pt.y,150);
 }
 
 /* GAME */
@@ -173,6 +180,14 @@ function center(){
   map.setView([lat,lng],16);
 }
 
+function toggleRoute(){
+  if(map.hasLayer(route)){
+    map.removeLayer(route);
+  }else{
+    map.addLayer(route);
+  }
+}
+
 /* GPS */
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
@@ -183,6 +198,9 @@ navigator.geolocation.watchPosition(pos=>{
   if(follow){
     map.setView([lat,lng],16);
   }
+
+  path.push([lat,lng]);
+  route.setLatLngs(path);
 
   if(exploring){
     let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
