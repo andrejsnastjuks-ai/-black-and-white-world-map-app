@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Map</title>
+<style>
+body { margin:0; background:black; color:white; font-family:sans-serif;}
+#btn { position:fixed; bottom:20px; left:20px; right:20px; padding:15px; font-size:18px;}
+</style>
+</head>
+<body>
+
+<h2 style="padding:20px;">Black World Map</h2>
+<p style="padding:20px;">Start и иди гулять</p>
+
+<button id="btn">Start</button>
+
+<script>
+document.getElementById("btn").onclick = () => {
+  navigator.geolocation.watchPosition(pos => {
+    document.body.innerHTML += "<p>" + pos.coords.latitude + "," + pos.coords.longitude + "</p>";
+  });
+};
+</script>
+
+</body>
+</html>
