@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow Travel Fog</title>
+<title>WanderGlow Travel Fog PRO</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -21,7 +21,7 @@ html,body{
 }
 
 .leaflet-tile-pane{
-  filter:brightness(.82) contrast(1.04) saturate(1.08);
+  filter:brightness(.86) contrast(1.05) saturate(1.08);
 }
 
 #fog{
@@ -45,6 +45,7 @@ html,body{
   backdrop-filter:blur(24px);
   -webkit-backdrop-filter:blur(24px);
   color:white;
+  box-shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 .panel{
@@ -83,11 +84,31 @@ html,body{
 }
 
 .stat b{
-  font-size:28px;
+  font-size:26px;
 }
 
 .stat small{
   color:rgba(255,255,255,.65);
+}
+
+.progress{
+  height:9px;
+  background:rgba(255,255,255,.14);
+  border-radius:99px;
+  overflow:hidden;
+  margin-top:12px;
+}
+
+.bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#00ff88,#75bbff);
+}
+
+.goal{
+  margin-top:10px;
+  font-size:15px;
+  color:rgba(255,255,255,.75);
 }
 
 button{
@@ -141,6 +162,15 @@ button:active{
   transition:.25s;
   font-weight:800;
 }
+
+.placeDot{
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#ffd23f;
+  border:3px solid #111;
+  box-shadow:0 0 16px rgba(255,210,63,.9);
+}
 </style>
 </head>
 
@@ -152,7 +182,10 @@ button:active{
 
 <div id="menu" class="menu">
   <button onclick="centerMe()" style="width:100%">📍 My location</button>
+  <button onclick="savePlace()" style="width:100%;margin-top:10px">⭐ Save place</button>
+  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
   <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
+  <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
   <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset</button>
   <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
 </div>
@@ -167,10 +200,15 @@ button:active{
   </div>
 
   <div class="row">
+    <div class="stat"><b id="kmView">0.00</b><br><small>KM</small></div>
     <div class="stat"><b id="cellsView">0</b><br><small>Cells</small></div>
     <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
-    <div class="stat"><b id="levelView">1</b><br><small>Level</small></div>
   </div>
+
+  <div class="progress">
+    <div id="bar" class="bar"></div>
+  </div>
+  <div id="goal" class="goal">Goal: open 10 cells</div>
 
   <div class="row">
     <button style="flex:1" onclick="centerMe()">📍</button>
@@ -192,12 +230,26 @@ let lat=null,lng=null;
 let marker=null;
 let firstFix=true;
 let exploring=false;
+let routeVisible=true;
+let lastPoint=null;
 
 let xp=Number(localStorage.wg_rts_xp||0);
+let total=Number(localStorage.wg_rts_total||0);
 let cells=JSON.parse(localStorage.wg_rts_cells||"{}");
+let zones=JSON.parse(localStorage.wg_rts_zones||"{}");
+let path=JSON.parse(localStorage.wg_rts_path||"[]");
+let places=JSON.parse(localStorage.wg_rts_places||"[]");
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
+
+const route=L.polyline(path,{
+  color:"#00ff88",
+  weight:4,
+  opacity:.65
+}).addTo(map);
+
+let placeMarkers=[];
 
 function resizeFog(){
   fog.width=window.innerWidth;
@@ -213,6 +265,10 @@ function cellKey(a,b){
   return Math.floor(a*1000)+"_"+Math.floor(b*1000);
 }
 
+function zoneKey(a,b){
+  return Math.floor(a*100)+"_"+Math.floor(b*100);
+}
+
 function cellCenter(key){
   const p=key.split("_");
   return [(Number(p[0])+0.5)/1000,(Number(p[1])+0.5)/1000];
@@ -224,13 +280,30 @@ function level(){
 
 function save(){
   localStorage.wg_rts_xp=xp;
+  localStorage.wg_rts_total=total;
   localStorage.wg_rts_cells=JSON.stringify(cells);
+  localStorage.wg_rts_zones=JSON.stringify(zones);
+  localStorage.wg_rts_path=JSON.stringify(path.slice(-1500));
+  localStorage.wg_rts_places=JSON.stringify(places);
 }
 
 function updateUI(){
+  const cellCount=Object.keys(cells).length;
+
   document.getElementById("xpView").innerText=xp;
-  document.getElementById("cellsView").innerText=Object.keys(cells).length;
-  document.getElementById("levelView").innerText=level();
+  document.getElementById("cellsView").innerText=cellCount;
+  document.getElementById("kmView").innerText=(total/1000).toFixed(2);
+
+  document.getElementById("bar").style.width=(xp%100)+"%";
+
+  if(cellCount<10){
+    document.getElementById("goal").innerText="Goal: open 10 cells";
+  }else if(Object.keys(zones).length<3){
+    document.getElementById("goal").innerText="Goal: discover 3 zones";
+  }else{
+    document.getElementById("goal").innerText="Level "+level()+" · keep exploring";
+  }
+
   save();
 }
 
@@ -259,10 +332,12 @@ function drawUser(){
   }
 }
 
-/* RTS FOG:
-   1) весь мир почти чёрный
-   2) уже посещённые зоны остаются тёмно-открытыми
-   3) вокруг текущей позиции карта почти полностью светлая
+/*
+  RTS / StarCraft logic:
+  - весь мир почти тёмный
+  - открытые клетки остаются видимыми
+  - текущая зона чуть шире и ярче
+  Радиус около 20–30 метров.
 */
 function removeFogCircle(x,y,r,strength){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
@@ -281,21 +356,22 @@ function removeFogCircle(x,y,r,strength){
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
 
-  // unexplored world
-  ctx.fillStyle="rgba(0,0,0,.94)";
+  ctx.fillStyle="rgba(0,0,0,.90)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  // explored memory: visible, but still darker like RTS explored area
   Object.keys(cells).forEach(key=>{
     const center=cellCenter(key);
     const p=map.latLngToContainerPoint(center);
-    removeFogCircle(p.x,p.y,135,.72);
+
+    // около 20–30 м
+    removeFogCircle(p.x,p.y,45,.76);
   });
 
-  // current vision: bright circle around you
   if(lat!==null&&lng!==null){
     const p=map.latLngToContainerPoint([lat,lng]);
-    removeFogCircle(p.x,p.y,190,.96);
+
+    // текущий обзор немного шире
+    removeFogCircle(p.x,p.y,70,.95);
   }
 }
 
@@ -319,13 +395,88 @@ function toggleMenu(){
   document.getElementById("menu").classList.toggle("open");
 }
 
+function toggleRoute(){
+  routeVisible=!routeVisible;
+
+  if(routeVisible){
+    map.addLayer(route);
+    toast("Route shown");
+  }else{
+    map.removeLayer(route);
+    toast("Route hidden");
+  }
+}
+
+function savePlace(){
+  if(lat===null||lng===null){
+    toast("GPS ещё ищет локацию");
+    return;
+  }
+
+  const name=prompt("Название места")||"Place";
+  places.push({
+    name,
+    lat,
+    lng,
+    date:new Date().toLocaleDateString()
+  });
+
+  drawPlaces();
+  save();
+  toast("⭐ Place saved");
+}
+
+function drawPlaces(){
+  placeMarkers.forEach(m=>map.removeLayer(m));
+  placeMarkers=[];
+
+  places.forEach((p,i)=>{
+    const icon=L.divIcon({
+      html:'<div class="placeDot"></div>',
+      className:"",
+      iconSize:[24,24],
+      iconAnchor:[12,12]
+    });
+
+    const m=L.marker([p.lat,p.lng],{icon})
+      .addTo(map)
+      .bindPopup("<b>"+p.name+"</b><br><small>"+(p.date||"")+"</small>");
+
+    placeMarkers.push(m);
+  });
+}
+
 function backup(){
-  const data={xp,cells,exportedAt:new Date().toISOString()};
+  const data={xp,total,cells,zones,path,places,exportedAt:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
 
   navigator.clipboard.writeText(text)
     .then(()=>toast("Backup copied"))
     .catch(()=>prompt("Copy backup:",text));
+}
+
+function importData(){
+  const text=prompt("Paste backup JSON");
+  if(!text)return;
+
+  try{
+    const d=JSON.parse(text);
+    xp=Number(d.xp||0);
+    total=Number(d.total||0);
+    cells=d.cells||{};
+    zones=d.zones||{};
+    path=d.path||[];
+    places=d.places||[];
+
+    route.setLatLngs(path);
+    drawPlaces();
+    updateUI();
+    drawFog();
+
+    toast("Import done");
+  }catch(e){
+    toast("Import error");
+  }
 }
 
 function resetData(){
@@ -335,7 +486,12 @@ function resetData(){
   }
 
   localStorage.removeItem("wg_rts_xp");
+  localStorage.removeItem("wg_rts_total");
   localStorage.removeItem("wg_rts_cells");
+  localStorage.removeItem("wg_rts_zones");
+  localStorage.removeItem("wg_rts_path");
+  localStorage.removeItem("wg_rts_places");
+
   location.reload();
 }
 
@@ -345,20 +501,40 @@ navigator.geolocation.watchPosition(pos=>{
 
   drawUser();
 
+  if(lastPoint){
+    const distance=map.distance(lastPoint,[lat,lng]);
+    if(distance>2&&distance<1000){
+      total+=distance;
+    }
+  }
+
+  lastPoint=[lat,lng];
+
   if(firstFix){
     map.setView([lat,lng],17);
     firstFix=false;
   }
 
+  path.push([lat,lng]);
+  if(path.length>1500)path.shift();
+  route.setLatLngs(path);
+
   document.getElementById("status").innerText=exploring?"Exploring...":"GPS ready";
 
   if(exploring){
-    const key=cellKey(lat,lng);
+    const cKey=cellKey(lat,lng);
+    const zKey=zoneKey(lat,lng);
 
-    if(!cells[key]){
-      cells[key]=true;
+    if(!cells[cKey]){
+      cells[cKey]=true;
       xp+=10;
       toast("+10 XP · новая зона открыта");
+    }
+
+    if(!zones[zKey]){
+      zones[zKey]=true;
+      xp+=50;
+      toast("🌍 New travel zone +50 XP");
     }
   }
 
@@ -374,6 +550,7 @@ navigator.geolocation.watchPosition(pos=>{
   timeout:15000
 });
 
+drawPlaces();
 updateUI();
 drawFog();
 </script>
