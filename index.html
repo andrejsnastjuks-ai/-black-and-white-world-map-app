@@ -2,45 +2,46 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WanderGlow Premium</title>
+<title>WanderGlow</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{
- --glass:rgba(255,255,255,.065);
- --glass2:rgba(255,255,255,.09);
+ --glass:rgba(255,255,255,.07);
+ --glass2:rgba(255,255,255,.10);
  --text:#f7fbff;
- --muted:rgba(247,251,255,.65);
+ --muted:rgba(247,251,255,.66);
  --mint:#7dffd0;
  --blue:#7bbcff;
 }
 html,body{margin:0;height:100%;overflow:hidden;background:#010305;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.28) contrast(.86) saturate(.18)}
+#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.25) contrast(.86) saturate(.16)}
 body.day #map{filter:grayscale(.85) brightness(.42) contrast(.9) saturate(.25)}
-.glass{background:var(--glass);backdrop-filter:blur(30px) saturate(1.35);-webkit-backdrop-filter:blur(30px) saturate(1.35);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 45px rgba(0,0,0,.35)}
-.sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;color:white;border-radius:30px;padding:14px;transition:.25s}
-.sheet.hiddenPanel{transform:translateY(120%);opacity:0;pointer-events:none}
+.glass{background:var(--glass);backdrop-filter:blur(32px) saturate(1.4);-webkit-backdrop-filter:blur(32px) saturate(1.4);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 45px rgba(0,0,0,.34)}
+button{border:0;border-radius:18px;padding:13px 14px;font-size:15px;font-weight:800}
+.sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;color:white;border-radius:32px;padding:14px;transition:.28s ease}
+.sheet.hiddenPanel{transform:translateY(125%);opacity:0;pointer-events:none}
+.collapseHandle{width:54px;height:28px;margin:0 auto 8px;border-radius:99px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:white;font-size:20px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .brand b{font-size:22px}.brand small{color:var(--muted)}
+.start{background:linear-gradient(135deg,#7dffd0,#dffff3);color:#031c13;min-width:98px}
 .stats{display:flex;gap:8px;margin-top:12px}
-.box{flex:1;background:var(--glass2);border-radius:18px;padding:9px;text-align:center}
+.box{flex:1;background:var(--glass2);border-radius:20px;padding:9px;text-align:center}
 .box b{font-size:18px}.box span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase}
-button{border:0;border-radius:16px;padding:13px 14px;font-size:15px;font-weight:800}
-.start{background:linear-gradient(135deg,#7dffd0,#d9fff0);color:#031c13;min-width:96px}
+.progressBar{height:8px;background:rgba(255,255,255,.10);border-radius:99px;overflow:hidden;margin-top:10px}
+.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#7bbcff)}
+.actions{display:flex;gap:8px;margin-top:12px}
 .dark{background:rgba(255,255,255,.10);color:white}
 .blue{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
 .red{background:rgba(120,20,20,.78);color:white}
-.fabTop{position:fixed;right:16px;top:58px;display:flex;flex-direction:column;gap:10px;z-index:9999}
-.fabBottom{position:fixed;right:16px;bottom:92px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.fabRight{position:fixed;right:16px;top:58px;display:flex;flex-direction:column;gap:10px;z-index:9999}
 .circle{width:52px;height:52px;border-radius:50%;font-size:20px;color:white}
-.peek{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;width:62px;height:42px;border-radius:24px;font-size:22px;color:white;display:none}
+.peek{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;width:72px;height:44px;border-radius:99px;font-size:24px;color:white;display:none}
 .peek.show{display:block}
-.modal{display:none;position:fixed;left:12px;right:12px;bottom:18px;z-index:10000;color:white;padding:18px;border-radius:28px;max-height:62vh;overflow:auto}
+.modal{display:none;position:fixed;left:12px;right:12px;bottom:18px;z-index:10000;color:white;padding:18px;border-radius:30px;max-height:68vh;overflow:auto}
 .handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .menuBtn{background:rgba(255,255,255,.09);color:white;text-align:left;padding:16px;border-radius:20px}
 .item{background:rgba(255,255,255,.09);margin:10px 0;padding:13px;border-radius:16px}
-.progressBar{height:8px;background:rgba(255,255,255,.10);border-radius:99px;overflow:hidden;margin-top:10px}
-.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#7bbcff)}
 .leaflet-control-attribution{display:none}
 </style>
 </head>
@@ -48,18 +49,17 @@ button{border:0;border-radius:16px;padding:13px 14px;font-size:15px;font-weight:
 
 <div id="map"></div>
 
-<div class="fabTop">
- <button class="circle glass" onclick="togglePanel()">⌄</button>
+<div class="fabRight">
+ <button class="circle glass" onclick="centerMe()">📍</button>
+ <button class="circle glass" onclick="addPlace()">⭐</button>
  <button class="circle glass" onclick="openMenu()">☰</button>
 </div>
 
-<div class="fabBottom">
- <button class="circle glass" onclick="addPlace()">⭐</button>
-</div>
-
-<button id="peekBtn" class="peek glass" onclick="togglePanel()">⌃</button>
+<button id="peekBtn" class="peek glass" onclick="showPanel()">⌃</button>
 
 <div id="sheet" class="sheet glass">
+ <div class="collapseHandle" onclick="hidePanel()">⌄</div>
+
  <div class="top">
   <div class="brand">
    <b>WanderGlow</b><br>
@@ -76,22 +76,23 @@ button{border:0;border-radius:16px;padding:13px 14px;font-size:15px;font-weight:
 
  <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
 
- <div style="display:flex;gap:8px;margin-top:12px">
+ <div class="actions">
   <button class="dark" style="flex:1" onclick="stop()">Stop</button>
-  <button class="dark" style="flex:1" onclick="togglePanel()">Hide</button>
+  <button class="blue" style="flex:1" onclick="addPlace()">Place</button>
+  <button class="dark" style="flex:1" onclick="openMenu()">Menu</button>
  </div>
 </div>
 
 <div id="menu" class="modal glass">
  <div class="handle"></div>
  <h2>WanderGlow</h2>
- <p style="color:var(--muted)">Открывай город, сохраняй любимые места и смотри прогресс путешествий.</p>
+ <p style="color:var(--muted)">Свободно двигай карту, смотри куда идти, возвращайся к себе кнопкой 📍 и открывай город шаг за шагом.</p>
 
  <div class="grid">
   <button class="menuBtn" onclick="toggleMode()">🌙<br>Day / Night</button>
   <button class="menuBtn" onclick="centerMe()">📍<br>My location</button>
   <button class="menuBtn" onclick="showPlaces()">⭐<br>My places</button>
-  <button class="menuBtn" onclick="togglePanel();closeMenu()">👁️<br>Show / hide panel</button>
+  <button class="menuBtn" onclick="showPanel();closeMenu()">⌃<br>Show panel</button>
  </div>
 
  <br>
@@ -106,17 +107,21 @@ const map=L.map('map').setView([56.9496,24.1052],13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
 let watch=null,current=null,last=null;
+let follow=true;
 let total=Number(localStorage.total||0);
-let zones=JSON.parse(localStorage.zones||'[]');
+let opened=JSON.parse(localStorage.zones||'[]');
 let places=JSON.parse(localStorage.places||'[]');
 let mode=localStorage.mode||'night';
 let panelHidden=localStorage.panelHidden==='true';
 
 if(mode==='day')document.body.classList.add('day');
 
+map.on('dragstart',()=>{follow=false;status.innerText='Map free mode'});
+map.on('zoomstart',()=>{follow=false});
+
 function save(){
  localStorage.total=total;
- localStorage.zones=JSON.stringify(zones);
+ localStorage.zones=JSON.stringify(opened);
  localStorage.places=JSON.stringify(places);
  localStorage.mode=mode;
  localStorage.panelHidden=panelHidden;
@@ -124,8 +129,8 @@ function save(){
 
 function ui(){
  km.innerText=(total/1000).toFixed(2);
- document.getElementById('zones').innerText=zones.length;
- const openedArea=zones.length*Math.PI*25*25;
+ document.getElementById('zones').innerText=opened.length;
+ const openedArea=opened.length*Math.PI*25*25;
  const localArea=Math.PI*2000*2000;
  const pct=Math.min(100,(openedArea/localArea)*100);
  progress.innerText=pct.toFixed(2)+'%';
@@ -133,11 +138,23 @@ function ui(){
 }
 
 function drawZone(p){
- L.circle(p,{radius:25,stroke:false,fillColor:'#7dffd0',fillOpacity:.34}).addTo(map);
+ L.circle(p,{radius:25,stroke:false,fillColor:'#7dffd0',fillOpacity:.32}).addTo(map);
 }
 
 function drawPlace(p){
  L.marker([p.lat,p.lng]).addTo(map).bindPopup('⭐ '+p.name);
+}
+
+function hidePanel(){
+ panelHidden=true;
+ applyPanel();
+ save();
+}
+
+function showPanel(){
+ panelHidden=false;
+ applyPanel();
+ save();
 }
 
 function applyPanel(){
@@ -145,13 +162,7 @@ function applyPanel(){
  peekBtn.classList.toggle('show',panelHidden);
 }
 
-function togglePanel(){
- panelHidden=!panelHidden;
- applyPanel();
- save();
-}
-
-zones.forEach(drawZone);
+opened.forEach(drawZone);
 places.forEach(drawPlace);
 ui();
 applyPanel();
@@ -162,7 +173,10 @@ function start(){
 
  watch=navigator.geolocation.watchPosition(pos=>{
   current=[pos.coords.latitude,pos.coords.longitude];
-  map.setView(current,16);
+
+  if(follow){
+    map.setView(current,16);
+  }
 
   if(last){
    const d=map.distance(last,current);
@@ -170,12 +184,12 @@ function start(){
   }
   last=current;
 
-  if(!zones.some(z=>map.distance(z,current)<22)){
-   zones.push(current);
+  if(!opened.some(z=>map.distance(z,current)<22)){
+   opened.push(current);
    drawZone(current);
   }
 
-  status.innerText='Exploring...';
+  status.innerText=follow?'Exploring...':'Exploring · map free';
   save();ui();
  },e=>status.innerText='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
@@ -184,6 +198,16 @@ function stop(){
  if(watch)navigator.geolocation.clearWatch(watch);
  watch=null;
  status.innerText='Saved';
+}
+
+function centerMe(){
+ if(current){
+   follow=true;
+   map.setView(current,16);
+   status.innerText='Following you';
+ } else {
+   alert('GPS ещё не найден. Нажми Explore.');
+ }
 }
 
 function addPlace(){
@@ -198,7 +222,6 @@ function addPlace(){
 
 function openMenu(){menu.style.display='block'}
 function closeMenu(){menu.style.display='none'}
-function centerMe(){if(current)map.setView(current,16);else alert('GPS ещё не найден')}
 
 function toggleMode(){
  mode=mode==='night'?'day':'night';
@@ -209,7 +232,7 @@ function toggleMode(){
 function showPlaces(){
  list.innerHTML='<h3>My places</h3>';
  places.forEach(p=>{
-  list.innerHTML+=`<div class="item"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><br><button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
+  list.innerHTML+=`<div class="item"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><br><button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);follow=false;closeMenu()">Show</button></div>`;
  });
 }
 
