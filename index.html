@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow BASE</title>
+<title>WanderGlow BASE + FOG</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -21,6 +21,13 @@ html,body{
   filter:grayscale(1) brightness(.65) contrast(.95);
 }
 
+#fog{
+  position:absolute;
+  inset:0;
+  z-index:500;
+  pointer-events:none;
+}
+
 .userDot{
   width:18px;
   height:18px;
@@ -28,6 +35,13 @@ html,body{
   background:#00ff88;
   border:4px solid white;
   box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
+}
+
+.panel,.menu,.toast{
+  background:rgba(70,70,70,.72);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  color:white;
 }
 
 .panel{
@@ -38,10 +52,6 @@ html,body{
   z-index:9999;
   padding:18px;
   border-radius:28px;
-  background:rgba(70,70,70,.70);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  color:white;
 }
 
 .title{
@@ -110,10 +120,6 @@ button:active{
   z-index:10000;
   padding:20px;
   border-radius:28px;
-  background:rgba(70,70,70,.82);
-  backdrop-filter:blur(26px);
-  -webkit-backdrop-filter:blur(26px);
-  color:white;
 }
 
 .menu.open{
@@ -128,8 +134,6 @@ button:active{
   z-index:12000;
   padding:14px;
   border-radius:18px;
-  background:rgba(30,30,30,.85);
-  color:white;
   opacity:0;
   transition:.25s;
   font-weight:800;
@@ -140,6 +144,7 @@ button:active{
 <body>
 
 <div id="map"></div>
+<canvas id="fog"></canvas>
 <div id="toast" class="toast"></div>
 
 <div id="menu" class="menu">
@@ -189,8 +194,29 @@ let exploring = false;
 let xp = Number(localStorage.wg_base_xp || 0);
 let cells = JSON.parse(localStorage.wg_base_cells || "{}");
 
+const fog = document.getElementById("fog");
+const ctx = fog.getContext("2d");
+
+function resizeFog(){
+  fog.width = window.innerWidth;
+  fog.height = window.innerHeight;
+  drawFog();
+}
+
+window.addEventListener("resize", resizeFog);
+map.on("move zoom", drawFog);
+resizeFog();
+
 function cellKey(a,b){
   return Math.floor(a * 1000) + "_" + Math.floor(b * 1000);
+}
+
+function cellCenter(key){
+  const p = key.split("_");
+  return [
+    (Number(p[0]) + 0.5) / 1000,
+    (Number(p[1]) + 0.5) / 1000
+  ];
 }
 
 function level(){
@@ -220,8 +246,8 @@ function drawUser(){
   const icon = L.divIcon({
     html:'<div class="userDot"></div>',
     className:'',
-    iconSize:[26,26],
-    iconAnchor:[13,13]
+    iconSize:[34,34],
+    iconAnchor:[17,17]
   });
 
   if(!marker){
@@ -231,6 +257,38 @@ function drawUser(){
     }).addTo(map).bindPopup("Ты здесь");
   }else{
     marker.setLatLng([lat,lng]);
+  }
+}
+
+function reveal(x,y,r){
+  const g = ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,"rgba(0,0,0,1)");
+  g.addColorStop(.45,"rgba(0,0,0,.70)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function drawFog(){
+  ctx.clearRect(0,0,fog.width,fog.height);
+
+  ctx.fillStyle = "rgba(0,0,0,.58)";
+  ctx.fillRect(0,0,fog.width,fog.height);
+
+  Object.keys(cells).forEach(key=>{
+    const center = cellCenter(key);
+    const point = map.latLngToContainerPoint(center);
+    reveal(point.x, point.y, 115);
+  });
+
+  if(lat !== null && lng !== null){
+    const point = map.latLngToContainerPoint([lat,lng]);
+    reveal(point.x, point.y, 170);
   }
 }
 
@@ -299,11 +357,12 @@ navigator.geolocation.watchPosition(pos=>{
     if(!cells[key]){
       cells[key] = true;
       xp += 10;
-      toast("+10 XP");
+      toast("+10 XP · карта открыта");
     }
   }
 
   updateUI();
+  drawFog();
 
 },err=>{
   document.getElementById("status").innerText = "GPS error";
@@ -315,6 +374,7 @@ navigator.geolocation.watchPosition(pos=>{
 });
 
 updateUI();
+drawFog();
 </script>
 
 </body>
