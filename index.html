@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V28 PRO</title>
+<title>WanderGlow V30</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -11,16 +11,28 @@
 html,body{
   margin:0;
   height:100%;
-  overflow:hidden;
   background:#000;
-  font-family:sans-serif;
+  overflow:hidden;
+  font-family:-apple-system,system-ui;
 }
 
+/* MAP */
 #map{
   height:100%;
-  filter:grayscale(1) brightness(.65);
+  filter:grayscale(1) brightness(.6);
 }
 
+/* PLAYER */
+.player{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#00ffb3;
+  border:3px solid white;
+  box-shadow:0 0 18px #00ffb3;
+}
+
+/* FOG */
 #fog{
   position:absolute;
   inset:0;
@@ -28,59 +40,85 @@ html,body{
   z-index:400;
 }
 
-/* 🔵 PLAYER */
-.player{
-  width:12px;
-  height:12px;
-  background:#00ffb3;
-  border-radius:50%;
-  border:2px solid white;
-  box-shadow:0 0 12px #00ffb3;
-}
-
-/* UI */
+/* PANEL */
 .panel{
   position:absolute;
-  bottom:10px;
+  bottom:12px;
   left:10px;
   right:10px;
-  background:rgba(20,20,20,.85);
-  padding:10px;
-  border-radius:12px;
+  background:rgba(25,25,25,.85);
+  backdrop-filter:blur(20px);
+  border-radius:20px;
+  padding:14px;
+  color:white;
   z-index:1000;
 }
 
-.menu{
-  position:absolute;
-  top:80px;
-  right:10px;
-  background:rgba(20,20,20,.9);
-  padding:10px;
-  border-radius:10px;
-  display:none;
-  z-index:1100;
-}
-
-.menu.open{display:block}
-
-button{
-  width:100%;
-  margin-top:6px;
-  padding:10px;
+/* BUTTONS */
+.btn{
+  flex:1;
+  padding:12px;
   border:0;
-  background:#333;
+  border-radius:14px;
+  background:rgba(255,255,255,.1);
   color:white;
-  border-radius:8px;
-}
-
-button:active{
-  transform:scale(.95);
+  font-weight:700;
 }
 
 .main{
-  background:#00ffb3;
+  background:#6ee7b7;
   color:black;
-  font-weight:bold;
+}
+
+.row{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+.stat{
+  flex:1;
+  text-align:center;
+  background:rgba(255,255,255,.08);
+  padding:8px;
+  border-radius:12px;
+}
+
+/* MENU MODAL */
+.menu{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:2000;
+}
+
+.menu.open{
+  display:flex;
+}
+
+.menu-box{
+  width:90%;
+  max-width:320px;
+  background:rgba(40,40,40,.95);
+  padding:16px;
+  border-radius:18px;
+}
+
+/* TOAST */
+.toast{
+  position:absolute;
+  top:20px;
+  left:10px;
+  right:10px;
+  background:rgba(30,30,30,.9);
+  padding:12px;
+  border-radius:12px;
+  opacity:0;
+  transition:.3s;
+  z-index:3000;
 }
 </style>
 </head>
@@ -90,44 +128,66 @@ button:active{
 <div id="map"></div>
 <canvas id="fog"></canvas>
 
+<div id="toast" class="toast"></div>
+
+<!-- MENU -->
 <div id="menu" class="menu">
-  <button onclick="center()">📍 Center</button>
-  <button onclick="toggleFollow()">Follow</button>
-  <button onclick="toggleRoute()">Route</button>
+  <div class="menu-box">
+    <button class="btn" onclick="center()">📍 My location</button>
+    <button class="btn" onclick="backup()">⬇ Backup</button>
+    <button class="btn" onclick="importData()">⬆ Import</button>
+    <button class="btn" onclick="reset()">Delete all data</button>
+    <button class="btn" onclick="toggleMenu()">Close</button>
+  </div>
 </div>
 
+<!-- PANEL -->
 <div class="panel">
-  <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
-  <button onclick="toggleMenu()">Menu</button>
+  <div style="display:flex;justify-content:space-between">
+    <div>
+      <b>WanderGlow</b><br>
+      <span id="status">Ready</span>
+    </div>
+    <button id="exploreBtn" class="btn main" onclick="toggleExplore()">Explore</button>
+  </div>
+
+  <div class="row">
+    <div class="stat"><b id="cells">0</b><br>Cells</div>
+    <div class="stat"><b id="xp">0</b><br>XP</div>
+    <div class="stat"><b id="level">1</b><br>Level</div>
+  </div>
+
+  <div class="row">
+    <button class="btn" onclick="stop()">Stop</button>
+    <button class="btn" onclick="toggleMenu()">Menu</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-let map=L.map('map').setView([56.95,24.1],15);
+const map=L.map('map').setView([56.95,24.1],15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let lat=0,lng=0;
-let marker=null;
-let follow=true;
+let lat,lng;
+let marker;
 let exploring=false;
 
-let cells={};
-let path=[];
+let xp=Number(localStorage.xp||0);
+let cells=JSON.parse(localStorage.cells||"{}");
 
-let route=L.polyline(path,{color:"#00ffb3"}).addTo(map);
-
-let fog=document.getElementById("fog");
-let ctx=fog.getContext("2d");
+const fog=document.getElementById("fog");
+const ctx=fog.getContext("2d");
 fog.width=innerWidth;
 fog.height=innerHeight;
 
-/* MENU */
-function toggleMenu(){
-  document.getElementById("menu").classList.toggle("open");
+function toast(text){
+  const t=document.getElementById("toast");
+  t.innerText=text;
+  t.style.opacity=1;
+  setTimeout(()=>t.style.opacity=0,2000);
 }
 
-/* PLAYER */
 function drawPlayer(){
   if(!marker){
     marker=L.marker([lat,lng],{
@@ -138,16 +198,15 @@ function drawPlayer(){
   }
 }
 
-/* FOG */
-function reveal(x,y,r){
-  let g=ctx.createRadialGradient(x,y,0,x,y,r);
+function reveal(x,y){
+  const g=ctx.createRadialGradient(x,y,0,x,y,150);
   g.addColorStop(0,"rgba(0,0,0,1)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
   ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.arc(x,y,150,0,Math.PI*2);
   ctx.fill();
   ctx.globalCompositeOperation="source-over";
 }
@@ -157,60 +216,82 @@ function drawFog(){
   ctx.fillRect(0,0,fog.width,fog.height);
 
   Object.keys(cells).forEach(k=>{
-    let p=k.split("_");
-    let pt=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
-    reveal(pt.x,pt.y,100);
+    let [a,b]=k.split("_");
+    let p=map.latLngToContainerPoint([a/1000,b/1000]);
+    reveal(p.x,p.y);
   });
 
-  let pt=map.latLngToContainerPoint([lat,lng]);
-  reveal(pt.x,pt.y,150);
+  if(lat){
+    let p=map.latLngToContainerPoint([lat,lng]);
+    reveal(p.x,p.y);
+  }
 }
 
-/* GAME */
+function updateUI(){
+  document.getElementById("xp").innerText=xp;
+  document.getElementById("cells").innerText=Object.keys(cells).length;
+  document.getElementById("level").innerText=Math.floor(xp/100)+1;
+
+  localStorage.xp=xp;
+  localStorage.cells=JSON.stringify(cells);
+}
+
 function toggleExplore(){
   exploring=!exploring;
 }
 
-function toggleFollow(){
-  follow=!follow;
+function stop(){
+  exploring=false;
+}
+
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
 }
 
 function center(){
-  follow=true;
   map.setView([lat,lng],16);
 }
 
-function toggleRoute(){
-  if(map.hasLayer(route)){
-    map.removeLayer(route);
-  }else{
-    map.addLayer(route);
-  }
+function backup(){
+  navigator.clipboard.writeText(JSON.stringify({xp,cells}));
+  toast("Saved");
 }
 
-/* GPS */
+function importData(){
+  let d=prompt("Paste backup");
+  let data=JSON.parse(d);
+  xp=data.xp;
+  cells=data.cells;
+  updateUI();
+}
+
+function reset(){
+  if(prompt("Type DELETE")!=="DELETE")return;
+  localStorage.clear();
+  location.reload();
+}
+
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
   drawPlayer();
-
-  if(follow){
-    map.setView([lat,lng],16);
-  }
-
-  path.push([lat,lng]);
-  route.setLatLngs(path);
+  map.setView([lat,lng],16);
 
   if(exploring){
     let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
-    cells[key]=true;
+    if(!cells[key]){
+      cells[key]=1;
+      xp+=10;
+      toast("+10 XP");
+    }
   }
 
   ctx.clearRect(0,0,fog.width,fog.height);
   drawFog();
+  updateUI();
 
-},()=>alert("GPS error"),{enableHighAccuracy:true});
+});
 </script>
 
 </body>
