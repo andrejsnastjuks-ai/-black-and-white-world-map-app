@@ -2,61 +2,125 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Black World Map</title>
+<title>WanderGlow</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
-body{margin:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
-#map{height:100vh;filter:grayscale(1) brightness(.45);}
-.panel{position:fixed;bottom:18px;left:14px;right:14px;background:rgba(0,0,0,.9);color:white;padding:16px;border-radius:24px;z-index:9999}
-h2{margin:0 0 8px}
-.stats{display:flex;gap:8px;margin:10px 0}
-.box{flex:1;background:#222;border-radius:14px;padding:10px;text-align:center}
-.row{display:flex;gap:8px;margin-top:8px}
-button{flex:1;padding:14px;border:0;border-radius:14px;font-size:15px;font-weight:700}
-.green{background:#00ff99}.dark{background:#222;color:white}.blue{background:#1a73e8;color:white}.red{background:#700;color:white}
-.modal{display:none;position:fixed;inset:0;background:#000;color:white;z-index:10000;padding:20px;overflow:auto}
-.place{background:#151515;margin:10px 0;padding:12px;border-radius:14px}
+body { margin:0; font-family:-apple-system, sans-serif; }
+#map { height:100vh; filter:grayscale(1) brightness(.5); }
+
+/* нижняя панель */
+.bar {
+ position:fixed;
+ bottom:20px;
+ left:14px;
+ right:14px;
+ background:rgba(0,0,0,0.6);
+ backdrop-filter:blur(10px);
+ color:white;
+ padding:12px;
+ border-radius:20px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ z-index:9999;
+}
+
+/* кнопки */
+.btn {
+ padding:10px 14px;
+ border-radius:12px;
+ border:none;
+ font-size:14px;
+ font-weight:600;
+}
+
+.green { background:#00ff99; }
+.dark { background:#222; color:white; }
+
+/* плавающие кнопки */
+.fab {
+ position:fixed;
+ right:20px;
+ bottom:90px;
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+}
+
+.circle {
+ width:50px;
+ height:50px;
+ border-radius:50%;
+ border:none;
+ font-size:18px;
+}
+
+.blue { background:#1a73e8; color:white; }
+.black { background:#222; color:white; }
+
+/* меню */
+.modal {
+ display:none;
+ position:fixed;
+ inset:0;
+ background:black;
+ color:white;
+ padding:20px;
+ z-index:10000;
+}
+.place {
+ background:#111;
+ margin:10px 0;
+ padding:12px;
+ border-radius:12px;
+}
 </style>
 </head>
+
 <body>
 
 <div id="map"></div>
 
-<div class="panel">
-  <h2>Black World Map</h2>
-  <div id="status">Готово</div>
-  <div class="stats">
-    <div class="box"><b id="km">0.00</b><br>км</div>
-    <div class="box"><b id="zones">0</b><br>зон</div>
-    <div class="box"><b id="placesCount">0</b><br>мест</div>
+<!-- нижняя панель -->
+<div class="bar">
+  <div>
+    <b>WanderGlow</b><br>
+    <small id="km">0.00 км</small>
   </div>
-  <div class="row">
-    <button class="green" onclick="start()">Start</button>
-    <button class="dark" onclick="stop()">Stop</button>
-  </div>
-  <div class="row">
-    <button class="blue" onclick="addPlace()">⭐ Place</button>
-    <button class="dark" onclick="openMenu()">☰ Menu</button>
+  <div>
+    <button class="btn green" onclick="start()">Start</button>
+    <button class="btn dark" onclick="stop()">Stop</button>
   </div>
 </div>
 
+<!-- плавающие кнопки -->
+<div class="fab">
+  <button class="circle blue" onclick="addPlace()">⭐</button>
+  <button class="circle black" onclick="openMenu()">☰</button>
+</div>
+
+<!-- меню -->
 <div id="menu" class="modal">
-  <h2>Menu</h2>
-  <button class="dark" onclick="showPlaces()">⭐ My places</button>
-  <button class="dark" onclick="centerMe()">📍 My location</button>
-  <button class="red" onclick="deleteAll()">Delete all data</button>
-  <button class="dark" onclick="closeMenu()">Close</button>
+  <h2>WanderGlow</h2>
+
+  <button onclick="showPlaces()">⭐ My places</button>
+  <button onclick="centerMe()">📍 My location</button>
+  <button onclick="deleteAll()">Delete all</button>
+  <button onclick="closeMenu()">Close</button>
+
   <div id="list"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 const map=L.map('map').setView([56.95,24.1],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-let watch=null,current=null,last=null;
-let total=Number(localStorage.total||0);
-let zones=JSON.parse(localStorage.zones||'[]');
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let watch=null,current=null,last=null,total=Number(localStorage.total||0);
 let places=JSON.parse(localStorage.places||'[]');
 let route=JSON.parse(localStorage.route||'[]');
 
@@ -64,54 +128,78 @@ const path=L.polyline(route,{color:'#00ff99',weight:5}).addTo(map);
 
 function save(){
  localStorage.total=total;
- localStorage.zones=JSON.stringify(zones);
  localStorage.places=JSON.stringify(places);
  localStorage.route=JSON.stringify(route);
 }
-function ui(){
- km.innerText=(total/1000).toFixed(2);
- document.getElementById('zones').innerText=zones.length;
- placesCount.innerText=places.length;
+
+function update(){
+ km.innerText=(total/1000).toFixed(2)+" км";
 }
-function drawZone(p){L.circle(p,{radius:45,color:'white',fillOpacity:.35}).addTo(map)}
-function icon(c){return c==="hotel"?"🏨":c==="food"?"🍽️":c==="fav"?"⭐":"📍"}
-function drawPlace(p){L.marker([p.lat,p.lng]).addTo(map).bindPopup(icon(p.cat)+" "+p.name)}
-zones.forEach(drawZone);places.forEach(drawPlace);ui();
-if(route.length)map.setView(route[route.length-1],16);
 
 function start(){
- status.innerText="GPS работает...";
  watch=navigator.geolocation.watchPosition(pos=>{
   current=[pos.coords.latitude,pos.coords.longitude];
   map.setView(current,16);
-  route.push(current); path.addLatLng(current);
-  if(last){let d=map.distance(last,current); if(d>3&&d<1000)total+=d}
+
+  route.push(current);
+  path.addLatLng(current);
+
+  if(last){
+   let d=map.distance(last,current);
+   if(d>3&&d<1000) total+=d;
+  }
+
   last=current;
-  if(!zones.some(z=>map.distance(z,current)<35)){zones.push(current);drawZone(current)}
-  save();ui();
- },e=>status.innerText="GPS ошибка: "+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
-}
-function stop(){if(watch)navigator.geolocation.clearWatch(watch);watch=null;status.innerText="Остановлено"}
-function addPlace(){
- if(!current){alert("Сначала нажми Start и дождись GPS");return}
- let name=prompt("Название места:"); if(!name)return;
- let cat=prompt("Категория: fav, hotel, food, other","fav")||"other";
- let p={name,cat,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
- places.push(p);drawPlace(p);save();ui();
-}
-function openMenu(){menu.style.display='block'}
-function closeMenu(){menu.style.display='none'}
-function centerMe(){if(current)map.setView(current,16);else alert("GPS ещё не найден")}
-function showPlaces(){
- list.innerHTML="<h3>My places</h3>";
- places.forEach(p=>{
-  list.innerHTML+=`<div class="place"><b>${icon(p.cat)} ${p.name}</b><br>${p.date}<br><button onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
+  save();
+  update();
  });
 }
-function deleteAll(){
- let t=prompt("Для полного удаления напиши DELETE");
- if(t==="DELETE"){localStorage.clear();location.reload()}else alert("Отмена");
+
+function stop(){
+ if(watch)navigator.geolocation.clearWatch(watch);
 }
+
+function addPlace(){
+ if(!current){alert("Start first");return;}
+ let name=prompt("Place name:");
+ if(!name)return;
+
+ let p={name,lat:current[0],lng:current[1]};
+ places.push(p);
+
+ L.marker([p.lat,p.lng]).addTo(map).bindPopup("⭐ "+name);
+
+ save();
+}
+
+function openMenu(){menu.style.display='block';}
+function closeMenu(){menu.style.display='none';}
+
+function showPlaces(){
+ list.innerHTML="";
+ places.forEach(p=>{
+  list.innerHTML+=`
+   <div class="place">
+    <b>${p.name}</b><br>
+    <button onclick="map.setView([${p.lat},${p.lng}],17)">Go</button>
+   </div>`;
+ });
+}
+
+function centerMe(){
+ if(current) map.setView(current,16);
+}
+
+function deleteAll(){
+ let t=prompt("Type DELETE");
+ if(t==="DELETE"){
+  localStorage.clear();
+  location.reload();
+ }
+}
+
+update();
 </script>
+
 </body>
 </html>
