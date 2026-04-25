@@ -3,44 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow V12</title>
+<title>WanderGlow</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-html,body{
+body {
   margin:0;
-  height:100%;
-  background:#05080a;
-  overflow:hidden;
   font-family:sans-serif;
+  background:#05080a;
+  color:white;
+}
+#map {
+  height:100vh;
 }
 
-/* карта */
-#map{
-  position:absolute;
-  width:100%;
-  height:100%;
-}
-
-/* затемнение карты */
-.leaflet-tile-pane{
-  filter:grayscale(1) brightness(0.25);
-}
-
-/* CANVAS ТУМАН */
-#fog{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-  z-index:500;
+/* карта темная */
+.leaflet-tile-pane {
+  filter:grayscale(1) brightness(0.3);
 }
 
 /* пользователь */
-.user{
+.user {
   width:18px;
   height:18px;
   border-radius:50%;
@@ -49,38 +33,36 @@ html,body{
   box-shadow:0 0 15px #7dffd0;
   animation:pulse 1.5s infinite;
 }
-
-@keyframes pulse{
+@keyframes pulse {
   0%{box-shadow:0 0 0px #7dffd0}
   50%{box-shadow:0 0 20px #7dffd0}
   100%{box-shadow:0 0 0px #7dffd0}
 }
 
-/* UI */
-.panel{
-  position:absolute;
+/* панель */
+.panel {
+  position:fixed;
   bottom:20px;
   left:20px;
   right:20px;
+  padding:15px;
+  border-radius:20px;
   background:rgba(255,255,255,0.08);
   backdrop-filter:blur(20px);
-  border-radius:20px;
-  padding:15px;
-  color:white;
 }
 
 /* кнопки */
-button{
+button {
   padding:10px 14px;
   border:none;
   border-radius:15px;
-  margin-right:8px;
+  margin:5px;
   background:#222;
   color:white;
+  font-size:16px;
   transition:0.15s;
 }
-
-button:active{
+button:active {
   transform:scale(0.9);
   filter:brightness(1.5);
 }
@@ -90,10 +72,10 @@ button:active{
 <body>
 
 <div id="map"></div>
-<canvas id="fog"></canvas>
 
 <div class="panel">
   <button onclick="start()">Explore</button>
+  <button onclick="stop()">Stop</button>
   <button onclick="centerMe()">📍</button>
 
   <div>XP: <span id="xp">0</span></div>
@@ -106,67 +88,50 @@ button:active{
 const map = L.map('map').setView([56.95,24.1],15);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19
+  maxZoom:19,
+  attribution:'© OpenStreetMap contributors'
 }).addTo(map);
 
-/* canvas */
-const canvas = document.getElementById("fog");
-const ctx = canvas.getContext("2d");
-
-function resizeCanvas(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-/* рисуем туман */
-function drawFog(){
-  ctx.fillStyle = "rgba(0,0,0,0.85)";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-}
-
-/* открытие зоны */
-function reveal(x,y){
-  const radius = 120;
-
-  const gradient = ctx.createRadialGradient(
-    x, y, 20,
-    x, y, radius
-  );
-
-  gradient.addColorStop(0, "rgba(0,0,0,0)");
-  gradient.addColorStop(1, "rgba(0,0,0,0.85)");
-
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(x,y,radius,0,Math.PI*2);
-  ctx.fillStyle = gradient;
-  ctx.fill();
-  ctx.globalCompositeOperation = "source-over";
-}
-
-/* пользователь */
-let userMarker;
-let current = null;
 let watch = null;
-let opened = {};
-let xp = 0;
+let current = null;
+let userMarker = null;
 
-/* обновление fog */
-drawFog();
+let opened = JSON.parse(localStorage.opened || "{}");
+let xp = Number(localStorage.xp || 0);
+
+/* отрисовка открытых зон */
+function drawAll() {
+  for (let key in opened) {
+    let [lat,lng] = key.split("_").map(Number);
+
+    L.circle([lat,lng],{
+      radius:25,
+      fillColor:"#fff",
+      fillOpacity:0.15,
+      stroke:false
+    }).addTo(map);
+
+    L.circle([lat,lng],{
+      radius:40,
+      fillColor:"#7dffd0",
+      fillOpacity:0.05,
+      stroke:false
+    }).addTo(map);
+  }
+}
+drawAll();
 
 /* GPS */
-function start(){
-  if(watch) return;
+function start() {
+  if (watch) return;
 
   watch = navigator.geolocation.watchPosition(pos=>{
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+    let lat = pos.coords.latitude;
+    let lng = pos.coords.longitude;
 
     current = [lat,lng];
 
-    if(!userMarker){
+    if (!userMarker) {
       userMarker = L.marker(current,{
         icon:L.divIcon({
           className:"",
@@ -179,33 +144,57 @@ function start(){
 
     map.setView(current,17);
 
-    const point = map.latLngToContainerPoint(current);
+    let key = lat.toFixed(5)+"_"+lng.toFixed(5);
 
-    const key = Math.floor(lat*10000)+"_"+Math.floor(lng*10000);
-
-    if(!opened[key]){
+    if (!opened[key]) {
       opened[key] = true;
 
-      reveal(point.x, point.y);
+      L.circle(current,{
+        radius:25,
+        fillColor:"#fff",
+        fillOpacity:0.2,
+        stroke:false
+      }).addTo(map);
+
+      L.circle(current,{
+        radius:40,
+        fillColor:"#7dffd0",
+        fillOpacity:0.05,
+        stroke:false
+      }).addTo(map);
 
       xp += 10;
+
+      localStorage.opened = JSON.stringify(opened);
+      localStorage.xp = xp;
+
       document.getElementById("xp").innerText = xp;
       document.getElementById("cells").innerText = Object.keys(opened).length;
     }
 
-  }, err=>{
-    alert(err.message);
   },{
     enableHighAccuracy:true
   });
 }
 
+/* стоп */
+function stop() {
+  if (watch) {
+    navigator.geolocation.clearWatch(watch);
+    watch = null;
+  }
+}
+
 /* центр */
-function centerMe(){
-  if(current){
+function centerMe() {
+  if (current) {
     map.setView(current,17);
   }
 }
+
+/* UI */
+document.getElementById("xp").innerText = xp;
+document.getElementById("cells").innerText = Object.keys(opened).length;
 </script>
 
 </body>
