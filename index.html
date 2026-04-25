@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow Reveal</title>
+<title>WanderGlow Travel Fog</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -20,27 +20,24 @@ html,body{
   height:100%;
 }
 
-/* Карта изначально почти чёрная */
 .leaflet-tile-pane{
-  filter:brightness(.12) grayscale(1) contrast(1.1);
+  filter:brightness(.82) contrast(1.04) saturate(1.08);
 }
 
-/* Слой открытия */
-#reveal{
+#fog{
   position:absolute;
   inset:0;
   z-index:500;
   pointer-events:none;
 }
 
-/* зелёная точка */
 .userDot{
   width:18px;
   height:18px;
   border-radius:50%;
   background:#00ff88;
   border:4px solid white;
-  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
+  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 32px #00ff88;
 }
 
 .panel,.menu,.toast{
@@ -67,7 +64,7 @@ html,body{
 
 .status{
   margin-top:4px;
-  color:rgba(255,255,255,.7);
+  color:rgba(255,255,255,.72);
   font-size:16px;
 }
 
@@ -85,8 +82,13 @@ html,body{
   background:rgba(255,255,255,.10);
 }
 
-.stat b{font-size:28px}
-.stat small{color:rgba(255,255,255,.65)}
+.stat b{
+  font-size:28px;
+}
+
+.stat small{
+  color:rgba(255,255,255,.65);
+}
 
 button{
   border:0;
@@ -98,7 +100,9 @@ button{
   background:rgba(255,255,255,.12);
 }
 
-button:active{transform:scale(.94)}
+button:active{
+  transform:scale(.94);
+}
 
 .main{
   background:linear-gradient(135deg,#00ff88,#baffdd);
@@ -121,7 +125,9 @@ button:active{transform:scale(.94)}
   border-radius:28px;
 }
 
-.menu.open{display:block}
+.menu.open{
+  display:block;
+}
 
 .toast{
   position:absolute;
@@ -141,7 +147,7 @@ button:active{transform:scale(.94)}
 <body>
 
 <div id="map"></div>
-<canvas id="reveal"></canvas>
+<canvas id="fog"></canvas>
 <div id="toast" class="toast"></div>
 
 <div id="menu" class="menu">
@@ -187,21 +193,21 @@ let marker=null;
 let firstFix=true;
 let exploring=false;
 
-let xp=Number(localStorage.wg_reveal_xp||0);
-let cells=JSON.parse(localStorage.wg_reveal_cells||"{}");
+let xp=Number(localStorage.wg_rts_xp||0);
+let cells=JSON.parse(localStorage.wg_rts_cells||"{}");
 
-const revealCanvas=document.getElementById("reveal");
-const ctx=revealCanvas.getContext("2d");
+const fog=document.getElementById("fog");
+const ctx=fog.getContext("2d");
 
-function resizeReveal(){
-  revealCanvas.width=window.innerWidth;
-  revealCanvas.height=window.innerHeight;
-  drawReveal();
+function resizeFog(){
+  fog.width=window.innerWidth;
+  fog.height=window.innerHeight;
+  drawFog();
 }
 
-window.addEventListener("resize",resizeReveal);
-map.on("move zoom",drawReveal);
-resizeReveal();
+window.addEventListener("resize",resizeFog);
+map.on("move zoom",drawFog);
+resizeFog();
 
 function cellKey(a,b){
   return Math.floor(a*1000)+"_"+Math.floor(b*1000);
@@ -209,10 +215,7 @@ function cellKey(a,b){
 
 function cellCenter(key){
   const p=key.split("_");
-  return [
-    (Number(p[0])+0.5)/1000,
-    (Number(p[1])+0.5)/1000
-  ];
+  return [(Number(p[0])+0.5)/1000,(Number(p[1])+0.5)/1000];
 }
 
 function level(){
@@ -220,8 +223,8 @@ function level(){
 }
 
 function save(){
-  localStorage.wg_reveal_xp=xp;
-  localStorage.wg_reveal_cells=JSON.stringify(cells);
+  localStorage.wg_rts_xp=xp;
+  localStorage.wg_rts_cells=JSON.stringify(cells);
 }
 
 function updateUI(){
@@ -256,14 +259,15 @@ function drawUser(){
   }
 }
 
-/* ВАЖНО:
-   Canvas затемняет всё чёрным.
-   Потом вырезает круги в местах, где ты был.
+/* RTS FOG:
+   1) весь мир почти чёрный
+   2) уже посещённые зоны остаются тёмно-открытыми
+   3) вокруг текущей позиции карта почти полностью светлая
 */
-function revealCircle(x,y,r){
+function removeFogCircle(x,y,r,strength){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
-  g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(.55,"rgba(0,0,0,.85)");
+  g.addColorStop(0,"rgba(0,0,0,"+strength+")");
+  g.addColorStop(.65,"rgba(0,0,0,"+(strength*.75)+")");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
@@ -274,24 +278,24 @@ function revealCircle(x,y,r){
   ctx.globalCompositeOperation="source-over";
 }
 
-function drawReveal(){
-  ctx.clearRect(0,0,revealCanvas.width,revealCanvas.height);
+function drawFog(){
+  ctx.clearRect(0,0,fog.width,fog.height);
 
-  // полностью чёрный мир
-  ctx.fillStyle="rgba(0,0,0,.92)";
-  ctx.fillRect(0,0,revealCanvas.width,revealCanvas.height);
+  // unexplored world
+  ctx.fillStyle="rgba(0,0,0,.94)";
+  ctx.fillRect(0,0,fog.width,fog.height);
 
-  // открытые сохранённые места
+  // explored memory: visible, but still darker like RTS explored area
   Object.keys(cells).forEach(key=>{
     const center=cellCenter(key);
     const p=map.latLngToContainerPoint(center);
-    revealCircle(p.x,p.y,120);
+    removeFogCircle(p.x,p.y,135,.72);
   });
 
-  // вокруг текущей точки всегда светлее
+  // current vision: bright circle around you
   if(lat!==null&&lng!==null){
     const p=map.latLngToContainerPoint([lat,lng]);
-    revealCircle(p.x,p.y,170);
+    removeFogCircle(p.x,p.y,190,.96);
   }
 }
 
@@ -316,12 +320,7 @@ function toggleMenu(){
 }
 
 function backup(){
-  const data={
-    xp,
-    cells,
-    exportedAt:new Date().toISOString()
-  };
-
+  const data={xp,cells,exportedAt:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
 
   navigator.clipboard.writeText(text)
@@ -335,8 +334,8 @@ function resetData(){
     return;
   }
 
-  localStorage.removeItem("wg_reveal_xp");
-  localStorage.removeItem("wg_reveal_cells");
+  localStorage.removeItem("wg_rts_xp");
+  localStorage.removeItem("wg_rts_cells");
   location.reload();
 }
 
@@ -359,12 +358,12 @@ navigator.geolocation.watchPosition(pos=>{
     if(!cells[key]){
       cells[key]=true;
       xp+=10;
-      toast("+10 XP · карта открыта");
+      toast("+10 XP · новая зона открыта");
     }
   }
 
   updateUI();
-  drawReveal();
+  drawFog();
 
 },()=>{
   document.getElementById("status").innerText="GPS error";
@@ -376,7 +375,7 @@ navigator.geolocation.watchPosition(pos=>{
 });
 
 updateUI();
-drawReveal();
+drawFog();
 </script>
 
 </body>
