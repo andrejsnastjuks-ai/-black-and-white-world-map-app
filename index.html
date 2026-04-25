@@ -11,80 +11,84 @@
 html,body{
   margin:0;
   height:100%;
-  overflow:hidden;
-  font-family:-apple-system,system-ui;
   background:#05080a;
+  font-family:-apple-system,system-ui;
+  overflow:hidden;
   color:white;
 }
 
 #map{height:100%}
 
+/* карта затемнена */
 .leaflet-tile-pane{
-  filter:grayscale(1) brightness(.28);
+  filter:grayscale(1) brightness(.25);
 }
 
-/* USER */
+/* пользователь */
 .user{
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
   border-radius:50%;
   background:#7dffd0;
-  border:4px solid white;
-  box-shadow:0 0 25px #7dffd0;
-  animation:pulse 1.5s infinite;
+  border:3px solid white;
+  box-shadow:0 0 20px #7dffd0;
+  animation:pulse 1.6s infinite;
 }
 @keyframes pulse{
   0%{box-shadow:0 0 0px #7dffd0}
-  50%{box-shadow:0 0 35px #7dffd0}
+  50%{box-shadow:0 0 30px #7dffd0}
   100%{box-shadow:0 0 0px #7dffd0}
 }
 
-/* PANEL */
+/* панель */
 .panel{
   position:fixed;
-  bottom:20px;
-  left:14px;
-  right:14px;
+  bottom:18px;
+  left:12px;
+  right:12px;
   padding:16px;
-  border-radius:28px;
+  border-radius:26px;
   background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(28px);
+  backdrop-filter:blur(26px);
 }
 
+/* верх */
 .top{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 
+/* кнопка explore */
 .explore{
-  padding:14px 18px;
-  border-radius:20px;
-  border:0;
+  padding:12px 18px;
+  border-radius:18px;
+  border:none;
   font-weight:bold;
   background:linear-gradient(135deg,#7dffd0,#eafff7);
   color:#042015;
+  transition:.2s;
 }
-
 .explore.active{
   background:linear-gradient(135deg,#4d96ff,#9bd8ff);
   color:white;
 }
 
+/* stats */
 .stats{
   display:flex;
   gap:8px;
   margin-top:12px;
 }
-
 .stat{
   flex:1;
   text-align:center;
   background:rgba(255,255,255,.08);
   padding:10px;
-  border-radius:18px;
+  border-radius:16px;
 }
 
+/* прогресс */
 .progress{
   margin-top:10px;
   height:8px;
@@ -98,7 +102,7 @@ html,body{
   background:linear-gradient(90deg,#7dffd0,#4d96ff);
 }
 
-/* BUTTONS */
+/* кнопки */
 .actions{
   display:flex;
   gap:8px;
@@ -107,19 +111,40 @@ html,body{
 button{
   flex:1;
   padding:12px;
-  border-radius:18px;
+  border-radius:16px;
   border:none;
   background:#333;
   color:white;
   font-weight:600;
   transition:.15s;
 }
+
+/* эффект нажатия */
 button:active{
-  transform:scale(.92);
-  filter:brightness(1.5);
+  transform:scale(.9);
+  filter:brightness(1.6);
 }
+
+/* синяя кнопка */
 .blue{
   background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+}
+
+/* уведомление */
+.toast{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(255,255,255,0.12);
+  padding:12px 18px;
+  border-radius:20px;
+  backdrop-filter:blur(20px);
+  opacity:0;
+  transition:.4s;
+}
+.toast.show{
+  opacity:1;
 }
 </style>
 </head>
@@ -127,6 +152,8 @@ button:active{
 <body>
 
 <div id="map"></div>
+
+<div class="toast" id="toast"></div>
 
 <div class="panel">
   <div class="top">
@@ -161,31 +188,35 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19
 }).addTo(map);
 
-/* DATA */
-let watch=null,current=null,last=null;
+/* ДАННЫЕ */
+let watch=null;
+let current=null;
+let last=null;
+
 let total=+localStorage.total||0;
 let xpVal=+localStorage.xp||0;
 let opened=JSON.parse(localStorage.opened||"{}");
 
 let userMarker;
 
-/* RESTORE */
+/* ВОССТАНОВЛЕНИЕ */
 Object.keys(opened).forEach(k=>{
   let [lat,lng]=k.split("_").map(Number);
   reveal([lat,lng]);
 });
 
-/* REVEAL */
+/* ОТКРЫТИЕ КАРТЫ */
 function reveal(pos){
+
   L.circle(pos,{
-    radius:28,
+    radius:40,
     fillColor:"#fff",
     fillOpacity:0.15,
     stroke:false
   }).addTo(map);
 
   L.circle(pos,{
-    radius:45,
+    radius:80,
     fillColor:"#7dffd0",
     fillOpacity:0.06,
     stroke:false
@@ -212,39 +243,52 @@ function start(){
 
     map.setView(current,17);
 
+    /* дистанция */
     if(last){
       let d=map.distance(last,current);
       if(d<1000) total+=d;
     }
     last=current;
 
-    let key=lat.toFixed(5)+"_"+lng.toFixed(5);
+    /* клетки */
+    let key=Math.round(lat*1000)/1000+"_"+Math.round(lng*1000)/1000;
 
     if(!opened[key]){
       opened[key]=true;
       reveal(current);
+
       xpVal+=10;
+
+      showToast("✨ +10 XP");
     }
 
     save();
-    ui();
+    updateUI();
 
-  },e=>alert(e.message),{enableHighAccuracy:true});
+  },e=>alert(e.message),{
+    enableHighAccuracy:true,
+    maximumAge:0,
+    timeout:5000
+  });
 }
 
+/* STOP */
 function stop(){
-  if(watch)navigator.geolocation.clearWatch(watch);
-  watch=null;
+  if(watch){
+    navigator.geolocation.clearWatch(watch);
+    watch=null;
+  }
   exploreBtn.classList.remove("active");
   status.innerText="Stopped";
 }
 
+/* ЦЕНТР */
 function centerMe(){
-  if(current)map.setView(current,17);
+  if(current) map.setView(current,17);
 }
 
 /* UI */
-function ui(){
+function updateUI(){
   km.innerText=(total/1000).toFixed(2);
   cells.innerText=Object.keys(opened).length;
   xp.innerText=xpVal;
@@ -252,13 +296,21 @@ function ui(){
   bar.style.width=Math.min(100,Object.keys(opened).length)+"%";
 }
 
+/* TOAST */
+function showToast(text){
+  toast.innerText=text;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),1500);
+}
+
+/* SAVE */
 function save(){
   localStorage.total=total;
   localStorage.xp=xpVal;
   localStorage.opened=JSON.stringify(opened);
 }
 
-ui();
+updateUI();
 </script>
 
 </body>
