@@ -8,14 +8,14 @@
 
 <style>
 :root{
-  --glass:rgba(255,255,255,.055);
-  --glassStrong:rgba(255,255,255,.09);
-  --line:rgba(255,255,255,.16);
+  --glass:rgba(255,255,255,.045);
+  --glass2:rgba(255,255,255,.075);
+  --line:rgba(255,255,255,.14);
   --mint:#7dffd0;
-  --mint2:#dffff3;
+  --mint2:#e2fff5;
   --blue:#8cc9ff;
   --red:#9b2929;
-  --muted:rgba(247,251,255,.64);
+  --muted:rgba(247,251,255,.62);
 }
 
 html,body{
@@ -33,11 +33,11 @@ html,body{
 }
 
 .glass{
-  background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.045));
-  backdrop-filter:blur(34px) saturate(1.45);
-  -webkit-backdrop-filter:blur(34px) saturate(1.45);
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
+  backdrop-filter:blur(36px) saturate(1.45);
+  -webkit-backdrop-filter:blur(36px) saturate(1.45);
   border:1px solid var(--line);
-  box-shadow:0 22px 55px rgba(0,0,0,.34);
+  box-shadow:0 22px 55px rgba(0,0,0,.32);
 }
 
 button{
@@ -55,6 +55,39 @@ button{
   color:white;
   border-radius:34px;
   padding:16px;
+  transition:.28s ease;
+}
+
+.panel.hidden{
+  transform:translateY(125%);
+  opacity:0;
+  pointer-events:none;
+}
+
+.showPanel{
+  display:none;
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:9999;
+  width:78px;
+  height:46px;
+  border-radius:99px;
+  color:white;
+  font-size:24px;
+}
+
+.showPanel.visible{
+  display:block;
+}
+
+.hideHandle{
+  width:48px;
+  height:5px;
+  border-radius:99px;
+  background:rgba(255,255,255,.32);
+  margin:0 auto 14px;
 }
 
 .top{
@@ -79,7 +112,14 @@ button{
   border-radius:22px;
   background:linear-gradient(135deg,var(--mint),var(--mint2));
   color:#031c13;
-  box-shadow:0 0 24px rgba(125,255,208,.28);
+  box-shadow:0 0 26px rgba(125,255,208,.35);
+  animation:explorePulse 2.4s infinite;
+}
+
+@keyframes explorePulse{
+  0%{box-shadow:0 0 18px rgba(125,255,208,.22)}
+  50%{box-shadow:0 0 34px rgba(125,255,208,.42)}
+  100%{box-shadow:0 0 18px rgba(125,255,208,.22)}
 }
 
 .stats{
@@ -90,7 +130,7 @@ button{
 
 .stat{
   flex:1;
-  background:rgba(255,255,255,.075);
+  background:rgba(255,255,255,.065);
   border:1px solid rgba(255,255,255,.08);
   border-radius:22px;
   padding:11px 8px;
@@ -112,7 +152,7 @@ button{
 
 .levelBox{
   margin-top:12px;
-  background:rgba(255,255,255,.07);
+  background:rgba(255,255,255,.058);
   border-radius:20px;
   padding:11px 12px;
 }
@@ -126,10 +166,10 @@ button{
 }
 
 .progressBar{
-  height:8px;
+  height:9px;
   margin-top:9px;
   border-radius:99px;
-  background:rgba(255,255,255,.095);
+  background:rgba(255,255,255,.085);
   overflow:hidden;
 }
 
@@ -138,7 +178,8 @@ button{
   width:0%;
   border-radius:99px;
   background:linear-gradient(90deg,var(--mint),var(--blue));
-  box-shadow:0 0 18px rgba(125,255,208,.55);
+  box-shadow:0 0 20px rgba(125,255,208,.65);
+  transition:width .45s ease;
 }
 
 .actions{
@@ -152,7 +193,7 @@ button{
   padding:13px;
   border-radius:20px;
   color:white;
-  background:rgba(255,255,255,.09);
+  background:rgba(255,255,255,.08);
 }
 
 .action.blue{
@@ -171,13 +212,17 @@ button{
   border-radius:34px;
 }
 
+.capsule.hidden{
+  display:none;
+}
+
 .circle{
   width:50px;
   height:50px;
   border-radius:50%;
   color:white;
   font-size:20px;
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.075);
 }
 
 .modal{
@@ -211,7 +256,7 @@ button{
 .menuBtn{
   min-height:86px;
   border-radius:24px;
-  background:rgba(255,255,255,.085);
+  background:rgba(255,255,255,.075);
   color:white;
   text-align:left;
   padding:16px;
@@ -228,7 +273,7 @@ button{
 }
 
 .item{
-  background:rgba(255,255,255,.085);
+  background:rgba(255,255,255,.075);
   border-radius:22px;
   padding:14px;
   margin-top:10px;
@@ -257,20 +302,20 @@ button{
 
 .unlock-flash{
   position:fixed;
-  width:120px;
-  height:120px;
+  width:130px;
+  height:130px;
   border-radius:50%;
   pointer-events:none;
   z-index:9998;
-  background:radial-gradient(circle,rgba(125,255,208,.55),rgba(125,255,208,.18),rgba(125,255,208,0));
+  background:radial-gradient(circle,rgba(125,255,208,.62),rgba(125,255,208,.18),rgba(125,255,208,0));
   transform:translate(-50%,-50%) scale(.2);
-  animation:unlock .9s ease-out forwards;
+  animation:unlock .95s ease-out forwards;
 }
 
 @keyframes unlock{
   0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}
-  80%{opacity:.75;transform:translate(-50%,-50%) scale(1.8)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
+  80%{opacity:.75;transform:translate(-50%,-50%) scale(1.85)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.25)}
 }
 
 .toast{
@@ -284,6 +329,43 @@ button{
   border-radius:24px;
   display:none;
   font-weight:800;
+}
+
+.levelUp{
+  position:fixed;
+  inset:0;
+  z-index:10002;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  pointer-events:none;
+}
+
+.levelCard{
+  padding:28px;
+  border-radius:34px;
+  text-align:center;
+  transform:scale(.85);
+  animation:levelPop 1.4s ease forwards;
+}
+
+.levelCard h1{
+  margin:0;
+  font-size:34px;
+}
+
+.levelCard p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:18px;
+}
+
+@keyframes levelPop{
+  0%{opacity:0;transform:scale(.75)}
+  25%{opacity:1;transform:scale(1.05)}
+  70%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(.92)}
 }
 
 input,textarea,select{
@@ -308,13 +390,24 @@ input,textarea,select{
 <div id="map"></div>
 <div id="toast" class="toast glass"></div>
 
-<div class="capsule glass">
+<div id="levelUp" class="levelUp">
+  <div class="levelCard glass">
+    <h1>LEVEL UP</h1>
+    <p id="levelUpText">Explorer II</p>
+  </div>
+</div>
+
+<div id="capsule" class="capsule glass">
   <button class="circle" onclick="centerMe()">📍</button>
   <button class="circle" onclick="openPlaceEditor()">⭐</button>
   <button class="circle" onclick="openMenu()">☰</button>
 </div>
 
-<div class="panel glass">
+<button id="showPanelBtn" class="showPanel glass" onclick="showPanel()">⌃</button>
+
+<div id="panel" class="panel glass">
+  <div class="hideHandle" onclick="hidePanel()"></div>
+
   <div class="top">
     <div class="brand">
       <b>WanderGlow</b><br>
@@ -352,6 +445,8 @@ input,textarea,select{
   <div class="grid">
     <button class="menuBtn" onclick="centerMe()">📍<strong>My location</strong><small>Вернуться к себе</small></button>
     <button class="menuBtn" onclick="showPlaces()">⭐<strong>My places</strong><small>Сохранённые места</small></button>
+    <button class="menuBtn" onclick="hideAllUI()">👁️<strong>Hide UI</strong><small>Чистая карта</small></button>
+    <button class="menuBtn" onclick="showAllUI()">✨<strong>Show UI</strong><small>Вернуть интерфейс</small></button>
     <button class="menuBtn" onclick="exportData()">⬇️<strong>Backup</strong><small>Сохранить данные</small></button>
     <button class="menuBtn" onclick="openImport()">⬆️<strong>Import</strong><small>Восстановить</small></button>
   </div>
@@ -368,9 +463,7 @@ input,textarea,select{
   <h2>Save place</h2>
 
   <input id="placeName" placeholder="Название места">
-
   <br><br>
-
   <select id="placeCategory">
     <option value="⭐">⭐ Избранное</option>
     <option value="🏨">🏨 Отель</option>
@@ -381,7 +474,6 @@ input,textarea,select{
   </select>
 
   <br><br>
-
   <button class="action blue" style="width:100%" onclick="savePlaceFromEditor()">Save place</button>
   <button class="action" style="width:100%;margin-top:10px" onclick="closePlaceEditor()">Close</button>
 </div>
@@ -389,11 +481,8 @@ input,textarea,select{
 <div id="importModal" class="modal glass">
   <div class="handle" onclick="closeImport()"></div>
   <h2>Import data</h2>
-
   <textarea id="importText" rows="8" placeholder="Paste backup JSON here"></textarea>
-
   <br><br>
-
   <button class="action blue" style="width:100%" onclick="importData()">Import</button>
   <button class="action" style="width:100%;margin-top:10px" onclick="closeImport()">Close</button>
 </div>
@@ -413,6 +502,7 @@ let follow=true;
 let total=Number(localStorage.wg_total||0);
 let opened=JSON.parse(localStorage.wg_opened||'{}');
 let places=JSON.parse(localStorage.wg_places||'[]');
+let lastLevel=localStorage.wg_lastLevel||'Explorer I';
 
 map.on('dragstart',()=>{follow=false;status.innerText='Free map'});
 map.on('zoomstart',()=>{follow=false});
@@ -426,6 +516,7 @@ function save(){
   localStorage.wg_total=total;
   localStorage.wg_opened=JSON.stringify(opened);
   localStorage.wg_places=JSON.stringify(places);
+  localStorage.wg_lastLevel=lastLevel;
 }
 
 function drawCell(key){
@@ -437,7 +528,7 @@ function drawCell(key){
   L.rectangle([[lat,lng],[lat+size,lng+size]],{
     stroke:false,
     fillColor:'#7dffd0',
-    fillOpacity:.31
+    fillOpacity:.32
   }).addTo(map);
 }
 
@@ -469,13 +560,13 @@ function drawUser(p){
 }
 
 function getLevel(count){
-  if(count < 10) return {name:'Explorer I', next:10};
-  if(count < 25) return {name:'Explorer II', next:25};
-  if(count < 50) return {name:'Traveler I', next:50};
-  if(count < 100) return {name:'Traveler II', next:100};
-  if(count < 200) return {name:'City Seeker', next:200};
-  if(count < 400) return {name:'World Seeker', next:400};
-  return {name:'Map Master', next:count};
+  if(count < 10) return {name:'Explorer I', next:10, prev:0};
+  if(count < 25) return {name:'Explorer II', next:25, prev:10};
+  if(count < 50) return {name:'Traveler I', next:50, prev:25};
+  if(count < 100) return {name:'Traveler II', next:100, prev:50};
+  if(count < 200) return {name:'City Seeker', next:200, prev:100};
+  if(count < 400) return {name:'World Seeker', next:400, prev:200};
+  return {name:'Map Master', next:count, prev:400};
 }
 
 function ui(){
@@ -488,19 +579,16 @@ function ui(){
 
   const lvl=getLevel(count);
   levelName.innerText=lvl.name;
-
-  const prevLevels=[0,10,25,50,100,200,400];
-  let prev=0;
-  for(const v of prevLevels){
-    if(count>=v) prev=v;
-  }
-
-  const need=Math.max(1,lvl.next-prev);
-  const done=Math.min(need,count-prev);
-  const levelPct=(done/need)*100;
-
   levelNeed.innerText=count+' / '+lvl.next+' cells';
+
+  const levelPct=Math.min(100,((count-lvl.prev)/(lvl.next-lvl.prev))*100);
   progressFill.style.width=levelPct+'%';
+
+  if(lvl.name!==lastLevel){
+    showLevelUp(lvl.name);
+    lastLevel=lvl.name;
+    save();
+  }
 }
 
 function showToast(text){
@@ -517,6 +605,13 @@ function unlockFlash(latlng){
   el.style.top=p.y+'px';
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),1000);
+}
+
+function showLevelUp(name){
+  levelUpText.innerText=name;
+  levelUp.style.display='flex';
+  if(navigator.vibrate)navigator.vibrate([40,60,40]);
+  setTimeout(()=>levelUp.style.display='none',1450);
 }
 
 Object.keys(opened).forEach(drawCell);
@@ -589,6 +684,29 @@ function centerMe(){
   }else{
     alert('Нажми Explore и дождись GPS');
   }
+}
+
+function hidePanel(){
+  panel.classList.add('hidden');
+  showPanelBtn.classList.add('visible');
+}
+
+function showPanel(){
+  panel.classList.remove('hidden');
+  showPanelBtn.classList.remove('visible');
+}
+
+function hideAllUI(){
+  closeMenu();
+  panel.classList.add('hidden');
+  capsule.classList.add('hidden');
+  showPanelBtn.classList.add('visible');
+}
+
+function showAllUI(){
+  panel.classList.remove('hidden');
+  capsule.classList.remove('hidden');
+  showPanelBtn.classList.remove('visible');
 }
 
 function openMenu(){menu.style.display='block'}
