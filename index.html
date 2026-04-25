@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow BASE + FOG</title>
+<title>WanderGlow Reveal</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -12,22 +12,28 @@ html,body{
   margin:0;
   height:100%;
   overflow:hidden;
-  background:#05080a;
+  background:#000;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 #map{
   height:100%;
-  filter:grayscale(1) brightness(.65) contrast(.95);
 }
 
-#fog{
+/* Карта изначально почти чёрная */
+.leaflet-tile-pane{
+  filter:brightness(.12) grayscale(1) contrast(1.1);
+}
+
+/* Слой открытия */
+#reveal{
   position:absolute;
   inset:0;
   z-index:500;
   pointer-events:none;
 }
 
+/* зелёная точка */
 .userDot{
   width:18px;
   height:18px;
@@ -79,13 +85,8 @@ html,body{
   background:rgba(255,255,255,.10);
 }
 
-.stat b{
-  font-size:28px;
-}
-
-.stat small{
-  color:rgba(255,255,255,.65);
-}
+.stat b{font-size:28px}
+.stat small{color:rgba(255,255,255,.65)}
 
 button{
   border:0;
@@ -97,9 +98,7 @@ button{
   background:rgba(255,255,255,.12);
 }
 
-button:active{
-  transform:scale(.94);
-}
+button:active{transform:scale(.94)}
 
 .main{
   background:linear-gradient(135deg,#00ff88,#baffdd);
@@ -122,9 +121,7 @@ button:active{
   border-radius:28px;
 }
 
-.menu.open{
-  display:block;
-}
+.menu.open{display:block}
 
 .toast{
   position:absolute;
@@ -144,7 +141,7 @@ button:active{
 <body>
 
 <div id="map"></div>
-<canvas id="fog"></canvas>
+<canvas id="reveal"></canvas>
 <div id="toast" class="toast"></div>
 
 <div id="menu" class="menu">
@@ -185,65 +182,64 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
   attribution:"© OpenStreetMap"
 }).addTo(map);
 
-let lat = null;
-let lng = null;
-let marker = null;
-let firstFix = true;
-let exploring = false;
+let lat=null,lng=null;
+let marker=null;
+let firstFix=true;
+let exploring=false;
 
-let xp = Number(localStorage.wg_base_xp || 0);
-let cells = JSON.parse(localStorage.wg_base_cells || "{}");
+let xp=Number(localStorage.wg_reveal_xp||0);
+let cells=JSON.parse(localStorage.wg_reveal_cells||"{}");
 
-const fog = document.getElementById("fog");
-const ctx = fog.getContext("2d");
+const revealCanvas=document.getElementById("reveal");
+const ctx=revealCanvas.getContext("2d");
 
-function resizeFog(){
-  fog.width = window.innerWidth;
-  fog.height = window.innerHeight;
-  drawFog();
+function resizeReveal(){
+  revealCanvas.width=window.innerWidth;
+  revealCanvas.height=window.innerHeight;
+  drawReveal();
 }
 
-window.addEventListener("resize", resizeFog);
-map.on("move zoom", drawFog);
-resizeFog();
+window.addEventListener("resize",resizeReveal);
+map.on("move zoom",drawReveal);
+resizeReveal();
 
 function cellKey(a,b){
-  return Math.floor(a * 1000) + "_" + Math.floor(b * 1000);
+  return Math.floor(a*1000)+"_"+Math.floor(b*1000);
 }
 
 function cellCenter(key){
-  const p = key.split("_");
+  const p=key.split("_");
   return [
-    (Number(p[0]) + 0.5) / 1000,
-    (Number(p[1]) + 0.5) / 1000
+    (Number(p[0])+0.5)/1000,
+    (Number(p[1])+0.5)/1000
   ];
 }
 
 function level(){
-  return Math.floor(xp / 100) + 1;
+  return Math.floor(xp/100)+1;
 }
 
 function save(){
-  localStorage.wg_base_xp = xp;
-  localStorage.wg_base_cells = JSON.stringify(cells);
+  localStorage.wg_reveal_xp=xp;
+  localStorage.wg_reveal_cells=JSON.stringify(cells);
 }
 
 function updateUI(){
-  document.getElementById("xpView").innerText = xp;
-  document.getElementById("cellsView").innerText = Object.keys(cells).length;
-  document.getElementById("levelView").innerText = level();
+  document.getElementById("xpView").innerText=xp;
+  document.getElementById("cellsView").innerText=Object.keys(cells).length;
+  document.getElementById("levelView").innerText=level();
   save();
 }
 
 function toast(text){
-  const el = document.getElementById("toast");
-  el.innerText = text;
-  el.style.opacity = 1;
-  setTimeout(()=>el.style.opacity = 0, 2000);
+  const el=document.getElementById("toast");
+  el.innerText=text;
+  el.style.opacity=1;
+  setTimeout(()=>el.style.opacity=0,2000);
 }
 
 function drawUser(){
-  const icon = L.divIcon({
+  const icon=L.divIcon({
     html:'<div class="userDot"></div>',
     className:'',
     iconSize:[34,34],
@@ -251,8 +247,8 @@ function drawUser(){
   });
 
   if(!marker){
-    marker = L.marker([lat,lng],{
-      icon:icon,
+    marker=L.marker([lat,lng],{
+      icon,
       zIndexOffset:10000
     }).addTo(map).bindPopup("Ты здесь");
   }else{
@@ -260,53 +256,59 @@ function drawUser(){
   }
 }
 
-function reveal(x,y,r){
-  const g = ctx.createRadialGradient(x,y,0,x,y,r);
+/* ВАЖНО:
+   Canvas затемняет всё чёрным.
+   Потом вырезает круги в местах, где ты был.
+*/
+function revealCircle(x,y,r){
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(.45,"rgba(0,0,0,.70)");
+  g.addColorStop(.55,"rgba(0,0,0,.85)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.fillStyle = g;
+  ctx.globalCompositeOperation="destination-out";
+  ctx.fillStyle=g;
   ctx.beginPath();
   ctx.arc(x,y,r,0,Math.PI*2);
   ctx.fill();
-  ctx.globalCompositeOperation = "source-over";
+  ctx.globalCompositeOperation="source-over";
 }
 
-function drawFog(){
-  ctx.clearRect(0,0,fog.width,fog.height);
+function drawReveal(){
+  ctx.clearRect(0,0,revealCanvas.width,revealCanvas.height);
 
-  ctx.fillStyle = "rgba(0,0,0,.58)";
-  ctx.fillRect(0,0,fog.width,fog.height);
+  // полностью чёрный мир
+  ctx.fillStyle="rgba(0,0,0,.92)";
+  ctx.fillRect(0,0,revealCanvas.width,revealCanvas.height);
 
+  // открытые сохранённые места
   Object.keys(cells).forEach(key=>{
-    const center = cellCenter(key);
-    const point = map.latLngToContainerPoint(center);
-    reveal(point.x, point.y, 115);
+    const center=cellCenter(key);
+    const p=map.latLngToContainerPoint(center);
+    revealCircle(p.x,p.y,120);
   });
 
-  if(lat !== null && lng !== null){
-    const point = map.latLngToContainerPoint([lat,lng]);
-    reveal(point.x, point.y, 170);
+  // вокруг текущей точки всегда светлее
+  if(lat!==null&&lng!==null){
+    const p=map.latLngToContainerPoint([lat,lng]);
+    revealCircle(p.x,p.y,170);
   }
 }
 
 function toggleExplore(){
-  exploring = !exploring;
-  document.getElementById("exploreBtn").classList.toggle("active", exploring);
-  document.getElementById("exploreBtn").innerText = exploring ? "Exploring" : "Explore";
-  document.getElementById("status").innerText = exploring ? "Exploring..." : "Paused";
+  exploring=!exploring;
+  document.getElementById("exploreBtn").classList.toggle("active",exploring);
+  document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
+  document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
 }
 
 function centerMe(){
-  if(lat === null || lng === null){
+  if(lat===null||lng===null){
     toast("GPS ещё ищет локацию");
     return;
   }
-
   map.setView([lat,lng],17);
-  document.getElementById("status").innerText = "Centered";
+  document.getElementById("status").innerText="Centered";
 }
 
 function toggleMenu(){
@@ -314,58 +316,58 @@ function toggleMenu(){
 }
 
 function backup(){
-  const data = {
-    xp: xp,
-    cells: cells,
-    exportedAt: new Date().toISOString()
+  const data={
+    xp,
+    cells,
+    exportedAt:new Date().toISOString()
   };
 
-  const text = JSON.stringify(data,null,2);
+  const text=JSON.stringify(data,null,2);
 
   navigator.clipboard.writeText(text)
     .then(()=>toast("Backup copied"))
-    .catch(()=>prompt("Copy backup:", text));
+    .catch(()=>prompt("Copy backup:",text));
 }
 
 function resetData(){
-  if(prompt("Для удаления напиши DELETE") !== "DELETE"){
+  if(prompt("Для удаления напиши DELETE")!=="DELETE"){
     toast("Cancelled");
     return;
   }
 
-  localStorage.removeItem("wg_base_xp");
-  localStorage.removeItem("wg_base_cells");
+  localStorage.removeItem("wg_reveal_xp");
+  localStorage.removeItem("wg_reveal_cells");
   location.reload();
 }
 
 navigator.geolocation.watchPosition(pos=>{
-  lat = pos.coords.latitude;
-  lng = pos.coords.longitude;
+  lat=pos.coords.latitude;
+  lng=pos.coords.longitude;
 
   drawUser();
 
   if(firstFix){
     map.setView([lat,lng],17);
-    firstFix = false;
+    firstFix=false;
   }
 
-  document.getElementById("status").innerText = exploring ? "Exploring..." : "GPS ready";
+  document.getElementById("status").innerText=exploring?"Exploring...":"GPS ready";
 
   if(exploring){
-    const key = cellKey(lat,lng);
+    const key=cellKey(lat,lng);
 
     if(!cells[key]){
-      cells[key] = true;
-      xp += 10;
+      cells[key]=true;
+      xp+=10;
       toast("+10 XP · карта открыта");
     }
   }
 
   updateUI();
-  drawFog();
+  drawReveal();
 
-},err=>{
-  document.getElementById("status").innerText = "GPS error";
+},()=>{
+  document.getElementById("status").innerText="GPS error";
   toast("Разреши доступ к геолокации");
 },{
   enableHighAccuracy:true,
@@ -374,7 +376,7 @@ navigator.geolocation.watchPosition(pos=>{
 });
 
 updateUI();
-drawFog();
+drawReveal();
 </script>
 
 </body>
