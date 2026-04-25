@@ -1,64 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>WanderGlow</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{
- --glass:rgba(255,255,255,.07);
+ --glass:rgba(255,255,255,.065);
  --glass2:rgba(255,255,255,.10);
+ --mint:#7dffd0;
+ --blue:#8cc8ff;
  --text:#f7fbff;
  --muted:rgba(247,251,255,.66);
- --mint:#7dffd0;
- --blue:#7bbcff;
 }
 html,body{margin:0;height:100%;overflow:hidden;background:#010305;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.25) contrast(.86) saturate(.16)}
-body.day #map{filter:grayscale(.85) brightness(.42) contrast(.9) saturate(.25)}
-.glass{background:var(--glass);backdrop-filter:blur(32px) saturate(1.4);-webkit-backdrop-filter:blur(32px) saturate(1.4);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 45px rgba(0,0,0,.34)}
+#map{height:100vh;width:100vw;filter:grayscale(1) brightness(.23) contrast(.84) saturate(.14)}
+body.day #map{filter:grayscale(.88) brightness(.42) contrast(.9) saturate(.22)}
+.glass{background:var(--glass);backdrop-filter:blur(32px) saturate(1.35);-webkit-backdrop-filter:blur(32px) saturate(1.35);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 45px rgba(0,0,0,.34)}
 button{border:0;border-radius:18px;padding:13px 14px;font-size:15px;font-weight:800}
 .sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;color:white;border-radius:32px;padding:14px;transition:.28s ease}
 .sheet.hiddenPanel{transform:translateY(125%);opacity:0;pointer-events:none}
-.collapseHandle{width:54px;height:28px;margin:0 auto 8px;border-radius:99px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:white;font-size:20px}
+.handle{width:58px;height:30px;margin:0 auto 10px;border-radius:99px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:22px}
+.peek{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;width:76px;height:46px;border-radius:99px;font-size:24px;color:white;display:none}
+.peek.show{display:block}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .brand b{font-size:22px}.brand small{color:var(--muted)}
 .start{background:linear-gradient(135deg,#7dffd0,#dffff3);color:#031c13;min-width:98px}
+.dark{background:rgba(255,255,255,.10);color:white}
+.blue{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
+.red{background:rgba(120,20,20,.78);color:white}
 .stats{display:flex;gap:8px;margin-top:12px}
 .box{flex:1;background:var(--glass2);border-radius:20px;padding:9px;text-align:center}
 .box b{font-size:18px}.box span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase}
 .progressBar{height:8px;background:rgba(255,255,255,.10);border-radius:99px;overflow:hidden;margin-top:10px}
-.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#7bbcff)}
+.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#8cc8ff)}
 .actions{display:flex;gap:8px;margin-top:12px}
-.dark{background:rgba(255,255,255,.10);color:white}
-.blue{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
-.red{background:rgba(120,20,20,.78);color:white}
-.fabRight{position:fixed;right:16px;top:58px;display:flex;flex-direction:column;gap:10px;z-index:9999}
-.circle{width:52px;height:52px;border-radius:50%;font-size:20px;color:white}
-.peek{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9998;width:72px;height:44px;border-radius:99px;font-size:24px;color:white;display:none}
-.peek.show{display:block}
-.modal{display:none;position:fixed;left:12px;right:12px;bottom:18px;z-index:10000;color:white;padding:18px;border-radius:30px;max-height:68vh;overflow:auto}
-.handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
+.modal{display:none;position:fixed;left:12px;right:12px;bottom:18px;z-index:10000;color:white;padding:18px;border-radius:30px;max-height:70vh;overflow:auto}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .menuBtn{background:rgba(255,255,255,.09);color:white;text-align:left;padding:16px;border-radius:20px}
 .item{background:rgba(255,255,255,.09);margin:10px 0;padding:13px;border-radius:16px}
-.leaflet-control-attribution{display:none}
 </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="fabRight">
- <button class="circle glass" onclick="centerMe()">📍</button>
- <button class="circle glass" onclick="addPlace()">⭐</button>
- <button class="circle glass" onclick="openMenu()">☰</button>
-</div>
-
 <button id="peekBtn" class="peek glass" onclick="showPanel()">⌃</button>
 
 <div id="sheet" class="sheet glass">
- <div class="collapseHandle" onclick="hidePanel()">⌄</div>
+ <div class="handle" onclick="hidePanel()">⌄</div>
 
  <div class="top">
   <div class="brand">
@@ -84,15 +75,15 @@ button{border:0;border-radius:18px;padding:13px 14px;font-size:15px;font-weight:
 </div>
 
 <div id="menu" class="modal glass">
- <div class="handle"></div>
+ <div class="handle" onclick="closeMenu()">⌄</div>
  <h2>WanderGlow</h2>
- <p style="color:var(--muted)">Свободно двигай карту, смотри куда идти, возвращайся к себе кнопкой 📍 и открывай город шаг за шагом.</p>
+ <p style="color:var(--muted)">Свободно двигай карту. Нажми 📍, чтобы вернуться к себе. Открытые места сохраняются.</p>
 
  <div class="grid">
-  <button class="menuBtn" onclick="toggleMode()">🌙<br>Day / Night</button>
   <button class="menuBtn" onclick="centerMe()">📍<br>My location</button>
+  <button class="menuBtn" onclick="toggleMode()">🌙<br>Day / Night</button>
   <button class="menuBtn" onclick="showPlaces()">⭐<br>My places</button>
-  <button class="menuBtn" onclick="showPanel();closeMenu()">⌃<br>Show panel</button>
+  <button class="menuBtn" onclick="hidePanel();closeMenu()">👁️<br>Hide panel</button>
  </div>
 
  <br>
@@ -103,8 +94,12 @@ button{border:0;border-radius:18px;padding:13px 14px;font-size:15px;font-weight:
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map=L.map('map').setView([56.9496,24.1052],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+const map=L.map('map',{attributionControl:true}).setView([56.9496,24.1052],13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+ maxZoom:19,
+ attribution:'© OpenStreetMap contributors'
+}).addTo(map);
 
 let watch=null,current=null,last=null;
 let follow=true;
@@ -130,15 +125,22 @@ function save(){
 function ui(){
  km.innerText=(total/1000).toFixed(2);
  document.getElementById('zones').innerText=opened.length;
+
  const openedArea=opened.length*Math.PI*25*25;
  const localArea=Math.PI*2000*2000;
  const pct=Math.min(100,(openedArea/localArea)*100);
+
  progress.innerText=pct.toFixed(2)+'%';
  progressFill.style.width=pct+'%';
 }
 
 function drawZone(p){
- L.circle(p,{radius:25,stroke:false,fillColor:'#7dffd0',fillOpacity:.32}).addTo(map);
+ L.circle(p,{
+  radius:25,
+  stroke:false,
+  fillColor:'#7dffd0',
+  fillOpacity:.34
+ }).addTo(map);
 }
 
 function drawPlace(p){
@@ -168,20 +170,25 @@ ui();
 applyPanel();
 
 function start(){
- if(!navigator.geolocation){status.innerText='GPS not supported';return}
+ if(!navigator.geolocation){
+  status.innerText='GPS not supported';
+  return;
+ }
+
  status.innerText='Finding GPS...';
 
  watch=navigator.geolocation.watchPosition(pos=>{
   current=[pos.coords.latitude,pos.coords.longitude];
 
   if(follow){
-    map.setView(current,16);
+   map.setView(current,16);
   }
 
   if(last){
    const d=map.distance(last,current);
    if(d>3&&d<1000)total+=d;
   }
+
   last=current;
 
   if(!opened.some(z=>map.distance(z,current)<22)){
@@ -190,8 +197,16 @@ function start(){
   }
 
   status.innerText=follow?'Exploring...':'Exploring · map free';
-  save();ui();
- },e=>status.innerText='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+  save();
+  ui();
+
+ },e=>{
+  status.innerText='GPS error: '+e.message;
+ },{
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
+ });
 }
 
 function stop(){
@@ -202,18 +217,23 @@ function stop(){
 
 function centerMe(){
  if(current){
-   follow=true;
-   map.setView(current,16);
-   status.innerText='Following you';
- } else {
-   alert('GPS ещё не найден. Нажми Explore.');
+  follow=true;
+  map.setView(current,16);
+  status.innerText='Following you';
+ }else{
+  alert('GPS ещё не найден. Нажми Explore.');
  }
 }
 
 function addPlace(){
- if(!current){alert('Нажми Explore и дождись GPS');return}
+ if(!current){
+  alert('Нажми Explore и дождись GPS');
+  return;
+ }
+
  const name=prompt('Название места:');
  if(!name)return;
+
  const p={name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
  places.push(p);
  drawPlace(p);
@@ -231,14 +251,30 @@ function toggleMode(){
 
 function showPlaces(){
  list.innerHTML='<h3>My places</h3>';
+
+ if(!places.length){
+  list.innerHTML+='<div class="item">Пока нет сохранённых мест.</div>';
+  return;
+ }
+
  places.forEach(p=>{
-  list.innerHTML+=`<div class="item"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><br><button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);follow=false;closeMenu()">Show</button></div>`;
+  list.innerHTML+=`
+   <div class="item">
+    <b>⭐ ${p.name}</b><br>
+    <small>${p.date}</small><br><br>
+    <button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);follow=false;closeMenu()">Show</button>
+   </div>`;
  });
 }
 
 function deleteAll(){
  const t=prompt('Для удаления всех данных напиши DELETE');
- if(t==='DELETE'){localStorage.clear();location.reload()}else alert('Отмена');
+ if(t==='DELETE'){
+  localStorage.clear();
+  location.reload();
+ }else{
+  alert('Отмена');
+ }
 }
 </script>
 </body>
