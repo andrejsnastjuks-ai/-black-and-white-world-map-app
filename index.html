@@ -1,140 +1,142 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>WanderGlow V24.2</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WanderGlow V26</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#05080a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100%;filter:grayscale(1) brightness(.58) contrast(.9)}
-#fog{position:absolute;inset:0;pointer-events:none;z-index:500}
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:sans-serif;
+}
 
-.player{width:9px;height:9px;border-radius:50%;background:#00ffb3;box-shadow:0 0 8px #00ffb3,0 0 18px rgba(0,255,179,.75);position:relative}
-.player:after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(0,255,179,.16);left:50%;top:50%;transform:translate(-50%,-50%)}
+#map{
+  height:100%;
+  filter:grayscale(1) brightness(.6);
+}
 
-.place{width:14px;height:14px;border-radius:50%;background:#ffcc00;border:2px solid #111;box-shadow:0 0 12px rgba(255,204,0,.85)}
+#fog{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
 
-.panel,.menu,.showBtn,.toast{background:rgba(20,20,20,.78);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 18px 45px rgba(0,0,0,.35)}
-.panel{position:absolute;left:10px;right:10px;bottom:15px;z-index:1000;padding:14px;border-radius:22px}
-.panel.hidden{display:none}
-.menu{position:absolute;top:100px;right:12px;z-index:1000;width:150px;padding:10px;border-radius:18px;display:none}
+/* 🔵 PLAYER */
+.player{
+  width:10px;
+  height:10px;
+  background:#00ffb3;
+  border-radius:50%;
+  box-shadow:0 0 10px #00ffb3;
+}
+
+/* UI */
+.panel{
+  position:absolute;
+  bottom:10px;
+  left:10px;
+  right:10px;
+  background:#111;
+  padding:10px;
+  border-radius:10px;
+  color:white;
+}
+
+.menu{
+  position:absolute;
+  top:80px;
+  right:10px;
+  background:#111;
+  padding:10px;
+  border-radius:10px;
+  display:none;
+}
+
 .menu.open{display:block}
-.showBtn{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:1000;display:none;border:0;color:#fff;padding:11px 18px;border-radius:16px}
-.showBtn.visible{display:block}
 
-.row{display:flex;gap:8px;margin-top:8px}
-.stat{flex:1;text-align:center;background:rgba(255,255,255,.075);padding:8px;border-radius:12px}
-.stat b{font-size:20px}.stat small{color:rgba(255,255,255,.65)}
-.btn{flex:1;padding:11px;border-radius:12px;border:0;background:rgba(255,255,255,.09);color:#fff;font-weight:800;font-size:13px;transition:.15s}
-.btn:active{transform:scale(.92);filter:brightness(1.45)}
-.main{background:linear-gradient(90deg,#7dffd0,#baffea);color:#041a13;font-weight:900}
-.main.active{background:linear-gradient(90deg,#4d96ff,#9bd8ff);color:#fff}
+button{
+  width:100%;
+  margin-top:5px;
+  padding:8px;
+  border:0;
+  background:#333;
+  color:white;
+  border-radius:6px;
+}
 
-.progress{height:8px;background:#222;border-radius:8px;margin-top:10px;overflow:hidden}
-.bar{height:100%;width:0%;background:linear-gradient(90deg,#7dffd0,#75bbff);transition:.25s}
-.toast{position:absolute;top:22px;left:18px;right:18px;z-index:2000;padding:12px 15px;border-radius:16px;opacity:0;transition:.25s;font-weight:800}
-.title{font-size:30px;font-weight:900}.status{color:rgba(255,255,255,.65);font-size:18px}.goal{margin-top:8px;font-size:16px;color:rgba(255,255,255,.7)}
-.flash{position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,179,.3),transparent 70%);transform:translate(-50%,-50%);pointer-events:none;z-index:999;animation:flash .65s forwards}
-@keyframes flash{to{transform:translate(-50%,-50%) scale(2);opacity:0}}
+button:active{
+  transform:scale(.95);
+}
+
+.main{
+  background:#00ffb3;
+  color:black;
+  font-weight:bold;
+}
 </style>
 </head>
 
 <body>
+
 <div id="map"></div>
 <canvas id="fog"></canvas>
-<div id="toast" class="toast"></div>
-
-<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
 <div id="menu" class="menu">
-  <button class="btn" onclick="center()">📍</button>
-  <button class="btn" onclick="savePlace()">⭐ Place</button>
-  <button class="btn" onclick="toggleRoute()">Route</button>
-  <button class="btn" onclick="toggleFollow()">Follow</button>
-  <button class="btn" onclick="hideUI()">Hide</button>
-  <button class="btn" onclick="backup()">Backup</button>
-  <button class="btn" onclick="importData()">Import</button>
-  <button class="btn" onclick="reset()">Reset</button>
+  <button onclick="center()">📍 Center</button>
+  <button onclick="toggleFollow()">Follow</button>
 </div>
 
-<div id="panel" class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-    <div>
-      <div class="title">WanderGlow</div>
-      <div id="status" class="status">Ready</div>
-    </div>
-    <button id="exploreBtn" class="btn main" onclick="toggleExplore()">Explore</button>
-  </div>
-
-  <div class="row">
-    <div class="stat"><b id="cellsView">0</b><br><small>Cells</small></div>
-    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
-    <div class="stat"><b id="levelView">1</b><br><small>Level</small></div>
-    <div class="stat"><b id="zonesView">0</b><br><small>Zones</small></div>
-  </div>
-
-  <div class="progress"><div id="bar" class="bar"></div></div>
-  <div id="goalView" class="goal">Goal: open 10 cells</div>
-
-  <div class="row">
-    <button class="btn" onclick="stopExplore()">Stop</button>
-    <button class="btn" onclick="center()">📍</button>
-    <button class="btn" onclick="openMenu()">Menu</button>
-  </div>
+<div class="panel">
+  <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
+  <button onclick="toggleMenu()">Menu</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map("map").setView([56.95,24.1],15);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+let map=L.map('map').setView([56.95,24.1],15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const fog=document.getElementById("fog");
-const ctx=fog.getContext("2d");
+let lat=0,lng=0;
+let marker=null;
+let follow=true;
+let exploring=false;
 
-const statusEl=document.getElementById("status");
-const exploreBtn=document.getElementById("exploreBtn");
-const cellsView=document.getElementById("cellsView");
-const xpView=document.getElementById("xpView");
-const levelView=document.getElementById("levelView");
-const zonesView=document.getElementById("zonesView");
-const bar=document.getElementById("bar");
-const goalView=document.getElementById("goalView");
-const panel=document.getElementById("panel");
-const menu=document.getElementById("menu");
-const showBtn=document.getElementById("showBtn");
-const toastBox=document.getElementById("toast");
+let cells={};
 
-let exploring=false,follow=true,routeVisible=true,firstFix=true;
-let marker=null,lat=null,lng=null;
+let fog=document.getElementById("fog");
+let ctx=fog.getContext("2d");
+fog.width=innerWidth;
+fog.height=innerHeight;
 
-let xp=Number(localStorage.wg_xp||0);
-let cells=JSON.parse(localStorage.wg_cells||"{}");
-let zones=JSON.parse(localStorage.wg_zones||"{}");
-let path=JSON.parse(localStorage.wg_path||"[]");
-let places=JSON.parse(localStorage.wg_places||"[]");
+/* MENU */
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
+}
 
-let route=L.polyline(path,{color:"#7dffd0",weight:4,opacity:.65}).addTo(map);
-let placeMarkers=[];
+/* PLAYER */
+function drawPlayer(){
+  if(!marker){
+    marker=L.marker([lat,lng],{
+      icon:L.divIcon({html:'<div class="player"></div>'})
+    }).addTo(map);
+  }else{
+    marker.setLatLng([lat,lng]);
+  }
+}
 
-function resizeFog(){fog.width=innerWidth;fog.height=innerHeight;drawFog()}
-addEventListener("resize",resizeFog);
-map.on("move zoom",drawFog);
-map.on("dragstart",()=>{follow=false;statusEl.innerText=exploring?"Exploring · Free map":"Free map"});
-resizeFog();
-
-function level(){return Math.floor(xp/100)+1}
-function cellKey(a,b){return Math.floor(a*1000)+"_"+Math.floor(b*1000)}
-function zoneKey(a,b){return Math.floor(a*100)+"_"+Math.floor(b*100)}
-
+/* FOG */
 function reveal(x,y,r){
-  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  let g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(.4,"rgba(0,0,0,.72)");
   g.addColorStop(1,"rgba(0,0,0,0)");
+
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
   ctx.beginPath();
@@ -144,187 +146,54 @@ function reveal(x,y,r){
 }
 
 function drawFog(){
-  ctx.clearRect(0,0,fog.width,fog.height);
-  ctx.fillStyle="rgba(0,0,0,.42)";
+  ctx.fillStyle="rgba(0,0,0,.5)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
   Object.keys(cells).forEach(k=>{
-    const p=k.split("_");
-    const pt=map.latLngToContainerPoint([Number(p[0])/1000,Number(p[1])/1000]);
-    reveal(pt.x,pt.y,100);
+    let p=k.split("_");
+    let pt=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
+    reveal(pt.x,pt.y,80);
   });
 
-  if(lat!==null&&lng!==null){
-    const pt=map.latLngToContainerPoint([lat,lng]);
-    reveal(pt.x,pt.y,160);
-  }
+  let pt=map.latLngToContainerPoint([lat,lng]);
+  reveal(pt.x,pt.y,120);
 }
 
-function save(){
-  localStorage.wg_xp=xp;
-  localStorage.wg_cells=JSON.stringify(cells);
-  localStorage.wg_zones=JSON.stringify(zones);
-  localStorage.wg_path=JSON.stringify(path.slice(-1000));
-  localStorage.wg_places=JSON.stringify(places);
-}
-
-function updateUI(){
-  const c=Object.keys(cells).length;
-  const z=Object.keys(zones).length;
-  cellsView.innerText=c;
-  xpView.innerText=xp;
-  levelView.innerText=level();
-  zonesView.innerText=z;
-  bar.style.width=(xp%100)+"%";
-  goalView.innerText=c<10?"Goal: open 10 cells":z<3?"Goal: discover 3 zones":level()<5?"Goal: reach Level 5":"Goal: explore more";
-  save();
-}
-
-function toast(t){
-  toastBox.innerText=t;
-  toastBox.style.opacity=1;
-  setTimeout(()=>toastBox.style.opacity=0,2200);
-}
-
-function flash(){
-  if(lat===null||lng===null)return;
-  const p=map.latLngToContainerPoint([lat,lng]);
-  const el=document.createElement("div");
-  el.className="flash";
-  el.style.left=p.x+"px";
-  el.style.top=p.y+"px";
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),650);
-}
-
+/* GAME */
 function toggleExplore(){
   exploring=!exploring;
-  exploreBtn.classList.toggle("active",exploring);
-  statusEl.innerText=exploring?(follow?"Exploring · Follow":"Exploring · Free map"):"Paused";
-}
-
-function stopExplore(){
-  exploring=false;
-  exploreBtn.classList.remove("active");
-  statusEl.innerText="Stopped";
-}
-
-function center(){
-  if(lat===null||lng===null){toast("Finding location...");return}
-  follow=true;
-  map.setView([lat,lng],17);
-  statusEl.innerText=exploring?"Exploring · Follow":"Following";
 }
 
 function toggleFollow(){
   follow=!follow;
-  if(follow){center();toast("Follow on")}
-  else{statusEl.innerText="Free map";toast("Follow off")}
 }
 
-function openMenu(){menu.classList.toggle("open")}
-function hideUI(){panel.classList.add("hidden");menu.classList.remove("open");showBtn.classList.add("visible")}
-function showUI(){panel.classList.remove("hidden");showBtn.classList.remove("visible")}
-
-function toggleRoute(){
-  routeVisible=!routeVisible;
-  if(routeVisible){map.addLayer(route);toast("Route shown")}
-  else{map.removeLayer(route);toast("Route hidden")}
+function center(){
+  follow=true;
+  map.setView([lat,lng],16);
 }
 
-function savePlace(){
-  if(lat===null||lng===null){toast("Сначала найди локацию");return}
-  const name=prompt("Название места")||"Place";
-  places.push({name,lat,lng,date:new Date().toLocaleDateString()});
-  drawPlaces();
-  save();
-  toast("⭐ Place saved");
-}
-
-function drawPlaces(){
-  placeMarkers.forEach(m=>map.removeLayer(m));
-  placeMarkers=[];
-  places.forEach((p,i)=>{
-    const m=L.marker([p.lat,p.lng],{
-      icon:L.divIcon({html:'<div class="place"></div>',className:"",iconSize:[18,18],iconAnchor:[9,9]})
-    }).addTo(map).bindPopup("<b>"+p.name+"</b><br><small>"+(p.date||"")+"</small><br><br><button onclick='deletePlace("+i+")'>Delete</button>");
-    placeMarkers.push(m);
-  });
-}
-
-function deletePlace(i){
-  if(!confirm("Удалить место?"))return;
-  places.splice(i,1);
-  drawPlaces();
-  save();
-  toast("Place deleted");
-}
-
-function backup(){
-  const data={xp,cells,zones,path,places,exportedAt:new Date().toISOString()};
-  const text=JSON.stringify(data,null,2);
-  navigator.clipboard.writeText(text).then(()=>toast("Backup copied")).catch(()=>prompt("Copy backup:",text));
-}
-
-function importData(){
-  const text=prompt("Paste backup JSON");
-  if(!text)return;
-  try{
-    const d=JSON.parse(text);
-    xp=Number(d.xp||0);
-    cells=d.cells||{};
-    zones=d.zones||{};
-    path=d.path||[];
-    places=d.places||[];
-    route.setLatLngs(path);
-    drawPlaces();
-    updateUI();
-    drawFog();
-    toast("Import done");
-  }catch(e){toast("Import error")}
-}
-
-function reset(){
-  if(prompt("Для удаления напиши DELETE")!=="DELETE"){toast("Cancelled");return}
-  if(prompt("Подтверди: CONFIRM DELETE")!=="CONFIRM DELETE"){toast("Cancelled");return}
-  localStorage.clear();
-  location.reload();
-}
-
+/* GPS */
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
-  if(!marker){
-    marker=L.marker([lat,lng],{
-      icon:L.divIcon({html:'<div class="player"></div>',className:"",iconSize:[20,20],iconAnchor:[10,10]}),
-      zIndexOffset:10000
-    }).addTo(map).bindPopup("Ты здесь");
-  }else marker.setLatLng([lat,lng]);
+  drawPlayer();
 
-  if(firstFix){map.setView([lat,lng],16);firstFix=false}
-  if(follow)map.setView([lat,lng],16);
-
-  path.push([lat,lng]);
-  if(path.length>1000)path.shift();
-  route.setLatLngs(path);
-
-  if(exploring){
-    const ck=cellKey(lat,lng);
-    const zk=zoneKey(lat,lng);
-
-    if(!cells[ck]){cells[ck]=true;xp+=10;toast("✨ New area +10 XP");flash()}
-    if(!zones[zk]){zones[zk]=true;xp+=50;toast("🌍 New District +50 XP");flash()}
+  if(follow){
+    map.setView([lat,lng],16);
   }
 
-  updateUI();
+  if(exploring){
+    let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
+    cells[key]=true;
+  }
+
+  ctx.clearRect(0,0,fog.width,fog.height);
   drawFog();
 
-},()=>toast("GPS error"),{enableHighAccuracy:true,maximumAge:0,timeout:15000});
-
-drawPlaces();
-updateUI();
-drawFog();
+},()=>alert("GPS error"),{enableHighAccuracy:true});
 </script>
+
 </body>
 </html>
