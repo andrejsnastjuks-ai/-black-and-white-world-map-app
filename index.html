@@ -3,144 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>WanderGlow V20</title>
+<title>WanderGlow V21 FINAL</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-html,body{
-  margin:0;
-  height:100%;
-  background:#000;
-  overflow:hidden;
-  font-family:-apple-system;
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system;color:#fff}
+#map{height:100%;filter:grayscale(1) brightness(.35)}
+#fog{position:absolute;inset:0;pointer-events:none}
 
-#map{
-  height:100%;
-  filter:grayscale(1) brightness(.35);
-}
-
-/* FOG */
-#fog{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:500;
-}
-
-/* PLAYER */
 .player{
-  width:26px;
-  height:26px;
-  border-radius:50%;
-  background:#7dffd0;
-  border:4px solid white;
-  position:relative;
-  box-shadow:0 0 0 10px rgba(125,255,208,.25),0 0 30px #7dffd0;
-  animation:pulse 1.5s infinite;
+  width:28px;height:28px;border-radius:50%;
+  background:#7dffd0;border:4px solid #fff;
+  box-shadow:0 0 0 8px rgba(125,255,208,.3),0 0 30px #7dffd0;
 }
 
-.player::before{
-  content:"";
-  position:absolute;
-  width:6px;
-  height:6px;
-  background:#003328;
-  border-radius:50%;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-}
-
-@keyframes pulse{
-  0%{box-shadow:0 0 0 5px rgba(125,255,208,.5)}
-  70%{box-shadow:0 0 0 30px rgba(125,255,208,0)}
-  100%{box-shadow:0 0 0 5px rgba(125,255,208,0)}
-}
-
-/* UI */
 .panel{
-  position:absolute;
-  bottom:20px;
-  left:10px;
-  right:10px;
-  padding:16px;
-  border-radius:20px;
-  background:rgba(30,30,30,.7);
+  position:absolute;bottom:20px;left:10px;right:10px;
+  background:rgba(20,20,20,.7);
   backdrop-filter:blur(20px);
-  color:white;
+  padding:14px;border-radius:18px;
 }
 
-.hidden{display:none;}
-
-.showBtn{
-  position:absolute;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#222;
-  color:white;
-  padding:10px 16px;
-  border-radius:12px;
+.menu{
+  position:absolute;top:70px;right:10px;
+  background:rgba(20,20,20,.8);
+  padding:10px;border-radius:16px;
   display:none;
 }
-
-.row{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-
-.stat{
-  flex:1;
-  text-align:center;
-  background:rgba(255,255,255,.05);
-  padding:10px;
-  border-radius:10px;
-}
+.menu.open{display:block}
+.menu.small{width:60px}
+.menu.small div{display:none}
 
 .btn{
-  flex:1;
-  padding:12px;
-  border-radius:12px;
-  border:none;
-  background:#333;
-  color:white;
+  padding:10px;border-radius:10px;
+  background:#333;color:#fff;border:0;
+  margin:3px;
 }
+.btn:active{transform:scale(.9)}
+.main{background:#7dffd0;color:#000;font-weight:bold}
 
-.btn:active{
-  transform:scale(.9);
-}
+.row{display:flex;gap:8px;margin-top:8px}
+.stat{flex:1;text-align:center;background:#222;padding:8px;border-radius:10px}
 
-.main{
-  background:linear-gradient(90deg,#7dffd0,#baffea);
-  color:black;
-}
+.barWrap{height:6px;background:#222;border-radius:6px;margin-top:8px}
+.bar{height:100%;width:0%;background:#7dffd0}
 
-.progress{
-  height:6px;
-  background:#222;
-  margin-top:10px;
-  border-radius:6px;
+.showBtn{
+  position:absolute;bottom:20px;left:50%;
+  transform:translateX(-50%);
+  display:none;
 }
-
-.bar{
-  height:100%;
-  width:0%;
-  background:#7dffd0;
-}
+.showBtn.visible{display:block}
+.hidden{display:none}
 
 .toast{
-  position:absolute;
-  top:20px;
-  left:50%;
+  position:absolute;top:20px;left:50%;
   transform:translateX(-50%);
-  background:#333;
-  padding:10px;
-  border-radius:10px;
-  opacity:0;
+  background:#333;padding:8px 12px;border-radius:8px;
+  opacity:0;transition:.3s;
 }
 </style>
 </head>
@@ -149,75 +70,70 @@ html,body{
 
 <div id="map"></div>
 <canvas id="fog"></canvas>
+
 <div id="toast" class="toast"></div>
 
-<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
+<button id="showBtn" class="showBtn btn" onclick="showUI()">Show UI</button>
+
+<div id="menu" class="menu">
+  <button class="btn main" onclick="toggleMenu()">☰</button>
+  <div>
+    <button class="btn" onclick="center()">📍</button>
+    <button class="btn" onclick="hideUI()">Hide</button>
+    <button class="btn" onclick="backup()">Backup</button>
+    <button class="btn" onclick="clearAll()">Reset</button>
+  </div>
+</div>
 
 <div id="panel" class="panel">
-
-<div style="display:flex;justify-content:space-between;">
-  <div>
-    <b>WanderGlow</b><br>
-    <span id="status">Ready</span>
+  <div style="display:flex;justify-content:space-between">
+    <div>
+      <b>WanderGlow</b><br>
+      <span id="status">Ready</span>
+    </div>
+    <button id="exploreBtn" class="btn main" onclick="toggle()">Explore</button>
   </div>
-  <button class="btn main" onclick="toggle()">Explore</button>
-</div>
 
-<div class="row">
-  <div class="stat"><div id="cells">0</div><small>Cells</small></div>
-  <div class="stat"><div id="xp">0</div><small>XP</small></div>
-  <div class="stat"><div id="level">1</div><small>Level</small></div>
-</div>
+  <div class="row">
+    <div class="stat"><b id="cells">0</b><br>Cells</div>
+    <div class="stat"><b id="xp">0</b><br>XP</div>
+    <div class="stat"><b id="level">1</b><br>Level</div>
+  </div>
 
-<div class="progress"><div id="bar" class="bar"></div></div>
+  <div class="barWrap"><div id="bar" class="bar"></div></div>
 
-<div class="row">
-  <button class="btn" onclick="stop()">Stop</button>
-  <button class="btn" onclick="center()">📍</button>
-  <button class="btn" onclick="hideUI()">Hide</button>
-</div>
-
+  <div class="row">
+    <button class="btn" onclick="stop()">Stop</button>
+    <button class="btn" onclick="center()">📍</button>
+    <button class="btn" onclick="menuToggle()">Menu</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-
-let map = L.map('map').setView([56.95,24.1],15);
-
+let map=L.map('map').setView([56.95,24.1],15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 /* STATE */
-let exploring=false;
-let marker=null;
-let lat=0,lng=0;
-let lastCell=null;
-
+let exploring=false,marker=null,lat=0,lng=0;
 let xp=Number(localStorage.xp||0);
 let cells=JSON.parse(localStorage.cells||"{}");
 let path=JSON.parse(localStorage.path||"[]");
 
-/* LEVEL */
-function getLevel(){ return Math.floor(xp/100)+1 }
-
-/* ROUTE */
 let line=L.polyline(path,{color:'#7dffd0'}).addTo(map);
 
 /* FOG */
 let fog=document.getElementById("fog");
 let ctx=fog.getContext("2d");
 
-function resize(){
-  fog.width=window.innerWidth;
-  fog.height=window.innerHeight;
-}
+function resize(){fog.width=innerWidth;fog.height=innerHeight}
 resize();
 
 function reveal(x,y,r){
   let g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
   g.addColorStop(1,"rgba(0,0,0,0)");
-
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
   ctx.beginPath();
@@ -230,46 +146,48 @@ function drawFog(){
   ctx.fillStyle="rgba(0,0,0,.65)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  Object.keys(cells).forEach(key=>{
-    let p=key.split("_");
-    let point=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
-    reveal(point.x,point.y,80);
+  Object.keys(cells).forEach(k=>{
+    let p=k.split("_");
+    let pt=map.latLngToContainerPoint([p[0]/1000,p[1]/1000]);
+    reveal(pt.x,pt.y,80);
   });
 
-  let p=map.latLngToContainerPoint([lat,lng]);
-  reveal(p.x,p.y,120);
+  let pt=map.latLngToContainerPoint([lat,lng]);
+  reveal(pt.x,pt.y,120);
 }
 
 /* UI */
-function hideUI(){
-  panel.classList.add("hidden");
-  showBtn.style.display="block";
-}
-function showUI(){
-  panel.classList.remove("hidden");
-  showBtn.style.display="none";
+function toggle(){exploring=!exploring;status.innerText=exploring?"Exploring":"Paused"}
+function stop(){exploring=false;status.innerText="Stopped"}
+function center(){map.setView([lat,lng],17)}
+function menuToggle(){menu.classList.toggle("open")}
+function toggleMenu(){menu.classList.toggle("small")}
+function hideUI(){panel.classList.add("hidden");showBtn.classList.add("visible")}
+function showUI(){panel.classList.remove("hidden");showBtn.classList.remove("visible")}
+
+function backup(){
+  navigator.clipboard.writeText(JSON.stringify({xp,cells,path},null,2));
+  toast("Backup saved");
 }
 
-function toggle(){
-  exploring=!exploring;
-  status.innerText=exploring?"Exploring":"Paused";
+function clearAll(){
+  if(prompt("Type DELETE")!=="DELETE")return;
+  localStorage.clear();
+  location.reload();
 }
 
-function stop(){
-  exploring=false;
-  status.innerText="Stopped";
-}
-
-function center(){
-  map.setView([lat,lng],17);
+function toast(t){
+  toastEl.innerText=t;
+  toastEl.style.opacity=1;
+  setTimeout(()=>toastEl.style.opacity=0,2000);
 }
 
 /* UPDATE */
 function update(){
-  document.getElementById("cells").innerText=Object.keys(cells).length;
-  document.getElementById("xp").innerText=xp;
-  document.getElementById("level").innerText=getLevel();
-  document.getElementById("bar").style.width=(xp%100)+"%";
+  cellsEl.innerText=Object.keys(cells).length;
+  xpEl.innerText=xp;
+  levelEl.innerText=Math.floor(xp/100)+1;
+  bar.style.width=(xp%100)+"%";
 
   localStorage.xp=xp;
   localStorage.cells=JSON.stringify(cells);
@@ -277,34 +195,24 @@ function update(){
 
 /* GPS */
 navigator.geolocation.watchPosition(pos=>{
-
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
   if(!marker){
     marker=L.marker([lat,lng],{
-      icon:L.divIcon({
-        html:'<div class="player"></div>',
-        className:'',
-        iconSize:[26,26]
-      })
+      icon:L.divIcon({html:'<div class="player"></div>'})
     }).addTo(map);
-  }else{
-    marker.setLatLng([lat,lng]);
-  }
+  }else marker.setLatLng([lat,lng]);
 
   map.setView([lat,lng],16);
 
-  /* PATH */
   path.push([lat,lng]);
-  if(path.length>600) path.shift();
+  if(path.length>600)path.shift();
   line.setLatLngs(path);
   localStorage.path=JSON.stringify(path);
 
-  /* GAME */
   if(exploring){
     let key=Math.floor(lat*1000)+"_"+Math.floor(lng*1000);
-
     if(!cells[key]){
       cells[key]=true;
       xp+=10;
@@ -312,12 +220,23 @@ navigator.geolocation.watchPosition(pos=>{
     }
   }
 
+  ctx.clearRect(0,0,fog.width,fog.height);
   drawFog();
 
 },()=>alert("GPS error"),{enableHighAccuracy:true});
 
 update();
 
+/* refs */
+let status=document.getElementById("status");
+let cellsEl=document.getElementById("cells");
+let xpEl=document.getElementById("xp");
+let levelEl=document.getElementById("level");
+let bar=document.getElementById("bar");
+let panel=document.getElementById("panel");
+let menu=document.getElementById("menu");
+let showBtn=document.getElementById("showBtn");
+let toastEl=document.getElementById("toast");
 </script>
 
 </body>
