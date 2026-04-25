@@ -6,35 +6,64 @@
 <title>WanderGlow</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-:root{--mint:#2ff5a8;--glass:rgba(16,22,28,.48);--soft:rgba(255,255,255,.10)}
-html,body{margin:0;height:100%;background:#071015;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden}
-#map{height:100vh;width:100vw;filter:grayscale(.55) brightness(.68) contrast(1.04)}
-#fogCanvas{position:fixed;inset:0;z-index:450;pointer-events:none}
-.sheet{position:fixed;left:14px;right:14px;bottom:18px;z-index:9999;background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:white;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:14px;box-shadow:0 18px 45px rgba(0,0,0,.38)}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.brand b{font-size:22px}.brand small{opacity:.75}
-.stats{display:flex;gap:8px;margin-top:12px}.box{flex:1;background:var(--soft);border-radius:18px;padding:9px;text-align:center}.box b{font-size:18px}.box span{display:block;font-size:11px;opacity:.75;text-transform:uppercase}
-button{border:0;border-radius:16px;padding:13px;font-weight:800;font-size:15px}
-.start{background:linear-gradient(135deg,#2ff5a8,#8affd6);color:#031d14;min-width:96px}.dark{background:rgba(255,255,255,.10);color:white}.blue{background:#4da3ff;color:white}.red{background:#7a1212;color:white}
-.fab{position:fixed;right:16px;bottom:138px;display:flex;flex-direction:column;gap:10px;z-index:9999}.circle{width:52px;height:52px;border-radius:50%;font-size:20px;background:var(--glass);color:white;border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(20px)}
-.modal{display:none;position:fixed;left:0;right:0;bottom:0;top:18%;z-index:10000;background:rgba(10,15,20,.82);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);color:white;padding:20px;border-radius:30px 30px 0 0;overflow:auto}
-.handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.menuBtn{background:rgba(255,255,255,.10);color:white;text-align:left;padding:16px;border-radius:20px}
-.item{background:rgba(255,255,255,.09);margin:10px 0;padding:13px;border-radius:16px}
+:root{
+  --glass:rgba(18,25,32,.34);
+  --glass2:rgba(255,255,255,.12);
+  --mint:#63f7bf;
+  --blue:#74b9ff;
+}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b1218;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#mapColor,#mapGray{position:fixed;inset:0;height:100vh;width:100vw}
+#mapColor{z-index:1}
+#mapGray{z-index:2;filter:grayscale(1) brightness(.78) contrast(.95) sepia(.08) hue-rotate(165deg)}
+#fogCanvas{position:fixed;inset:0;z-index:3;pointer-events:none}
 .leaflet-control-attribution{display:none}
+
+.glass{
+  background:var(--glass);
+  backdrop-filter:blur(26px);
+  -webkit-backdrop-filter:blur(26px);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 18px 45px rgba(0,0,0,.25);
+}
+.sheet{
+  position:fixed;left:14px;right:14px;bottom:18px;z-index:20;
+  color:white;border-radius:28px;padding:14px;
+}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand b{font-size:22px}.brand small{opacity:.78}
+.stats{display:flex;gap:8px;margin-top:12px}
+.box{flex:1;background:var(--glass2);border-radius:18px;padding:9px;text-align:center}
+.box b{font-size:18px}.box span{display:block;font-size:11px;opacity:.75;text-transform:uppercase}
+button{border:0;border-radius:16px;padding:13px 14px;font-size:15px;font-weight:800}
+.start{background:linear-gradient(135deg,#63f7bf,#b4ffe2);color:#062015;min-width:96px}
+.dark{background:rgba(255,255,255,.13);color:white}
+.blue{background:linear-gradient(135deg,#4d96ff,#8ed5ff);color:white}
+.red{background:rgba(130,20,20,.8);color:white}
+.fab{position:fixed;right:16px;bottom:138px;display:flex;flex-direction:column;gap:10px;z-index:20}
+.circle{width:52px;height:52px;border-radius:50%;font-size:20px;color:white}
+.modal{
+  display:none;position:fixed;left:0;right:0;bottom:0;top:18%;z-index:30;
+  color:white;padding:20px;border-radius:30px 30px 0 0;overflow:auto;
+}
+.handle{width:46px;height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin:0 auto 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menuBtn{background:rgba(255,255,255,.11);color:white;text-align:left;padding:16px;border-radius:20px}
+.item{background:rgba(255,255,255,.10);margin:10px 0;padding:13px;border-radius:16px}
 </style>
 </head>
 <body>
 
-<div id="map"></div>
+<div id="mapColor"></div>
+<div id="mapGray"></div>
 <canvas id="fogCanvas"></canvas>
 
 <div class="fab">
-  <button class="circle" onclick="addPlace()">⭐</button>
-  <button class="circle" onclick="openMenu()">☰</button>
+  <button class="circle glass" onclick="addPlace()">⭐</button>
+  <button class="circle glass" onclick="openMenu()">☰</button>
 </div>
 
-<div class="sheet">
+<div class="sheet glass">
   <div class="top">
     <div class="brand">
       <b>WanderGlow</b><br>
@@ -49,10 +78,10 @@ button{border:0;border-radius:16px;padding:13px;font-weight:800;font-size:15px}
   </div>
 </div>
 
-<div id="menu" class="modal">
+<div id="menu" class="modal glass">
   <div class="handle"></div>
   <h2>WanderGlow</h2>
-  <p style="opacity:.75">Открывай мир вокруг себя. Карта становится цветной там, где ты был.</p>
+  <p style="opacity:.75">Открывай мир вокруг себя. Цветными остаются только места, где ты уже был.</p>
   <div class="grid">
     <button class="menuBtn" onclick="loadNearbyGems()">✨<br>Find gems</button>
     <button class="menuBtn" onclick="showGems()">🗺️<br>Nearby gems</button>
@@ -67,8 +96,22 @@ button{border:0;border-radius:16px;padding:13px;font-weight:800;font-size:15px}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map=L.map('map').setView([56.9496,24.1052],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+const colorMap=L.map('mapColor',{zoomControl:false,attributionControl:false}).setView([56.9496,24.1052],13);
+const grayMap=L.map('mapGray',{zoomControl:true,attributionControl:false}).setView([56.9496,24.1052],13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(colorMap);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(grayMap);
+
+let syncing=false;
+function sync(from,to){
+  if(syncing)return;
+  syncing=true;
+  to.setView(from.getCenter(),from.getZoom(),{animate:false});
+  syncing=false;
+  drawFog();
+}
+colorMap.on('move zoom',()=>sync(colorMap,grayMap));
+grayMap.on('move zoom',()=>sync(grayMap,colorMap));
 
 const canvas=document.getElementById('fogCanvas');
 const ctx=canvas.getContext('2d');
@@ -82,11 +125,54 @@ let unlocked=JSON.parse(localStorage.unlockedGems||'[]');
 let gemMarkers=[];
 
 function resizeCanvas(){
-  const w=window.innerWidth,h=window.innerHeight,d=window.devicePixelRatio||1;
-  canvas.width=w*d;canvas.height=h*d;
-  canvas.style.width=w+'px';canvas.style.height=h+'px';
+  const w=document.documentElement.clientWidth;
+  const h=document.documentElement.clientHeight;
+  const d=window.devicePixelRatio||1;
+  canvas.width=w*d;
+  canvas.height=h*d;
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
   ctx.setTransform(d,0,0,d,0,0);
   drawFog();
+}
+
+function drawFog(){
+  const w=document.documentElement.clientWidth;
+  const h=document.documentElement.clientHeight;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.fillStyle='rgba(245,245,245,0.01)';
+  ctx.fillRect(0,0,w,h);
+
+  zonesData.forEach(z=>{
+    const p=grayMap.latLngToContainerPoint(z);
+    const r=metersToPixels(z,24);
+    ctx.globalCompositeOperation='destination-out';
+
+    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+    g.addColorStop(0,'rgba(0,0,0,1)');
+    g.addColorStop(.72,'rgba(0,0,0,.82)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  grayMap.getContainer().style.webkitMaskImage = canvasToMask();
+  grayMap.getContainer().style.maskImage = canvasToMask();
+  ctx.globalCompositeOperation='source-over';
+}
+
+function canvasToMask(){
+  return 'url('+canvas.toDataURL()+')';
+}
+
+function metersToPixels(latlng,meters){
+  const p1=grayMap.latLngToContainerPoint(latlng);
+  const lng=latlng[1]+meters/(111320*Math.cos(latlng[0]*Math.PI/180));
+  const p2=grayMap.latLngToContainerPoint([latlng[0],lng]);
+  return Math.max(16,Math.min(90,Math.abs(p2.x-p1.x)));
 }
 
 function save(){
@@ -103,101 +189,41 @@ function ui(){
   gems.innerText=unlocked.length;
 }
 
-function metersToPixels(latlng,meters){
-  const p1=map.latLngToContainerPoint(latlng);
-  const lng=latlng[1]+meters/(111320*Math.cos(latlng[0]*Math.PI/180));
-  const p2=map.latLngToContainerPoint([latlng[0],lng]);
-  return Math.max(14,Math.min(90,Math.abs(p2.x-p1.x)));
+function drawPlace(p){
+  L.marker([p.lat,p.lng]).addTo(colorMap).bindPopup('⭐ '+p.name);
 }
 
-function drawFog(){
-  const w=window.innerWidth,h=window.innerHeight;
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle='rgba(9,13,17,.62)';
-  ctx.fillRect(0,0,w,h);
-  ctx.globalCompositeOperation='destination-out';
-
-  zonesData.forEach(z=>{
-    const p=map.latLngToContainerPoint(z);
-    const r=metersToPixels(z,24);
-    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
-    g.addColorStop(0,'rgba(0,0,0,1)');
-    g.addColorStop(.65,'rgba(0,0,0,.72)');
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=g;
-    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
-  });
-
-  ctx.globalCompositeOperation='source-over';
+function clearGemMarkers(){
+  gemMarkers.forEach(m=>colorMap.removeLayer(m));
+  gemMarkers=[];
 }
-
-function iconFor(tags){
-  if(tags.tourism) return '🏛️';
-  if(tags.historic) return '🏰';
-  if(tags.amenity==='restaurant'||tags.amenity==='cafe') return '🍽️';
-  if(tags.leisure==='park') return '🌳';
-  if(tags.natural) return '🌿';
-  return '✨';
-}
-
-function clearGemMarkers(){gemMarkers.forEach(m=>map.removeLayer(m));gemMarkers=[]}
 
 function drawGems(){
   clearGemMarkers();
   gemsData.forEach(g=>{
     const done=unlocked.includes(g.id);
-    const marker=L.marker([g.lat,g.lng]).addTo(map).bindPopup((done?'✅ ':'🔒 ')+g.icon+' '+g.name);
-    gemMarkers.push(marker);
+    const m=L.marker([g.lat,g.lng]).addTo(colorMap).bindPopup((done?'✅ ':'🔒 ')+g.icon+' '+g.name);
+    gemMarkers.push(m);
   });
 }
 
-function drawPlace(p){L.marker([p.lat,p.lng]).addTo(map).bindPopup('⭐ '+p.name)}
+function iconFor(tags){
+  if(tags.tourism)return'🏛️';
+  if(tags.historic)return'🏰';
+  if(tags.amenity==='restaurant'||tags.amenity==='cafe')return'🍽️';
+  if(tags.leisure==='park')return'🌳';
+  if(tags.natural)return'🌿';
+  return'✨';
+}
 
 places.forEach(drawPlace);
 drawGems();
 ui();
-resizeCanvas();
 
-map.on('move zoom resize',drawFog);
 window.addEventListener('resize',resizeCanvas);
-setTimeout(resizeCanvas,600);
-
-async function loadNearbyGems(){
-  if(!current){alert('Нажми Explore и дождись GPS');return}
-  status.innerText='Searching nearby gems...';
-
-  const lat=current[0],lng=current[1];
-  const radius=2500;
-
-  const query=`
-  [out:json][timeout:25];
-  (
-    node(around:${radius},${lat},${lng})["tourism"];
-    node(around:${radius},${lat},${lng})["historic"];
-    node(around:${radius},${lat},${lng})["amenity"~"restaurant|cafe"];
-    node(around:${radius},${lat},${lng})["leisure"="park"];
-    node(around:${radius},${lat},${lng})["natural"];
-  );
-  out center 40;
-  `;
-
-  try{
-    const url='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query);
-    const res=await fetch(url);
-    const data=await res.json();
-
-    gemsData=data.elements
-      .filter(e=>e.lat&&e.lon&&e.tags&&e.tags.name)
-      .slice(0,40)
-      .map(e=>({id:String(e.id),name:e.tags.name,lat:e.lat,lng:e.lon,icon:iconFor(e.tags)}));
-
-    save();drawGems();showGems();
-    status.innerText='Gems found ✨';
-  }catch(e){
-    status.innerText='Could not load gems';
-    alert('Не удалось загрузить интересные места. Попробуй позже.');
-  }
-}
+window.addEventListener('orientationchange',()=>setTimeout(resizeCanvas,500));
+setTimeout(resizeCanvas,300);
+setTimeout(resizeCanvas,1000);
 
 function start(){
   if(!navigator.geolocation){status.innerText='GPS not supported';return}
@@ -205,21 +231,21 @@ function start(){
 
   watch=navigator.geolocation.watchPosition(pos=>{
     current=[pos.coords.latitude,pos.coords.longitude];
-    map.setView(current,16);
+    grayMap.setView(current,16);
 
     if(last){
-      let d=map.distance(last,current);
-      if(d>3&&d<1000) total+=d;
+      const d=grayMap.distance(last,current);
+      if(d>3&&d<1000)total+=d;
     }
     last=current;
 
-    if(!zonesData.some(z=>map.distance(z,current)<18)){
+    if(!zonesData.some(z=>grayMap.distance(z,current)<18)){
       zonesData.push(current);
       drawFog();
     }
 
     gemsData.forEach(g=>{
-      if(!unlocked.includes(g.id)&&map.distance(current,[g.lat,g.lng])<80){
+      if(!unlocked.includes(g.id)&&grayMap.distance(current,[g.lat,g.lng])<80){
         unlocked.push(g.id);
         alert('✨ New place discovered: '+g.name);
         drawGems();
@@ -231,21 +257,51 @@ function start(){
   },e=>status.innerText='GPS error: '+e.message,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
 
+async function loadNearbyGems(){
+  if(!current){alert('Нажми Explore и дождись GPS');return}
+  status.innerText='Searching nearby gems...';
+
+  const lat=current[0],lng=current[1],radius=2500;
+  const query=`
+  [out:json][timeout:25];
+  (
+    node(around:${radius},${lat},${lng})["tourism"];
+    node(around:${radius},${lat},${lng})["historic"];
+    node(around:${radius},${lat},${lng})["amenity"~"restaurant|cafe"];
+    node(around:${radius},${lat},${lng})["leisure"="park"];
+    node(around:${radius},${lat},${lng})["natural"];
+  );
+  out 40;
+  `;
+  try{
+    const res=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));
+    const data=await res.json();
+    gemsData=data.elements.filter(e=>e.lat&&e.lon&&e.tags&&e.tags.name).slice(0,40).map(e=>({
+      id:String(e.id),name:e.tags.name,lat:e.lat,lng:e.lon,icon:iconFor(e.tags)
+    }));
+    save();drawGems();showGems();status.innerText='Gems found ✨';
+  }catch(e){
+    status.innerText='Could not load gems';
+    alert('Не удалось загрузить интересные места. Попробуй позже.');
+  }
+}
+
 function addPlace(){
   if(!current){alert('Нажми Explore и дождись GPS');return}
-  let name=prompt('Название места:');if(!name)return;
-  let p={name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
+  const name=prompt('Название места:');
+  if(!name)return;
+  const p={name,lat:current[0],lng:current[1],date:new Date().toLocaleDateString()};
   places.push(p);drawPlace(p);save();ui();
 }
 
 function openMenu(){menu.style.display='block'}
 function closeMenu(){menu.style.display='none'}
-function centerMe(){if(current)map.setView(current,16);else alert('GPS ещё не найден')}
+function centerMe(){if(current)grayMap.setView(current,16);else alert('GPS ещё не найден')}
 
 function showPlaces(){
   list.innerHTML='<h3>My places</h3>';
   places.forEach(p=>{
-    list.innerHTML+=`<div class="item"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><br><button class="blue" onclick="map.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
+    list.innerHTML+=`<div class="item"><b>⭐ ${p.name}</b><br><small>${p.date}</small><br><br><button class="blue" onclick="grayMap.setView([${p.lat},${p.lng}],17);closeMenu()">Show</button></div>`;
   });
 }
 
@@ -253,12 +309,12 @@ function showGems(){
   list.innerHTML='<h3>Nearby gems</h3>';
   gemsData.forEach(g=>{
     const done=unlocked.includes(g.id);
-    list.innerHTML+=`<div class="item"><b>${done?'✅':'🔒'} ${g.icon} ${g.name}</b><br><br><button class="blue" onclick="map.setView([${g.lat},${g.lng}],17);closeMenu()">Go</button></div>`;
+    list.innerHTML+=`<div class="item"><b>${done?'✅':'🔒'} ${g.icon} ${g.name}</b><br><br><button class="blue" onclick="grayMap.setView([${g.lat},${g.lng}],17);closeMenu()">Go</button></div>`;
   });
 }
 
 function deleteAll(){
-  let t=prompt('Для удаления всех данных напиши DELETE');
+  const t=prompt('Для удаления всех данных напиши DELETE');
   if(t==='DELETE'){localStorage.clear();location.reload()}else alert('Отмена');
 }
 </script>
