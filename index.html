@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 006 PRO MAX PREMIUM A</title>
+<title>WanderGlow 006 PRO MAX PREMIUM B FINAL</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
@@ -201,10 +201,6 @@ button:active{
 .pauseBtn.paused,.lockBtn.locked,.followBtn.on{
   background:linear-gradient(135deg,#ffd43b,#fff1a8);
   color:#201600;
-}
-
-.followBtn.on small{
-  color:#00ff72;
 }
 
 #hud{
@@ -456,8 +452,9 @@ button:active{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const KEY="wg_006_premium_a_";
+const KEY="wg_006_pro_max_premium_b_final_";
 const OLD_KEYS=[
+  "wg_006_premium_a_",
   "wg_006_stable_full_",
   "wg_006_pro_max_ultra_full_",
   "wg_006_pro_max_gps_final_",
@@ -482,7 +479,8 @@ function loadValue(name,fallback){
 }
 
 function safeJSON(text,fallback){
-  try{return JSON.parse(text)}catch(e){return fallback}
+  try{return JSON.parse(text)}
+  catch(e){return fallback}
 }
 
 const map=L.map("map",{zoomControl:true,preferCanvas:true}).setView([56.95,24.1],15);
@@ -493,10 +491,21 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
 }).addTo(map);
 
 let lat=null,lng=null,accuracy=null;
-let exploring=false,paused=false,indoorLock=false,firstFix=true,routeVisible=true;
-let followMe=true,suppressMapEvent=false;
-let lastAccepted=null,lastSmooth=null,fogQueued=false,lastSave=0,gpsQueue=[];
-let gpsStarted=false,watchId=null;
+let exploring=false;
+let paused=false;
+let indoorLock=false;
+let firstFix=true;
+let routeVisible=true;
+let followMe=true;
+let suppressMapEvent=false;
+let lastAccepted=null;
+let lastSmooth=null;
+let fogQueued=false;
+let lastSave=0;
+let lastDraw=0;
+let gpsQueue=[];
+let gpsStarted=false;
+let watchId=null;
 
 let walked=Number(loadValue("walked",0));
 let explored=Number(loadValue("explored",0));
@@ -509,56 +518,151 @@ let currentTrip=safeJSON(loadValue("currentTrip","null"),null);
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
-const routeGlow=L.polyline(routePath,{color:"#7dffd4",weight:9,opacity:.18,smoothFactor:1.5}).addTo(map);
-const routeLine=L.polyline(routePath,{color:"#00ff88",weight:4,opacity:.85,smoothFactor:1.5}).addTo(map);
-const previewLine=L.polyline([],{color:"#ffffff",weight:5,opacity:.75,dashArray:"8 10",smoothFactor:1.5}).addTo(map);
+const routeGlow=L.polyline(routePath,{
+  color:"#7dffd4",
+  weight:9,
+  opacity:.18,
+  smoothFactor:1.5
+}).addTo(map);
+
+const routeLine=L.polyline(routePath,{
+  color:"#00ff88",
+  weight:4,
+  opacity:.85,
+  smoothFactor:1.5
+}).addTo(map);
+
+const previewLine=L.polyline([],{
+  color:"#ffffff",
+  weight:5,
+  opacity:.75,
+  dashArray:"8 10",
+  smoothFactor:1.5
+}).addTo(map);
 
 const modes={
-  walk:{label:"Walk",icon:"🚶",radius:25,step:20,keyScale:4000,maxAccuracy:45,minDistance:8,maxJump:45,maxSpeed:3,bridge:35},
-  car:{label:"Car",icon:"🚗",radius:35,step:20,keyScale:2000,maxAccuracy:70,minDistance:15,maxJump:120,maxSpeed:40,bridge:90},
-  train:{label:"Train",icon:"🚆",radius:70,step:45,keyScale:1200,maxAccuracy:100,minDistance:20,maxJump:600,maxSpeed:90,bridge:220},
-  plane:{label:"Plane",icon:"✈️",radius:300,step:90,keyScale:300,maxAccuracy:500,minDistance:80,maxJump:30000,maxSpeed:300,bridge:2000}
+  walk:{
+    label:"Walk",
+    icon:"🚶",
+    radius:25,
+    step:20,
+    keyScale:4000,
+    maxAccuracy:45,
+    minDistance:8,
+    maxJump:45,
+    maxSpeed:3,
+    bridge:35
+  },
+  car:{
+    label:"Car",
+    icon:"🚗",
+    radius:35,
+    step:20,
+    keyScale:2000,
+    maxAccuracy:70,
+    minDistance:15,
+    maxJump:120,
+    maxSpeed:40,
+    bridge:90
+  },
+  train:{
+    label:"Train",
+    icon:"🚆",
+    radius:70,
+    step:45,
+    keyScale:1200,
+    maxAccuracy:100,
+    minDistance:20,
+    maxJump:600,
+    maxSpeed:90,
+    bridge:220
+  },
+  plane:{
+    label:"Plane",
+    icon:"✈️",
+    radius:300,
+    step:90,
+    keyScale:300,
+    maxAccuracy:500,
+    minDistance:80,
+    maxJump:30000,
+    maxSpeed:300,
+    bridge:2000
+  }
 };
 
 setTimeout(()=>map.invalidateSize(),300);
 setTimeout(()=>map.invalidateSize(),1000);
-setTimeout(()=>{if(lat===null||lng===null){map.setView([56.95,24.1],13);requestFogDraw()}},3000);
+setTimeout(()=>{
+  if(lat===null||lng===null){
+    map.setView([56.95,24.1],13);
+    safeDrawFog();
+  }
+},3000);
 
-function currentMode(){return modes[mode]||modes.walk}
+function currentMode(){
+  return modes[mode]||modes.walk;
+}
 
 function resizeFog(){
   fog.width=window.innerWidth;
   fog.height=window.innerHeight;
-  requestFogDraw();
+  safeDrawFog();
   updateUserDot();
   updateAccuracyCircle();
 }
 
 window.addEventListener("resize",resizeFog);
-map.on("move zoom",()=>{requestFogDraw();updateUserDot();updateAccuracyCircle()});
-map.on("dragstart",()=>{if(!suppressMapEvent){followMe=false;updateUI();toast("Follow off")}});
+
+map.on("move zoom",()=>{
+  safeDrawFog();
+  updateUserDot();
+  updateAccuracyCircle();
+});
+
+map.on("dragstart",()=>{
+  if(!suppressMapEvent){
+    followMe=false;
+    updateUI();
+    toast("Follow off");
+  }
+});
+
 resizeFog();
 
 function startGPS(){
   if(gpsStarted)return;
   gpsStarted=true;
+
   if(!navigator.geolocation){
     document.getElementById("status").innerText="GPS unavailable";
     toast("GPS unavailable");
     return;
   }
+
   watchId=navigator.geolocation.watchPosition(onGPS,onGPSError,{
     enableHighAccuracy:true,
     maximumAge:0,
     timeout:15000
   });
 }
+
 setTimeout(startGPS,700);
 
 function requestFogDraw(){
   if(fogQueued)return;
   fogQueued=true;
-  requestAnimationFrame(()=>{fogQueued=false;drawFog()});
+  requestAnimationFrame(()=>{
+    fogQueued=false;
+    drawFog();
+  });
+}
+
+function safeDrawFog(){
+  const now=performance.now();
+  if(now-lastDraw<100)return;
+  lastDraw=now;
+  requestFogDraw();
 }
 
 function formatMeters(m){
@@ -567,7 +671,10 @@ function formatMeters(m){
 
 function formatDate(ts){
   const d=new Date(ts);
-  return d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  return d.toLocaleDateString()+" "+d.toLocaleTimeString([],{
+    hour:"2-digit",
+    minute:"2-digit"
+  });
 }
 
 function getCountry(a,b){
@@ -586,7 +693,10 @@ function keyCenter(key){
   const parts=key.split("_");
   const keyMode=parts[0];
   const scale=(modes[keyMode]||modes.walk).keyScale;
-  return [(Number(parts[1])+0.5)/scale,(Number(parts[2])+0.5)/scale];
+  return [
+    (Number(parts[1])+0.5)/scale,
+    (Number(parts[2])+0.5)/scale
+  ];
 }
 
 function metersToPixels(m,latitude){
@@ -612,7 +722,9 @@ function save(force=false){
   const now=Date.now();
   if(!force&&now-lastSave<1800)return;
   lastSave=now;
+
   pruneVisited();
+
   localStorage[KEY+"walked"]=walked;
   localStorage[KEY+"explored"]=explored;
   localStorage[KEY+"visited"]=JSON.stringify(visited);
@@ -662,23 +774,32 @@ function updateUI(){
 }
 
 function updateStatus(accepted){
-  if(paused)document.getElementById("status").innerText="Paused";
-  else if(indoorLock)document.getElementById("status").innerText="Indoor lock";
-  else if(exploring)document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
-  else document.getElementById("status").innerText=followMe?"GPS ready • Follow on":"GPS ready";
+  if(paused){
+    document.getElementById("status").innerText="Paused";
+  }else if(indoorLock){
+    document.getElementById("status").innerText="Indoor lock";
+  }else if(exploring){
+    document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
+  }else{
+    document.getElementById("status").innerText=followMe?"GPS ready • Follow on":"GPS ready";
+  }
 }
 
 function toast(text){
   const el=document.getElementById("toast");
   el.innerText=text;
   el.style.opacity=1;
-  setTimeout(()=>{el.style.opacity=0},2200);
+  setTimeout(()=>{
+    el.style.opacity=0;
+  },2200);
 }
 
 function updateUserDot(){
   if(lat===null||lng===null)return;
+
   const point=map.latLngToContainerPoint([lat,lng]);
   const dot=document.getElementById("userDot");
+
   dot.style.left=point.x+"px";
   dot.style.top=point.y+"px";
   dot.style.display="block";
@@ -690,9 +811,11 @@ function updateUserDot(){
 
 function updateAccuracyCircle(){
   if(lat===null||lng===null||accuracy===null)return;
+
   const point=map.latLngToContainerPoint([lat,lng]);
   const px=Math.min(metersToPixels(accuracy,lat),220);
   const el=document.getElementById("accuracyCircle");
+
   el.style.left=point.x+"px";
   el.style.top=point.y+"px";
   el.style.width=(px*2)+"px";
@@ -702,19 +825,23 @@ function updateAccuracyCircle(){
 
 function pulse(){
   if(lat===null||lng===null)return;
+
   const el=document.getElementById("pulse");
   el.classList.remove("on");
   void el.offsetWidth;
   el.classList.add("on");
+
   if(navigator.vibrate)navigator.vibrate(20);
 }
 
 function eraseCircle(x,y,r){
   const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
+
   gradient.addColorStop(0,"rgba(0,0,0,1)");
   gradient.addColorStop(.35,"rgba(0,0,0,.98)");
   gradient.addColorStop(.68,"rgba(0,0,0,.48)");
   gradient.addColorStop(1,"rgba(0,0,0,0)");
+
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=gradient;
   ctx.beginPath();
@@ -725,55 +852,74 @@ function eraseCircle(x,y,r){
 
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
+
   ctx.fillStyle="rgba(0,0,0,.82)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  const w=fog.width,h=fog.height;
+  const w=fog.width;
+  const h=fog.height;
 
   Object.keys(visited).forEach(key=>{
     const center=keyCenter(key);
     const keyMode=key.split("_")[0];
     const radius=(modes[keyMode]||modes.walk).radius;
     const point=map.latLngToContainerPoint(center);
+
     if(point.x<-120||point.y<-120||point.x>w+120||point.y>h+120)return;
+
     eraseCircle(point.x,point.y,metersToPixels(radius,center[0]));
   });
 
   if(lat!==null&&lng!==null){
     const point=map.latLngToContainerPoint([lat,lng]);
     let baseRadius=currentMode().radius;
+
     if(gpsQuality()==="Weak")baseRadius*=0.7;
     if(gpsQuality()==="Bad")baseRadius*=0.45;
     if(accuracy&&accuracy>40)baseRadius*=0.75;
+
     eraseCircle(point.x,point.y,metersToPixels(baseRadius*1.1,lat));
   }
 }
 
 function shouldAcceptMovement(distance,seconds,acc){
   const current=currentMode();
+
   if(paused||indoorLock)return false;
   if(acc!==null&&acc>current.maxAccuracy)return false;
   if(distance<current.minDistance)return false;
   if(distance>current.maxJump)return false;
+
   if(seconds&&seconds>0){
     const speed=distance/seconds;
     if(speed>current.maxSpeed)return false;
   }
+
   return true;
 }
 
 function smoothPoint(a,b){
-  if(!lastSmooth)lastSmooth=[a,b];
-  else lastSmooth=[lastSmooth[0]*0.75+a*0.25,lastSmooth[1]*0.75+b*0.25];
+  if(!lastSmooth){
+    lastSmooth=[a,b];
+  }else{
+    lastSmooth=[
+      lastSmooth[0]*0.75+a*0.25,
+      lastSmooth[1]*0.75+b*0.25
+    ];
+  }
+
   return lastSmooth;
 }
 
 function addVisitedAt(a,b,notify=true){
   const key=keyFor(a,b);
+
   if(!visited[key]&&gpsQuality()!=="Bad"){
     visited[key]=true;
     explored+=Math.min(currentMode().step,30);
+
     if(currentTrip)currentTrip.areas=(currentTrip.areas||0)+1;
+
     if(notify){
       toast("New area explored • "+currentMode().label);
       pulse();
@@ -783,13 +929,16 @@ function addVisitedAt(a,b,notify=true){
 
 function revealBetween(from,to){
   if(!from||!to)return;
+
   const dist=map.distance(from,to);
   const step=Math.max(currentMode().radius*0.65,15);
   const count=Math.max(1,Math.ceil(dist/step));
+
   for(let i=0;i<=count;i++){
     const t=i/count;
     const a=from[0]+(to[0]-from[0])*t;
     const b=from[1]+(to[1]-from[1])*t;
+
     addVisitedAt(a,b,false);
   }
 }
@@ -800,13 +949,16 @@ function addRoutePoint(a,b){
 
   if(last){
     const dist=map.distance(last,point);
+
     if(dist>currentMode().bridge)return;
+
     routePath.push(point);
   }else{
     routePath.push(point);
   }
 
   if(routePath.length>1600)routePath=routePath.slice(-1600);
+
   updateRoute();
 
   if(currentTrip){
@@ -818,15 +970,25 @@ function addRoutePoint(a,b){
 
 function followMap(){
   if(!followMe||lat===null||lng===null)return;
+
   suppressMapEvent=true;
-  map.panTo([lat,lng],{animate:true,duration:.4});
-  setTimeout(()=>{suppressMapEvent=false},500);
+
+  map.panTo([lat,lng],{
+    animate:true,
+    duration:.4
+  });
+
+  setTimeout(()=>{
+    suppressMapEvent=false;
+  },500);
 }
 
 function toggleFollow(){
-  followMe=true;
-  centerMe();
-  toast("Follow locked");
+  followMe=!followMe;
+
+  if(followMe)centerMe();
+
+  toast(followMe?"Follow on":"Follow off");
   updateUI();
 }
 
@@ -834,19 +996,24 @@ function setMode(newMode){
   mode=newMode;
   lastAccepted=null;
   lastSmooth=null;
+
   toast("Mode: "+currentMode().label);
   updateUI();
-  requestFogDraw();
+  safeDrawFog();
   save(true);
 }
 
 function toggleExplore(){
   startGPS();
+
   exploring=!exploring;
+
   const btn=document.getElementById("exploreBtn");
   btn.classList.toggle("active",exploring);
   btn.innerText=exploring?"Exploring":"Explore";
+
   if(exploring&&!currentTrip)startTrip();
+
   updateStatus(false);
   updateUI();
 }
@@ -855,6 +1022,7 @@ function togglePause(){
   paused=!paused;
   lastAccepted=null;
   lastSmooth=null;
+
   updateStatus(false);
   updateUI();
 }
@@ -863,20 +1031,30 @@ function toggleIndoorLock(){
   indoorLock=!indoorLock;
   lastAccepted=null;
   lastSmooth=null;
+
   toast(indoorLock?"Indoor lock on":"Indoor lock off");
   updateUI();
 }
 
 function centerMe(){
   startGPS();
+
   if(lat===null||lng===null){
     toast("GPS is still searching...");
     return;
   }
+
   followMe=true;
   suppressMapEvent=true;
-  map.setView([lat,lng],17,{animate:true});
-  setTimeout(()=>{suppressMapEvent=false},700);
+
+  map.setView([lat,lng],17,{
+    animate:true
+  });
+
+  setTimeout(()=>{
+    suppressMapEvent=false;
+  },700);
+
   updateUI();
 }
 
@@ -897,6 +1075,7 @@ function showUI(){
 
 function toggleRoute(){
   routeVisible=!routeVisible;
+
   if(routeVisible){
     map.addLayer(routeGlow);
     map.addLayer(routeLine);
@@ -906,6 +1085,7 @@ function toggleRoute(){
     map.removeLayer(routeLine);
     toast("Route hidden");
   }
+
   updateUI();
 }
 
@@ -916,8 +1096,10 @@ function updateRoute(){
 
 function clearRoute(){
   if(!confirm("Clear route only? Opened map will stay."))return;
+
   routePath=[];
   lastSmooth=null;
+
   updateRoute();
   save(true);
   toast("Route cleared");
@@ -925,7 +1107,18 @@ function clearRoute(){
 
 function startTrip(){
   if(currentTrip)return;
-  currentTrip={id:Date.now(),startedAt:Date.now(),endedAt:null,mode:mode,distance:0,areas:0,route:[]};
+
+  currentTrip={
+    id:Date.now(),
+    startedAt:Date.now(),
+    endedAt:null,
+    duration:0,
+    mode:mode,
+    distance:0,
+    areas:0,
+    route:[]
+  };
+
   toast("Trip started");
   updateUI();
   save(true);
@@ -933,14 +1126,26 @@ function startTrip(){
 
 function stopTrip(){
   if(!currentTrip)return;
+
   currentTrip.endedAt=Date.now();
+  currentTrip.duration=currentTrip.endedAt-currentTrip.startedAt;
   currentTrip.distance=currentTrip.distance||0;
   currentTrip.areas=currentTrip.areas||0;
   currentTrip.mode=currentTrip.mode||mode;
   currentTrip.route=(currentTrip.route||[]).slice(-1600);
+
+  if(currentTrip.distance<50&&currentTrip.areas<3&&currentTrip.route.length<5){
+    currentTrip=null;
+    toast("Short trip ignored");
+    updateUI();
+    save(true);
+    return;
+  }
+
   trips.unshift(currentTrip);
   trips=trips.slice(0,30);
   currentTrip=null;
+
   toast("Trip saved");
   updateUI();
   save(true);
@@ -953,22 +1158,33 @@ function toggleTrip(){
 
 function renderTrips(){
   const box=document.getElementById("tripsList");
+
   if(!box)return;
-  if(!trips.length){
+
+  const realTrips=trips.filter(t=>
+    (t.distance||0)>=50||
+    (t.areas||0)>=3||
+    (t.route||[]).length>=5
+  );
+
+  if(!realTrips.length){
     box.innerHTML='<div class="tripItem"><small>No trips yet</small></div>';
     return;
   }
-  box.innerHTML=trips.slice(0,8).map((t,i)=>{
+
+  box.innerHTML=realTrips.slice(0,8).map((t,i)=>{
+    const originalIndex=trips.indexOf(t);
     const title=formatDate(t.startedAt);
     const duration=t.endedAt?Math.round((t.endedAt-t.startedAt)/60000)+" min":"";
     const modeLabel=(modes[t.mode]||modes.walk).icon+" "+(modes[t.mode]||modes.walk).label;
+
     return `
       <div class="tripItem">
         <b>${title}</b>
         <small>${modeLabel} · ${formatMeters(t.distance||0)} · ${t.areas||0} areas · ${duration}</small>
         <div class="tripActions">
-          <button onclick="showTrip(${i})">View</button>
-          <button onclick="deleteTrip(${i})">Delete</button>
+          <button onclick="showTrip(${originalIndex})">View</button>
+          <button onclick="deleteTrip(${originalIndex})">Delete</button>
         </div>
       </div>
     `;
@@ -977,19 +1193,26 @@ function renderTrips(){
 
 function showTrip(i){
   const trip=trips[i];
+
   if(!trip||!trip.route||!trip.route.length){
     toast("No route");
     return;
   }
+
   previewLine.setLatLngs(trip.route);
-  map.fitBounds(L.latLngBounds(trip.route),{padding:[40,40]});
+  map.fitBounds(L.latLngBounds(trip.route),{
+    padding:[40,40]
+  });
+
   toast("Trip preview");
 }
 
 function deleteTrip(i){
   if(!confirm("Delete this trip?"))return;
+
   trips.splice(i,1);
   previewLine.setLatLngs([]);
+
   updateUI();
   save(true);
 }
@@ -1000,16 +1223,32 @@ function clearTripPreview(){
 }
 
 function backup(){
-  const data={walked,explored,visited,routePath,mode,trips,currentTrip,exportedAt:new Date().toISOString()};
+  const data={
+    walked,
+    explored,
+    visited,
+    routePath,
+    mode,
+    trips,
+    currentTrip,
+    exportedAt:new Date().toISOString()
+  };
+
   const text=JSON.stringify(data,null,2);
-  navigator.clipboard.writeText(text).then(()=>toast("Backup copied")).catch(()=>prompt("Copy backup:",text));
+
+  navigator.clipboard.writeText(text)
+    .then(()=>toast("Backup copied"))
+    .catch(()=>prompt("Copy backup:",text));
 }
 
 function importData(){
   const text=prompt("Paste backup JSON");
+
   if(!text)return;
+
   try{
     const data=JSON.parse(text);
+
     walked=Number(data.walked||0);
     explored=Number(data.explored||0);
     visited=data.visited||{};
@@ -1017,10 +1256,12 @@ function importData(){
     mode=data.mode||"walk";
     trips=data.trips||[];
     currentTrip=data.currentTrip||null;
+
     updateRoute();
     updateUI();
-    requestFogDraw();
+    safeDrawFog();
     save(true);
+
     toast("Import complete");
   }catch(e){
     toast("Import error");
@@ -1032,7 +1273,11 @@ function resetData(){
     toast("Cancelled");
     return;
   }
-  Object.keys(localStorage).forEach(key=>{if(key.startsWith(KEY))localStorage.removeItem(key)});
+
+  Object.keys(localStorage).forEach(key=>{
+    if(key.startsWith(KEY))localStorage.removeItem(key);
+  });
+
   location.reload();
 }
 
@@ -1043,66 +1288,115 @@ function onGPS(pos){
   const now=Date.now();
 
   accuracy=acc;
-  gpsQueue.push({lat:rawLat,lng:rawLng,acc});
+
+  gpsQueue.push({
+    lat:rawLat,
+    lng:rawLng,
+    acc
+  });
+
   if(gpsQueue.length>5)gpsQueue.shift();
 
-  let avgLat=0,avgLng=0;
-  gpsQueue.forEach(p=>{avgLat+=p.lat;avgLng+=p.lng});
+  let avgLat=0;
+  let avgLng=0;
+
+  gpsQueue.forEach(p=>{
+    avgLat+=p.lat;
+    avgLng+=p.lng;
+  });
+
   avgLat/=gpsQueue.length;
   avgLng/=gpsQueue.length;
 
   if(lat===null||lng===null){
     lat=avgLat;
     lng=avgLng;
-  }else{
-    const smooth=gpsQuality()==="Good"?.30:.16;
-    lat=lat*(1-smooth)+avgLat*smooth;
-    lng=lng*(1-smooth)+avgLng*smooth;
-  }
+    lastAccepted={
+      lat,
+      lng,
+      time:now
+    };
 
-  updateUserDot();
-  updateAccuracyCircle();
+    updateUserDot();
+    updateAccuracyCircle();
 
-  if(firstFix){
-    suppressMapEvent=true;
-    map.setView([lat,lng],17);
-    setTimeout(()=>{suppressMapEvent=false},700);
-    firstFix=false;
-  }
-
-  let accepted=false;
-
-  if(lastAccepted){
-    const distance=map.distance([lastAccepted.lat,lastAccepted.lng],[lat,lng]);
-    const seconds=(now-lastAccepted.time)/1000;
-
-    if(shouldAcceptMovement(distance,seconds,acc)){
-      if(gpsQuality()==="Good"){
-        walked+=distance;
-        if(currentTrip)currentTrip.distance=(currentTrip.distance||0)+distance;
-      }
-
-      accepted=true;
-      const from=[lastAccepted.lat,lastAccepted.lng];
-      const to=[lat,lng];
-
-      revealBetween(from,to);
-
-      if(gpsQuality()==="Good"&&!indoorLock)addRoutePoint(lat,lng);
-
-      lastAccepted={lat,lng,time:now};
+    if(firstFix){
+      suppressMapEvent=true;
+      map.setView([lat,lng],17);
+      setTimeout(()=>{
+        suppressMapEvent=false;
+      },700);
+      firstFix=false;
     }
-  }else{
-    lastAccepted={lat,lng,time:now};
+
     revealBetween([lat,lng],[lat,lng]);
-    if(gpsQuality()==="Good"&&!indoorLock)addRoutePoint(lat,lng);
+
+    if(gpsQuality()==="Good"&&!indoorLock){
+      addRoutePoint(lat,lng);
+    }
+
+    updateStatus(false);
+    updateUI();
+    safeDrawFog();
+    followMap();
+    return;
   }
 
-  if(exploring&&!paused)addVisitedAt(lat,lng,true);
+  const distanceFromLast=lastAccepted
+    ? map.distance([lastAccepted.lat,lastAccepted.lng],[avgLat,avgLng])
+    : 0;
 
-  updateStatus(accepted);
+  const seconds=lastAccepted
+    ? (now-lastAccepted.time)/1000
+    : 0;
+
+  const accepted=shouldAcceptMovement(distanceFromLast,seconds,acc);
+
+  if(!accepted){
+    updateStatus(false);
+    updateUI();
+    updateUserDot();
+    updateAccuracyCircle();
+    safeDrawFog();
+    followMap();
+    return;
+  }
+
+  const smoothFactor=gpsQuality()==="Good"?.25:.14;
+
+  lat=lat*(1-smoothFactor)+avgLat*smoothFactor;
+  lng=lng*(1-smoothFactor)+avgLng*smoothFactor;
+
+  const from=[lastAccepted.lat,lastAccepted.lng];
+  const to=[lat,lng];
+
+  revealBetween(from,to);
+
+  if(gpsQuality()==="Good"&&!indoorLock){
+    addRoutePoint(lat,lng);
+  }
+
+  if(gpsQuality()==="Good"){
+    walked+=distanceFromLast;
+
+    if(currentTrip){
+      currentTrip.distance=(currentTrip.distance||0)+distanceFromLast;
+    }
+  }
+
+  lastAccepted={
+    lat,
+    lng,
+    time:now
+  };
+
+  if(exploring&&!paused){
+    addVisitedAt(lat,lng,true);
+  }
+
+  updateStatus(true);
   updateUI();
-  requestFogDraw();
+  safeDrawFog();
   updateUserDot();
   updateAccuracyCircle();
   followMap();
@@ -1114,7 +1408,7 @@ function onGPSError(){
 }
 
 updateUI();
-requestFogDraw();
+safeDrawFog();
 updateRoute();
 renderTrips();
 </script>
