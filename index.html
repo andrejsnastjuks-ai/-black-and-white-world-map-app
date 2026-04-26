@@ -2,63 +2,189 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow FINAL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WanderGlow Travel Stable</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-html,body{margin:0;height:100%;background:#000;font-family:sans-serif}
-#map{height:100%}
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+#map{
+  height:100%;
+}
+
+.leaflet-tile-pane{
+  filter:brightness(1.05) contrast(1.05) saturate(1.08);
+}
+
+.leaflet-control-container{
+  z-index:3000;
+}
 
 #fog{
   position:absolute;
-  top:0;left:0;
-  width:100%;height:100%;
-  pointer-events:none;
+  inset:0;
   z-index:500;
+  pointer-events:none;
 }
 
-.userDot{
-  width:14px;height:14px;border-radius:50%;
+#userDot{
+  position:absolute;
+  z-index:4000;
+  width:18px;
+  height:18px;
+  border-radius:50%;
   background:#00ff88;
-  border:3px solid white;
-  box-shadow:0 0 20px #00ff88;
+  border:4px solid white;
+  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  display:none;
+}
+
+.panel,.menu,.toast,.showBtn{
+  background:rgba(62,62,62,.76);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  color:white;
+  box-shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 .panel{
   position:absolute;
-  bottom:20px;left:10px;right:10px;
-  background:rgba(40,40,40,.7);
-  backdrop-filter:blur(20px);
-  border-radius:20px;
-  padding:14px;
-  color:white;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:5000;
+  padding:18px;
+  border-radius:28px;
 }
 
-.row{display:flex;gap:8px;margin-top:10px}
+.panel.hidden{
+  display:none;
+}
+
+.title{
+  font-size:34px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+
+.status{
+  margin-top:4px;
+  color:rgba(255,255,255,.72);
+  font-size:17px;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
 
 .stat{
   flex:1;
   text-align:center;
-  background:rgba(255,255,255,.1);
-  border-radius:12px;
-  padding:10px;
+  padding:14px 8px;
+  border-radius:20px;
+  background:rgba(255,255,255,.10);
+}
+
+.stat b{
+  display:block;
+  font-size:25px;
+}
+
+.stat small{
+  color:rgba(255,255,255,.65);
 }
 
 button{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:rgba(255,255,255,.1);
+  border:0;
+  border-radius:18px;
+  padding:14px;
+  font-weight:900;
+  font-size:16px;
   color:white;
-  font-weight:bold;
+  background:rgba(255,255,255,.13);
+}
+
+button:active{
+  transform:scale(.94);
 }
 
 .main{
-  background:#00ff88;
-  color:black;
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.main.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
+}
+
+.menu{
+  display:none;
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:6000;
+  padding:20px;
+  border-radius:28px;
+  max-height:78vh;
+  overflow:auto;
+}
+
+.menu.open{
+  display:block;
+}
+
+.modeGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.modeBtn.activeMode{
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.showBtn{
+  display:none;
+  position:absolute;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  z-index:6000;
+  padding:14px 22px;
+  border-radius:22px;
+}
+
+.showBtn.visible{
+  display:block;
+}
+
+.toast{
+  position:absolute;
+  top:22px;
+  left:18px;
+  right:18px;
+  z-index:7000;
+  padding:14px;
+  border-radius:18px;
+  opacity:0;
+  transition:.25s;
+  font-weight:800;
 }
 </style>
 </head>
@@ -67,104 +193,182 @@ button{
 
 <div id="map"></div>
 <canvas id="fog"></canvas>
+<div id="userDot"></div>
+<div id="toast" class="toast"></div>
 
-<div class="panel">
-  <div style="display:flex;justify-content:space-between">
+<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
+
+<div id="menu" class="menu">
+  <button onclick="centerMe()" style="width:100%">📍 My location</button>
+
+  <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
+  <div class="modeGrid">
+    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
+    <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
+    <button id="modeTrain" class="modeBtn" onclick="setMode('train')">🚆 Train</button>
+    <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
+  </div>
+
+  <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
+  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
+  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset data</button>
+  <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
+</div>
+
+<div id="panel" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
     <div>
-      <b>WanderGlow</b><br>
-      <small id="status">GPS...</small>
+      <div class="title">WanderGlow</div>
+      <div id="status" class="status">Waiting for GPS...</div>
     </div>
-    <button id="exploreBtn" class="main">Explore</button>
+    <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
   </div>
 
   <div class="row">
-    <div class="stat"><b id="walked">0 m</b><br>Walked</div>
-    <div class="stat"><b id="explored">0 m</b><br>Explored</div>
-    <div class="stat"><b id="areas">0</b><br>Areas</div>
+    <div class="stat"><b id="walkedView">0 m</b><small>Walked</small></div>
+    <div class="stat"><b id="exploredView">0 m</b><small>Explored</small></div>
+    <div class="stat"><b id="areasView">0</b><small>Areas</small></div>
   </div>
 
   <div class="row">
-    <button onclick="setMode('walk')">🚶</button>
-    <button onclick="setMode('car')">🚗</button>
-    <button onclick="setMode('train')">🚆</button>
-    <button onclick="setMode('plane')">✈️</button>
+    <div class="stat"><b id="countryView">Unknown</b><small>Country</small></div>
+    <div class="stat"><b id="modeView">🚶 Walk</b><small>Mode</small></div>
+  </div>
+
+  <div class="row">
+    <button style="flex:1" onclick="centerMe()">📍</button>
+    <button style="flex:1" onclick="toggleMenu()">Menu</button>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map("map").setView([56.95,24.1],15);
+const map=L.map("map",{zoomControl:true}).setView([56.95,24.1],15);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap"
+}).addTo(map);
 
-let lat,lng,marker;
+let lat=null;
+let lng=null;
 let exploring=false;
-let lastPoint;
+let firstFix=true;
+let lastPoint=null;
 
-let walked=0;
-let explored=0;
-let visited={};
+let walked=Number(localStorage.wg_final_walked||0);
+let explored=Number(localStorage.wg_final_explored||0);
+let visited=JSON.parse(localStorage.wg_final_visited||"{}");
+let mode=localStorage.wg_final_mode||"walk";
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
 const modes={
-  walk:{r:25,step:25},
-  car:{r:80,step:80},
-  train:{r:120,step:120},
-  plane:{r:500,step:500}
+  walk:{label:"Walk",icon:"🚶",radius:25,step:25,keyScale:4000},
+  car:{label:"Car",icon:"🚗",radius:80,step:80,keyScale:1500},
+  train:{label:"Train",icon:"🚆",radius:120,step:120,keyScale:1000},
+  plane:{label:"Plane",icon:"✈️",radius:800,step:800,keyScale:220}
 };
 
-let mode="walk";
+function currentMode(){
+  return modes[mode]||modes.walk;
+}
 
-function resize(){
+function resizeFog(){
   fog.width=window.innerWidth;
   fog.height=window.innerHeight;
-}
-resize();
-
-window.addEventListener("resize", ()=>{
-  resize();
   drawFog();
+  updateUserDot();
+}
+
+window.addEventListener("resize",resizeFog);
+map.on("move zoom",()=>{
+  drawFog();
+  updateUserDot();
 });
 
-map.on("move zoom", drawFog);
+resizeFog();
 
-function metersToPx(m){
-  if(!lat) return m;
-  const zoom = map.getZoom();
-  const metersPerPixel =
-    40075016.686 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoom + 8);
-  return m / metersPerPixel;
-}
-
-function key(lat,lng){
-  return Math.floor(lat*3000)+"_"+Math.floor(lng*3000);
-}
-
-function drawFog(){
-  ctx.clearRect(0,0,fog.width,fog.height);
-
-  ctx.fillStyle="rgba(0,0,0,.85)";
-  ctx.fillRect(0,0,fog.width,fog.height);
-
-  Object.keys(visited).forEach(k=>{
-    const [a,b]=k.split("_");
-    const p=map.latLngToContainerPoint([a/3000,b/3000]);
-
-    erase(p.x,p.y,metersToPx(30));
-  });
-
-  if(lat){
-    const p=map.latLngToContainerPoint([lat,lng]);
-    erase(p.x,p.y,metersToPx(modes[mode].r));
+function formatMeters(m){
+  if(m>=1000){
+    return (m/1000).toFixed(2)+" km";
   }
+  return Math.round(m)+" m";
 }
 
-function erase(x,y,r){
+function getCountry(a,b){
+  if(a>=55.6&&a<=58.1&&b>=20.8&&b<=28.3)return "Latvia";
+  if(a>=54.8&&a<=56.5&&b>=20.9&&b<=26.9)return "Lithuania";
+  if(a>=57.4&&a<=59.8&&b>=21.5&&b<=28.3)return "Estonia";
+  return "Unknown";
+}
+
+function keyFor(a,b){
+  const s=currentMode().keyScale;
+  return mode+"_"+Math.floor(a*s)+"_"+Math.floor(b*s);
+}
+
+function keyCenter(key){
+  const parts=key.split("_");
+  const keyMode=parts[0];
+  const s=(modes[keyMode]||modes.walk).keyScale;
+  return [
+    (Number(parts[1])+0.5)/s,
+    (Number(parts[2])+0.5)/s
+  ];
+}
+
+function metersToPixels(m,latitude){
+  const zoom=map.getZoom();
+  const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
+  return m/metersPerPixel;
+}
+
+function save(){
+  localStorage.wg_final_walked=walked;
+  localStorage.wg_final_explored=explored;
+  localStorage.wg_final_visited=JSON.stringify(visited);
+  localStorage.wg_final_mode=mode;
+}
+
+function updateUI(){
+  document.getElementById("walkedView").innerText=formatMeters(walked);
+  document.getElementById("exploredView").innerText=formatMeters(explored);
+  document.getElementById("areasView").innerText=Object.keys(visited).length;
+  document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
+  document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
+
+  document.querySelectorAll(".modeBtn").forEach(btn=>btn.classList.remove("activeMode"));
+  const active=document.getElementById("mode"+currentMode().label);
+  if(active)active.classList.add("activeMode");
+
+  save();
+}
+
+function toast(text){
+  const el=document.getElementById("toast");
+  el.innerText=text;
+  el.style.opacity=1;
+  setTimeout(()=>el.style.opacity=0,2200);
+}
+
+function updateUserDot(){
+  if(lat===null||lng===null)return;
+
+  const point=map.latLngToContainerPoint([lat,lng]);
+  const dot=document.getElementById("userDot");
+
+  dot.style.left=point.x+"px";
+  dot.style.top=point.y+"px";
+  dot.style.display="block";
+}
+
+function eraseCircle(x,y,r){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
+  g.addColorStop(.55,"rgba(0,0,0,.82)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
@@ -175,53 +379,146 @@ function erase(x,y,r){
   ctx.globalCompositeOperation="source-over";
 }
 
-function updateUI(){
-  document.getElementById("walked").innerText=Math.round(walked)+" m";
-  document.getElementById("explored").innerText=Math.round(explored)+" m";
-  document.getElementById("areas").innerText=Object.keys(visited).length;
+function drawFog(){
+  ctx.clearRect(0,0,fog.width,fog.height);
+
+  ctx.fillStyle="rgba(0,0,0,.84)";
+  ctx.fillRect(0,0,fog.width,fog.height);
+
+  Object.keys(visited).forEach(key=>{
+    const center=keyCenter(key);
+    const keyMode=key.split("_")[0];
+    const radius=(modes[keyMode]||modes.walk).radius;
+    const p=map.latLngToContainerPoint(center);
+
+    eraseCircle(p.x,p.y,metersToPixels(radius,center[0]));
+  });
+
+  if(lat!==null&&lng!==null){
+    const p=map.latLngToContainerPoint([lat,lng]);
+    eraseCircle(p.x,p.y,metersToPixels(currentMode().radius*1.25,lat));
+  }
 }
 
-function setMode(m){
-  mode=m;
+function setMode(newMode){
+  mode=newMode;
+  toast("Mode: "+currentMode().label);
+  updateUI();
+  drawFog();
 }
 
-document.getElementById("exploreBtn").onclick=()=>{
+function toggleExplore(){
   exploring=!exploring;
-};
 
-navigator.geolocation.watchPosition(p=>{
-  lat=p.coords.latitude;
-  lng=p.coords.longitude;
+  document.getElementById("exploreBtn").classList.toggle("active",exploring);
+  document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
+  document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
 
-  if(!marker){
-    marker=L.marker([lat,lng],{
-      icon:L.divIcon({html:'<div class="userDot"></div>'})
-    }).addTo(map);
-  }else{
-    marker.setLatLng([lat,lng]);
+  updateUI();
+}
+
+function centerMe(){
+  if(lat===null||lng===null){
+    toast("GPS is still searching...");
+    return;
   }
 
+  map.setView([lat,lng],17);
+}
+
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
+}
+
+function hideUI(){
+  document.getElementById("panel").classList.add("hidden");
+  document.getElementById("menu").classList.remove("open");
+  document.getElementById("showBtn").classList.add("visible");
+}
+
+function showUI(){
+  document.getElementById("panel").classList.remove("hidden");
+  document.getElementById("showBtn").classList.remove("visible");
+}
+
+function backup(){
+  const data={
+    walked,
+    explored,
+    visited,
+    mode,
+    exportedAt:new Date().toISOString()
+  };
+
+  const text=JSON.stringify(data,null,2);
+
+  navigator.clipboard.writeText(text)
+    .then(()=>toast("Backup copied"))
+    .catch(()=>prompt("Copy backup:",text));
+}
+
+function resetData(){
+  if(prompt("Type DELETE to reset all data")!=="DELETE"){
+    toast("Cancelled");
+    return;
+  }
+
+  localStorage.removeItem("wg_final_walked");
+  localStorage.removeItem("wg_final_explored");
+  localStorage.removeItem("wg_final_visited");
+  localStorage.removeItem("wg_final_mode");
+
+  location.reload();
+}
+
+navigator.geolocation.watchPosition(pos=>{
+  lat=pos.coords.latitude;
+  lng=pos.coords.longitude;
+
+  updateUserDot();
+
   if(lastPoint){
-    const d=map.distance(lastPoint,[lat,lng]);
-    walked+=d;
+    const distance=map.distance(lastPoint,[lat,lng]);
+
+    if(distance>2&&distance<1000000){
+      walked+=distance;
+    }
   }
 
   lastPoint=[lat,lng];
 
+  if(firstFix){
+    map.setView([lat,lng],17);
+    firstFix=false;
+  }
+
+  document.getElementById("status").innerText=exploring?"Exploring...":"GPS ready";
+
   if(exploring){
-    const k=key(lat,lng);
-    if(!visited[k]){
-      visited[k]=true;
-      explored+=modes[mode].step;
+    const key=keyFor(lat,lng);
+
+    if(!visited[key]){
+      visited[key]=true;
+      explored+=currentMode().step;
+      toast("New area explored · "+currentMode().label);
     }
   }
 
-  drawFog();
   updateUI();
+  drawFog();
+  updateUserDot();
 
+},()=>{
+  document.getElementById("status").innerText="GPS error";
+  toast("Please allow location access");
 },{
-  enableHighAccuracy:true
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
 });
+
+updateUI();
+drawFog();
 </script>
 
 </body>
