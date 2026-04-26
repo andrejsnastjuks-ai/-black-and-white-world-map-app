@@ -3,46 +3,383 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 006 Stable Full</title>
+<title>WanderGlow 006 PRO MAX PREMIUM A</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100%;width:100%;background:#050505}
-.leaflet-tile-pane{filter:brightness(.82) contrast(1.12) saturate(.95)}
-.leaflet-control-container{z-index:3000}
-#fog{position:absolute;inset:0;z-index:500;pointer-events:none}
-#accuracyCircle{position:absolute;border-radius:50%;background:rgba(0,255,136,.10);border:2px solid rgba(0,255,136,.25);transform:translate(-50%,-50%);pointer-events:none;z-index:3000;display:none}
-#pulse{position:absolute;z-index:3900;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none}
-#pulse.on{animation:pulse .8s ease-out}
-@keyframes pulse{0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
-#userDot{position:absolute;z-index:4000;width:18px;height:18px;border-radius:50%;background:#00ff88;border:4px solid #fff;box-shadow:0 0 0 16px rgba(0,255,136,.20),0 0 36px #00ff88;transform:translate(-50%,-50%);display:none;pointer-events:none}
-.panel,.menu,.toast,.showBtn{background:rgba(45,45,45,.84);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:white;box-shadow:0 18px 45px rgba(0,0,0,.35)}
-.panel{position:absolute;left:14px;right:14px;bottom:18px;z-index:5000;padding:18px;border-radius:28px}
-.panel.hidden{display:none}
-.title{font-size:34px;font-weight:900;letter-spacing:-1px}
-.status{margin-top:4px;color:rgba(255,255,255,.72);font-size:16px}
-.row{display:flex;gap:8px;margin-top:14px}
-.stat{flex:1;text-align:center;padding:13px 7px;border-radius:20px;background:rgba(255,255,255,.10)}
-.stat b{display:block;font-size:20px}
-.stat small{color:rgba(255,255,255,.65)}
-.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-button{border:0;border-radius:18px;padding:12px 8px;font-weight:900;font-size:14px;color:white;background:rgba(255,255,255,.13)}
-button:active{transform:scale(.94)}
-.main{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215;padding:14px;font-size:16px}
-.main.active,.tripActive{background:linear-gradient(135deg,#4d96ff,#9bd8ff)!important;color:white!important}
-.pauseBtn.paused,.lockBtn.locked,.followBtn.on{background:linear-gradient(135deg,#ffcc66,#fff2b0);color:#2c1d00}
-.menu{display:none;position:absolute;left:14px;right:14px;bottom:18px;z-index:6000;padding:20px;border-radius:28px;max-height:78vh;overflow:auto}
-.menu.open{display:block}
-.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.modeBtn.activeMode{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215}
-.tripItem{margin-top:10px;padding:12px;border-radius:18px;background:rgba(255,255,255,.10)}
-.tripItem b{display:block;font-size:16px}
-.tripItem small{display:block;margin-top:4px;line-height:1.35;color:rgba(255,255,255,.68)}
-.tripActions{display:flex;gap:8px;margin-top:10px}
-.tripActions button{font-size:13px;padding:10px}
-.showBtn{display:none;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:6000;padding:14px 24px;border-radius:24px}
-.showBtn.visible{display:block}
-.toast{position:absolute;top:22px;left:18px;right:18px;z-index:7000;padding:16px 18px;border-radius:22px;opacity:0;transition:.25s;font-weight:900;font-size:18px}
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+#map{
+  height:100%;
+  width:100%;
+  background:#050505;
+}
+
+.leaflet-tile-pane{
+  filter:brightness(.78) contrast(1.28) saturate(.85);
+}
+
+.leaflet-control-container{
+  z-index:3000;
+}
+
+#fog{
+  position:absolute;
+  inset:0;
+  z-index:500;
+  pointer-events:none;
+}
+
+#accuracyCircle{
+  position:absolute;
+  border-radius:50%;
+  background:rgba(0,255,136,.10);
+  border:2px solid rgba(0,255,136,.24);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:3000;
+  display:none;
+}
+
+#pulse{
+  position:absolute;
+  z-index:3900;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);
+  transform:translate(-50%,-50%) scale(.4);
+  opacity:0;
+  pointer-events:none;
+}
+
+#pulse.on{
+  animation:pulse .8s ease-out;
+}
+
+@keyframes pulse{
+  0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
+}
+
+#userDot{
+  position:absolute;
+  z-index:4000;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#00ff88;
+  border:4px solid #fff;
+  box-shadow:
+    0 0 0 16px rgba(0,255,136,.22),
+    0 0 36px #00ff88,
+    0 0 70px rgba(0,255,136,.35);
+  transform:translate(-50%,-50%);
+  display:none;
+  pointer-events:none;
+}
+
+.panel,.menu,.toast,.showBtn,.hudCard{
+  background:linear-gradient(180deg,rgba(35,35,35,.88),rgba(18,18,18,.88));
+  border:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(26px);
+  -webkit-backdrop-filter:blur(26px);
+  color:white;
+  box-shadow:
+    0 20px 55px rgba(0,0,0,.50),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.panel{
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:5000;
+  padding:18px;
+  border-radius:30px;
+  box-shadow:
+    0 0 0 1px rgba(0,255,136,.28),
+    0 0 24px rgba(0,255,136,.30),
+    0 22px 60px rgba(0,0,0,.55);
+}
+
+.panel.hidden{
+  display:none;
+}
+
+.title{
+  font-size:34px;
+  font-weight:950;
+  letter-spacing:-1.2px;
+  line-height:1;
+}
+
+.status{
+  margin-top:8px;
+  color:#2cff73;
+  font-size:16px;
+  font-weight:750;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.stat{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-align:left;
+  padding:13px 10px;
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.06));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.statIcon{
+  font-size:26px;
+  min-width:32px;
+  text-align:center;
+}
+
+.stat b{
+  display:block;
+  font-size:20px;
+  line-height:1.05;
+}
+
+.stat small{
+  color:rgba(255,255,255,.66);
+  font-size:14px;
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:.8fr 1.1fr 1fr 1.2fr .9fr .9fr;
+  gap:8px;
+  margin-top:14px;
+}
+
+button{
+  border:0;
+  border-radius:18px;
+  padding:12px 8px;
+  font-weight:900;
+  font-size:14px;
+  color:white;
+  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.07));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+button:active{
+  transform:scale(.94);
+}
+
+.main{
+  background:linear-gradient(135deg,#00ff72,#baffdd);
+  color:#052215;
+  padding:15px 24px;
+  font-size:18px;
+  min-width:132px;
+}
+
+.main.active,.tripActive{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff)!important;
+  color:white!important;
+}
+
+.pauseBtn.paused,.lockBtn.locked,.followBtn.on{
+  background:linear-gradient(135deg,#ffd43b,#fff1a8);
+  color:#201600;
+}
+
+.followBtn.on small{
+  color:#00ff72;
+}
+
+#hud{
+  position:absolute;
+  right:12px;
+  top:78px;
+  z-index:5200;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  pointer-events:none;
+}
+
+.hudCard{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:18px;
+  min-width:116px;
+}
+
+.hudIcon{
+  font-size:28px;
+}
+
+.hudCard b{
+  display:block;
+  font-size:15px;
+}
+
+.hudCard small{
+  display:block;
+  color:rgba(255,255,255,.72);
+  margin-top:2px;
+}
+
+.menu{
+  display:none;
+  position:absolute;
+  right:14px;
+  top:150px;
+  width:min(360px,calc(100vw - 28px));
+  z-index:6000;
+  padding:16px;
+  border-radius:28px;
+  max-height:calc(100vh - 230px);
+  overflow:auto;
+}
+
+.menu.open{
+  display:block;
+}
+
+.modeGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.modeBtn{
+  padding:12px 6px;
+  font-size:14px;
+  border-radius:18px;
+}
+
+.modeBtn span{
+  display:block;
+  font-size:24px;
+  margin-bottom:4px;
+}
+
+.modeBtn.activeMode{
+  background:linear-gradient(135deg,#00ff72,#baffdd);
+  color:#052215;
+}
+
+.menuItem{
+  width:100%;
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  text-align:left;
+  padding:13px 16px;
+  border-radius:18px;
+}
+
+.menuItem .sub{
+  display:block;
+  color:rgba(255,255,255,.62);
+  margin-top:2px;
+  font-size:13px;
+}
+
+.arrow{
+  color:#ffd21f;
+  font-size:24px;
+}
+
+.danger{
+  background:linear-gradient(180deg,rgba(170,45,45,.95),rgba(120,22,22,.95))!important;
+}
+
+.tripItem{
+  margin-top:10px;
+  padding:12px;
+  border-radius:18px;
+  background:rgba(255,255,255,.10);
+}
+
+.tripItem b{
+  display:block;
+  font-size:16px;
+}
+
+.tripItem small{
+  display:block;
+  margin-top:4px;
+  line-height:1.35;
+  color:rgba(255,255,255,.68);
+}
+
+.tripActions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.tripActions button{
+  font-size:13px;
+  padding:10px;
+}
+
+.showBtn{
+  display:none;
+  position:absolute;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  z-index:6000;
+  padding:14px 24px;
+  border-radius:24px;
+}
+
+.showBtn.visible{
+  display:block;
+}
+
+.toast{
+  position:absolute;
+  top:22px;
+  left:18px;
+  right:18px;
+  z-index:7000;
+  padding:16px 18px;
+  border-radius:22px;
+  opacity:0;
+  transition:.25s;
+  font-weight:900;
+  font-size:18px;
+}
+
+@media(max-width:430px){
+  .title{font-size:31px}
+  .panel{left:12px;right:12px;bottom:16px;padding:16px}
+  .stat{padding:12px 8px;gap:8px}
+  .statIcon{font-size:23px;min-width:26px}
+  .stat b{font-size:18px}
+  .stat small{font-size:13px}
+  .controls{grid-template-columns:.8fr 1fr .9fr 1.1fr .9fr .9fr;gap:7px}
+  button{font-size:13px;padding:11px 6px}
+  .menu{top:146px}
+}
 </style>
 </head>
 
@@ -54,32 +391,34 @@ button:active{transform:scale(.94)}
 <div id="userDot"></div>
 <div id="toast" class="toast"></div>
 
+<div id="hud">
+  <div class="hudCard"><div class="hudIcon">🛰️</div><div><b>GPS</b><small id="hudGps">Search</small></div></div>
+  <div class="hudCard"><div class="hudIcon">🔒</div><div><b>Indoor</b><small id="hudLock">off</small></div></div>
+  <div class="hudCard"><div class="hudIcon">🎯</div><div><b id="hudAcc">± -- m</b><small>Accuracy</small></div></div>
+</div>
+
 <button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
 <div id="menu" class="menu">
-  <button onclick="centerMe()" style="width:100%">📍 My location / Follow</button>
-
-  <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
   <div class="modeGrid">
-    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
-    <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
-    <button id="modeTrain" class="modeBtn" onclick="setMode('train')">🚆 Train</button>
-    <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
+    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')"><span>🚶</span>Walk</button>
+    <button id="modeCar" class="modeBtn" onclick="setMode('car')"><span>🚗</span>Car</button>
+    <button id="modeTrain" class="modeBtn" onclick="setMode('train')"><span>🚆</span>Train</button>
+    <button id="modePlane" class="modeBtn" onclick="setMode('plane')"><span>✈️</span>Plane</button>
   </div>
 
-  <button id="tripMenuBtn" onclick="toggleTrip()" style="width:100%;margin-top:10px">Start trip</button>
-  <button onclick="toggleFollow()" id="followMenuBtn" style="width:100%;margin-top:10px">Follow on</button>
-  <button onclick="toggleIndoorLock()" id="lockMenuBtn" style="width:100%;margin-top:10px">Indoor lock off</button>
-  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
-  <button onclick="clearRoute()" style="width:100%;margin-top:10px">Clear route only</button>
-  <button onclick="clearTripPreview()" style="width:100%;margin-top:10px">Clear trip preview</button>
-  <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
-  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
-  <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
-  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#a73030">Reset all data</button>
-  <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
+  <button class="menuItem" onclick="toggleFollow()"><span><b>Follow</b><span id="menuFollowSub" class="sub">on</span></span><span class="arrow">›</span></button>
+  <button class="menuItem" onclick="toggleIndoorLock()"><span><b>Indoor lock</b><span id="menuLockSub" class="sub">off</span></span><span class="arrow">›</span></button>
+  <button class="menuItem" onclick="toggleRoute()"><span><b>Route</b><span id="menuRouteSub" class="sub">on</span></span><span class="arrow">›</span></button>
+  <button class="menuItem" onclick="clearRoute()"><b>Clear route only</b></button>
+  <button class="menuItem" onclick="clearTripPreview()"><b>Clear trip preview</b></button>
+  <button class="menuItem" onclick="hideUI()"><b>Hide UI</b></button>
+  <button class="menuItem" onclick="backup()"><b>Backup</b></button>
+  <button class="menuItem" onclick="importData()"><b>Import</b></button>
+  <button class="menuItem danger" onclick="resetData()"><b>Reset all data</b></button>
+  <button class="menuItem" onclick="toggleMenu()" style="justify-content:center"><b>Close</b></button>
 
-  <div style="margin-top:18px;font-weight:900;font-size:18px">Trips history</div>
+  <div style="margin-top:16px;font-weight:900;font-size:18px">Trips history</div>
   <div id="tripsList"></div>
 </div>
 
@@ -93,31 +432,33 @@ button:active{transform:scale(.94)}
   </div>
 
   <div class="row">
-    <div class="stat"><b id="walkedView">0 m</b><small>Walked</small></div>
-    <div class="stat"><b id="exploredView">0 m</b><small>Explored</small></div>
-    <div class="stat"><b id="areasView">0</b><small>Areas</small></div>
+    <div class="stat"><div class="statIcon">👣</div><div><b id="walkedView">0 m</b><small>Walked</small></div></div>
+    <div class="stat"><div class="statIcon">🗺️</div><div><b id="exploredView">0 m</b><small>Explored</small></div></div>
+    <div class="stat"><div class="statIcon">🚩</div><div><b id="areasView">0</b><small>Areas</small></div></div>
   </div>
 
   <div class="row">
-    <div class="stat"><b id="countryView">Unknown</b><small>Country</small></div>
-    <div class="stat"><b id="modeView">🚶 Walk</b><small>Mode</small></div>
-    <div class="stat"><b id="gpsView">GPS</b><small>Signal</small></div>
+    <div class="stat"><div class="statIcon">🌍</div><div><b id="countryView">Unknown</b><small>Country</small></div></div>
+    <div class="stat"><div class="statIcon" id="modeIcon">🚶</div><div><b id="modeView">Walk</b><small>Mode</small></div></div>
+    <div class="stat"><div class="statIcon">📶</div><div><b id="gpsView">GPS</b><small>Signal</small></div></div>
   </div>
 
   <div class="controls">
     <button onclick="centerMe()">📍</button>
-    <button id="pauseBtn" class="pauseBtn" onclick="togglePause()">Pause</button>
-    <button id="lockBtn" class="lockBtn" onclick="toggleIndoorLock()">Lock</button>
-    <button id="followBtn" class="followBtn on" onclick="toggleFollow()">Follow</button>
-    <button id="tripBtn" onclick="toggleTrip()">Trip</button>
-    <button onclick="toggleMenu()">Menu</button>
+    <button id="pauseBtn" class="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+    <button id="lockBtn" class="lockBtn" onclick="toggleIndoorLock()">🔒 Lock</button>
+    <button id="followBtn" class="followBtn on" onclick="toggleFollow()">🧭 Follow<br><small>on</small></button>
+    <button id="tripBtn" onclick="toggleTrip()">🎒 Trip</button>
+    <button onclick="toggleMenu()">☰ Menu</button>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-const KEY="wg_006_stable_full_";
+const KEY="wg_006_premium_a_";
 const OLD_KEYS=[
+  "wg_006_stable_full_",
   "wg_006_pro_max_ultra_full_",
   "wg_006_pro_max_gps_final_",
   "wg_006_pro_trips_",
@@ -282,29 +623,39 @@ function save(force=false){
 }
 
 function updateUI(){
+  const cm=currentMode();
+
   document.getElementById("walkedView").innerText=formatMeters(walked);
   document.getElementById("exploredView").innerText=formatMeters(explored);
   document.getElementById("areasView").innerText=Object.keys(visited).length;
   document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
-  document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
+  document.getElementById("modeView").innerText=cm.label;
+  document.getElementById("modeIcon").innerText=cm.icon;
   document.getElementById("gpsView").innerText=gpsQuality();
 
+  document.getElementById("hudGps").innerText=gpsQuality();
+  document.getElementById("hudLock").innerText=indoorLock?"on":"off";
+  document.getElementById("hudAcc").innerText=accuracy?("± "+Math.round(accuracy)+" m"):"± -- m";
+
   document.querySelectorAll(".modeBtn").forEach(btn=>btn.classList.remove("activeMode"));
-  const active=document.getElementById("mode"+currentMode().label);
+  const active=document.getElementById("mode"+cm.label);
   if(active)active.classList.add("activeMode");
 
-  document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause";
+  document.getElementById("pauseBtn").innerHTML=paused?"▶ Resume":"⏸ Pause";
   document.getElementById("pauseBtn").classList.toggle("paused",paused);
-  document.getElementById("lockBtn").innerText=indoorLock?"Unlock":"Lock";
+
+  document.getElementById("lockBtn").innerHTML=indoorLock?"🔓 Unlock":"🔒 Lock";
   document.getElementById("lockBtn").classList.toggle("locked",indoorLock);
-  document.getElementById("lockMenuBtn").innerText=indoorLock?"Indoor lock on":"Indoor lock off";
-  document.getElementById("followBtn").innerText=followMe?"Follow":"Off";
+
+  document.getElementById("followBtn").innerHTML=followMe?"🧭 Follow<br><small>on</small>":"🧭 Follow<br><small>off</small>";
   document.getElementById("followBtn").classList.toggle("on",followMe);
-  document.getElementById("followMenuBtn").innerText=followMe?"Follow on":"Follow off";
-  document.getElementById("tripBtn").innerText=currentTrip?"Stop":"Trip";
+
+  document.getElementById("tripBtn").innerHTML=currentTrip?"💾 Stop":"🎒 Trip";
   document.getElementById("tripBtn").classList.toggle("tripActive",!!currentTrip);
-  document.getElementById("tripMenuBtn").innerText=currentTrip?"Stop trip":"Start trip";
-  document.getElementById("tripMenuBtn").classList.toggle("tripActive",!!currentTrip);
+
+  document.getElementById("menuFollowSub").innerText=followMe?"on":"off";
+  document.getElementById("menuLockSub").innerText=indoorLock?"on":"off";
+  document.getElementById("menuRouteSub").innerText=routeVisible?"on":"off";
 
   renderTrips();
   save(false);
@@ -314,7 +665,7 @@ function updateStatus(accepted){
   if(paused)document.getElementById("status").innerText="Paused";
   else if(indoorLock)document.getElementById("status").innerText="Indoor lock";
   else if(exploring)document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
-  else document.getElementById("status").innerText=followMe?"GPS ready · Follow":"GPS ready";
+  else document.getElementById("status").innerText=followMe?"GPS ready • Follow on":"GPS ready";
 }
 
 function toast(text){
@@ -331,6 +682,7 @@ function updateUserDot(){
   dot.style.left=point.x+"px";
   dot.style.top=point.y+"px";
   dot.style.display="block";
+
   const pulseEl=document.getElementById("pulse");
   pulseEl.style.left=point.x+"px";
   pulseEl.style.top=point.y+"px";
@@ -346,17 +698,6 @@ function updateAccuracyCircle(){
   el.style.width=(px*2)+"px";
   el.style.height=(px*2)+"px";
   el.style.display="block";
-
-  if(gpsQuality()==="Good"){
-    el.style.background="rgba(0,255,136,.09)";
-    el.style.borderColor="rgba(0,255,136,.24)";
-  }else if(gpsQuality()==="Weak"){
-    el.style.background="rgba(255,204,102,.10)";
-    el.style.borderColor="rgba(255,204,102,.28)";
-  }else{
-    el.style.background="rgba(255,80,80,.08)";
-    el.style.borderColor="rgba(255,80,80,.24)";
-  }
 }
 
 function pulse(){
@@ -384,7 +725,7 @@ function eraseCircle(x,y,r){
 
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
-  ctx.fillStyle="rgba(0,0,0,.84)";
+  ctx.fillStyle="rgba(0,0,0,.82)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
   const w=fog.width,h=fog.height;
@@ -434,7 +775,7 @@ function addVisitedAt(a,b,notify=true){
     explored+=Math.min(currentMode().step,30);
     if(currentTrip)currentTrip.areas=(currentTrip.areas||0)+1;
     if(notify){
-      toast("New area explored · "+currentMode().label);
+      toast("New area explored • "+currentMode().label);
       pulse();
     }
   }
@@ -539,7 +880,9 @@ function centerMe(){
   updateUI();
 }
 
-function toggleMenu(){document.getElementById("menu").classList.toggle("open")}
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
+}
 
 function hideUI(){
   document.getElementById("panel").classList.add("hidden");
@@ -563,6 +906,7 @@ function toggleRoute(){
     map.removeLayer(routeLine);
     toast("Route hidden");
   }
+  updateUI();
 }
 
 function updateRoute(){
@@ -602,7 +946,10 @@ function stopTrip(){
   save(true);
 }
 
-function toggleTrip(){if(currentTrip)stopTrip();else startTrip()}
+function toggleTrip(){
+  if(currentTrip)stopTrip();
+  else startTrip();
+}
 
 function renderTrips(){
   const box=document.getElementById("tripsList");
