@@ -16,14 +16,15 @@ html,body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-#map{height:100%}
-
-/* карта немного светлее */
-.leaflet-tile-pane{
-  filter:brightness(1.05) contrast(1.05) saturate(1.1);
+#map{
+  height:100%;
 }
 
-/* туман */
+.leaflet-tile-pane{
+  filter:brightness(1.05) contrast(1.05) saturate(1.08);
+}
+
+/* ВЕРХНИЙ СЛОЙ, КОТОРЫЙ СТИРАЕТСЯ */
 #fog{
   position:absolute;
   inset:0;
@@ -31,70 +32,84 @@ html,body{
   pointer-events:none;
 }
 
-/* зелёная точка */
+/* ЗЕЛЁНАЯ ТОЧКА */
 .userDot{
   width:18px;
   height:18px;
   border-radius:50%;
   background:#00ff88;
   border:4px solid white;
-  box-shadow:0 0 0 10px rgba(0,255,136,.25),0 0 30px #00ff88;
+  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
 }
 
-/* UI */
+.panel,.menu,.toast,.showBtn{
+  background:rgba(70,70,70,.72);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  color:white;
+  box-shadow:0 18px 45px rgba(0,0,0,.35);
+}
+
 .panel{
   position:absolute;
   left:14px;
   right:14px;
   bottom:18px;
-  padding:18px;
-  border-radius:26px;
-  background:rgba(60,60,60,.7);
-  backdrop-filter:blur(20px);
-  color:white;
   z-index:9999;
+  padding:18px;
+  border-radius:28px;
 }
 
-.panel.hidden{display:none;}
+.panel.hidden{display:none}
 
 .title{
-  font-size:30px;
+  font-size:32px;
   font-weight:900;
 }
 
 .status{
-  color:rgba(255,255,255,.7);
   margin-top:4px;
+  color:rgba(255,255,255,.72);
+  font-size:16px;
 }
 
 .row{
   display:flex;
   gap:10px;
-  margin-top:12px;
+  margin-top:14px;
 }
 
 .stat{
   flex:1;
   text-align:center;
-  background:rgba(255,255,255,.1);
-  padding:12px;
-  border-radius:16px;
+  padding:14px 8px;
+  border-radius:20px;
+  background:rgba(255,255,255,.10);
 }
 
-.stat b{font-size:24px}
+.stat b{font-size:26px}
+.stat small{color:rgba(255,255,255,.65)}
 
 button{
   border:0;
-  border-radius:16px;
-  padding:12px;
-  font-weight:800;
+  border-radius:18px;
+  padding:14px;
+  font-weight:900;
+  font-size:16px;
   color:white;
-  background:rgba(255,255,255,.15);
+  background:rgba(255,255,255,.12);
 }
 
+button:active{transform:scale(.94)}
+
 .main{
-  background:linear-gradient(135deg,#00ff88,#7dffd4);
-  color:#002c18;
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.main.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
 }
 
 .menu{
@@ -103,42 +118,37 @@ button{
   left:14px;
   right:14px;
   bottom:18px;
-  padding:20px;
-  border-radius:26px;
-  background:rgba(60,60,60,.75);
-  backdrop-filter:blur(20px);
   z-index:10000;
+  padding:20px;
+  border-radius:28px;
 }
 
-.menu.open{display:block;}
+.menu.open{display:block}
 
 .showBtn{
   display:none;
   position:absolute;
-  bottom:20px;
   left:50%;
+  bottom:24px;
   transform:translateX(-50%);
-  padding:12px 20px;
-  border-radius:20px;
-  background:rgba(60,60,60,.8);
-  color:white;
   z-index:10001;
+  padding:14px 22px;
+  border-radius:22px;
 }
 
-.showBtn.visible{display:block;}
+.showBtn.visible{display:block}
 
 .toast{
   position:absolute;
-  top:20px;
-  left:20px;
-  right:20px;
-  background:rgba(60,60,60,.85);
-  padding:12px;
-  border-radius:14px;
-  color:white;
-  opacity:0;
-  transition:.3s;
+  top:22px;
+  left:18px;
+  right:18px;
   z-index:12000;
+  padding:14px;
+  border-radius:18px;
+  opacity:0;
+  transition:.25s;
+  font-weight:800;
 }
 </style>
 </head>
@@ -154,11 +164,13 @@ button{
 <div id="menu" class="menu">
   <button onclick="centerMe()" style="width:100%">📍 My location</button>
   <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
+  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
+  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset</button>
   <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
 </div>
 
 <div id="panel" class="panel">
-  <div style="display:flex;justify-content:space-between">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
     <div>
       <div class="title">WanderGlow</div>
       <div id="status" class="status">Waiting for GPS...</div>
@@ -167,9 +179,9 @@ button{
   </div>
 
   <div class="row">
-    <div class="stat"><b id="cellsView">0</b><br>Cells</div>
-    <div class="stat"><b id="xpView">0</b><br>XP</div>
-    <div class="stat"><b id="kmView">0.00</b><br>KM</div>
+    <div class="stat"><b id="kmView">0.00</b><br><small>KM</small></div>
+    <div class="stat"><b id="cellsView">0</b><br><small>Places</small></div>
+    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
   </div>
 
   <div class="row">
@@ -181,45 +193,70 @@ button{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map = L.map("map").setView([56.95,24.1],15);
+const map=L.map("map").setView([56.95,24.1],15);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap"
+}).addTo(map);
 
 let lat=null,lng=null;
 let marker=null;
 let exploring=false;
+let firstFix=true;
+let lastPoint=null;
 
-let cells=JSON.parse(localStorage.cells||"{}");
-let xp=Number(localStorage.xp||0);
-let total=Number(localStorage.total||0);
+let xp=Number(localStorage.wg_travel_xp||0);
+let total=Number(localStorage.wg_travel_total||0);
+let visited=JSON.parse(localStorage.wg_travel_visited||"{}");
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
-function resize(){
+function resizeFog(){
   fog.width=window.innerWidth;
   fog.height=window.innerHeight;
-}
-resize();
-
-function cellKey(a,b){
-  return Math.floor(a*1000)+"_"+Math.floor(b*1000);
+  drawFog();
 }
 
-function cellCenter(key){
+window.addEventListener("resize",resizeFog);
+map.on("move zoom",drawFog);
+resizeFog();
+
+function keyFor(a,b){
+  return Math.floor(a*4000)+"_"+Math.floor(b*4000);
+}
+
+function keyCenter(key){
   const p=key.split("_");
-  return [(Number(p[0])+0.5)/1000,(Number(p[1])+0.5)/1000];
+  return [
+    (Number(p[0])+0.5)/4000,
+    (Number(p[1])+0.5)/4000
+  ];
+}
+
+function metersToPixels(m, latitude){
+  const zoom=map.getZoom();
+  const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
+  return m/metersPerPixel;
 }
 
 function save(){
-  localStorage.cells=JSON.stringify(cells);
-  localStorage.xp=xp;
-  localStorage.total=total;
+  localStorage.wg_travel_xp=xp;
+  localStorage.wg_travel_total=total;
+  localStorage.wg_travel_visited=JSON.stringify(visited);
 }
 
-function toast(t){
+function updateUI(){
+  document.getElementById("xpView").innerText=xp;
+  document.getElementById("cellsView").innerText=Object.keys(visited).length;
+  document.getElementById("kmView").innerText=(total/1000).toFixed(2);
+  save();
+}
+
+function toast(text){
   const el=document.getElementById("toast");
-  el.innerText=t;
+  el.innerText=text;
   el.style.opacity=1;
   setTimeout(()=>el.style.opacity=0,2000);
 }
@@ -228,21 +265,25 @@ function drawUser(){
   const icon=L.divIcon({
     html:'<div class="userDot"></div>',
     className:'',
-    iconSize:[30,30],
-    iconAnchor:[15,15]
+    iconSize:[34,34],
+    iconAnchor:[17,17]
   });
 
   if(!marker){
-    marker=L.marker([lat,lng],{icon}).addTo(map);
+    marker=L.marker([lat,lng],{
+      icon,
+      zIndexOffset:10000
+    }).addTo(map);
   }else{
     marker.setLatLng([lat,lng]);
   }
 }
 
-/* FOG */
-function cut(x,y,r){
+/* СТИРАЕМ ВЕРХНИЙ СЛОЙ */
+function eraseCircle(x,y,r){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
+  g.addColorStop(.55,"rgba(0,0,0,.8)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
@@ -256,28 +297,37 @@ function cut(x,y,r){
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
 
-  ctx.fillStyle="rgba(0,0,0,.85)";
+  /* Верхний слой: неизведанная карта */
+  ctx.fillStyle="rgba(0,0,0,.88)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  Object.keys(cells).forEach(k=>{
-    const p=map.latLngToContainerPoint(cellCenter(k));
-    cut(p.x,p.y,25);
+  /* Сохранённые открытые места */
+  Object.keys(visited).forEach(key=>{
+    const c=keyCenter(key);
+    const p=map.latLngToContainerPoint(c);
+    eraseCircle(p.x,p.y,metersToPixels(28,c[0]));
   });
 
-  if(lat){
+  /* Текущий обзор путешественника */
+  if(lat!==null&&lng!==null){
     const p=map.latLngToContainerPoint([lat,lng]);
-    cut(p.x,p.y,60);
+    eraseCircle(p.x,p.y,metersToPixels(35,lat));
   }
 }
 
-/* UI */
 function toggleExplore(){
   exploring=!exploring;
+  document.getElementById("exploreBtn").classList.toggle("active",exploring);
   document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
+  document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
 }
 
 function centerMe(){
-  if(lat) map.setView([lat,lng],17);
+  if(lat===null||lng===null){
+    toast("GPS ещё ищет локацию");
+    return;
+  }
+  map.setView([lat,lng],17);
 }
 
 function toggleMenu(){
@@ -295,34 +345,79 @@ function showUI(){
   document.getElementById("showBtn").classList.remove("visible");
 }
 
-/* GPS */
+function backup(){
+  const data={
+    xp,
+    total,
+    visited,
+    exportedAt:new Date().toISOString()
+  };
+
+  const text=JSON.stringify(data,null,2);
+
+  navigator.clipboard.writeText(text)
+    .then(()=>toast("Backup copied"))
+    .catch(()=>prompt("Copy backup:",text));
+}
+
+function resetData(){
+  if(prompt("Для удаления напиши DELETE")!=="DELETE"){
+    toast("Cancelled");
+    return;
+  }
+
+  localStorage.removeItem("wg_travel_xp");
+  localStorage.removeItem("wg_travel_total");
+  localStorage.removeItem("wg_travel_visited");
+  location.reload();
+}
+
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
   drawUser();
-  map.setView([lat,lng],17);
 
-  document.getElementById("status").innerText="Exploring";
-
-  if(exploring){
-    const key=cellKey(lat,lng);
-    if(!cells[key]){
-      cells[key]=true;
-      xp+=10;
-      toast("+10 XP");
+  if(lastPoint){
+    const d=map.distance(lastPoint,[lat,lng]);
+    if(d>2&&d<1000){
+      total+=d;
     }
   }
 
-  document.getElementById("xpView").innerText=xp;
-  document.getElementById("cellsView").innerText=Object.keys(cells).length;
+  lastPoint=[lat,lng];
 
-  save();
+  if(firstFix){
+    map.setView([lat,lng],17);
+    firstFix=false;
+  }
+
+  document.getElementById("status").innerText=exploring?"Exploring...":"GPS ready";
+
+  if(exploring){
+    const key=keyFor(lat,lng);
+
+    if(!visited[key]){
+      visited[key]=true;
+      xp+=10;
+      toast("+10 XP · new place discovered");
+    }
+  }
+
+  updateUI();
   drawFog();
 
+},()=>{
+  document.getElementById("status").innerText="GPS error";
+  toast("Разреши доступ к геолокации");
 },{
-  enableHighAccuracy:true
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
 });
+
+updateUI();
+drawFog();
 </script>
 
 </body>
