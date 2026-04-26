@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 006 PRO MAX ULTRA FULL</title>
+<title>WanderGlow 006 Stable Full</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 #map{height:100%;width:100%;background:#050505}
-.leaflet-tile-pane{filter:brightness(.95) contrast(1.08) saturate(1.05)}
+.leaflet-tile-pane{filter:brightness(.82) contrast(1.12) saturate(.95)}
 .leaflet-control-container{z-index:3000}
 #fog{position:absolute;inset:0;z-index:500;pointer-events:none}
-#accuracyCircle{position:absolute;border-radius:50%;background:rgba(0,255,136,.10);border:2px solid rgba(0,255,136,.24);transform:translate(-50%,-50%);pointer-events:none;z-index:3000;display:none}
+#accuracyCircle{position:absolute;border-radius:50%;background:rgba(0,255,136,.10);border:2px solid rgba(0,255,136,.25);transform:translate(-50%,-50%);pointer-events:none;z-index:3000;display:none}
 #pulse{position:absolute;z-index:3900;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none}
 #pulse.on{animation:pulse .8s ease-out}
 @keyframes pulse{0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
@@ -115,10 +115,10 @@ button:active{transform:scale(.94)}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-const KEY="wg_006_pro_max_ultra_full_";
+const KEY="wg_006_stable_full_";
 const OLD_KEYS=[
+  "wg_006_pro_max_ultra_full_",
   "wg_006_pro_max_gps_final_",
   "wg_006_pro_trips_",
   "wg_005_pro_max_ui_upgrade_",
@@ -139,13 +139,16 @@ function loadValue(name,fallback){
   }
   return fallback;
 }
-function safeJSON(text,fallback){try{return JSON.parse(text)}catch(e){return fallback}}
+
+function safeJSON(text,fallback){
+  try{return JSON.parse(text)}catch(e){return fallback}
+}
 
 const map=L.map("map",{zoomControl:true,preferCanvas:true}).setView([56.95,24.1],15);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
-  attribution:"&copy; OpenStreetMap &copy; CARTO",
-  subdomains:"abcd",
-  maxZoom:20
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap"
 }).addTo(map);
 
 let lat=null,lng=null,accuracy=null;
@@ -159,8 +162,8 @@ let explored=Number(loadValue("explored",0));
 let visited=safeJSON(loadValue("visited","{}"),{});
 let routePath=safeJSON(loadValue("routePath","[]"),[]).slice(-1600);
 let mode=loadValue("mode","walk");
-let trips=safeJSON(localStorage[KEY+"trips"]||loadValue("trips","[]"),[]);
-let currentTrip=safeJSON(localStorage[KEY+"currentTrip"]||loadValue("currentTrip","null"),null);
+let trips=safeJSON(loadValue("trips","[]"),[]);
+let currentTrip=safeJSON(loadValue("currentTrip","null"),null);
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
@@ -189,6 +192,7 @@ function resizeFog(){
   updateUserDot();
   updateAccuracyCircle();
 }
+
 window.addEventListener("resize",resizeFog);
 map.on("move zoom",()=>{requestFogDraw();updateUserDot();updateAccuracyCircle()});
 map.on("dragstart",()=>{if(!suppressMapEvent){followMe=false;updateUI();toast("Follow off")}});
@@ -216,43 +220,53 @@ function requestFogDraw(){
   requestAnimationFrame(()=>{fogQueued=false;drawFog()});
 }
 
-function formatMeters(m){return m>=1000?(m/1000).toFixed(2)+" km":Math.round(m)+" m"}
+function formatMeters(m){
+  return m>=1000?(m/1000).toFixed(2)+" km":Math.round(m)+" m";
+}
+
 function formatDate(ts){
   const d=new Date(ts);
   return d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 }
+
 function getCountry(a,b){
   if(a>=55.6&&a<=58.1&&b>=20.8&&b<=28.3)return "Latvia";
   if(a>=54.8&&a<=56.5&&b>=20.9&&b<=26.9)return "Lithuania";
   if(a>=57.4&&a<=59.8&&b>=21.5&&b<=28.3)return "Estonia";
   return "Unknown";
 }
+
 function keyFor(a,b){
   const scale=currentMode().keyScale;
   return mode+"_"+Math.floor(a*scale)+"_"+Math.floor(b*scale);
 }
+
 function keyCenter(key){
   const parts=key.split("_");
   const keyMode=parts[0];
   const scale=(modes[keyMode]||modes.walk).keyScale;
   return [(Number(parts[1])+0.5)/scale,(Number(parts[2])+0.5)/scale];
 }
+
 function metersToPixels(m,latitude){
   const zoom=map.getZoom();
   const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
   return Math.max(4,m/metersPerPixel);
 }
+
 function gpsQuality(){
   if(accuracy===null)return "Search";
   if(accuracy<=20)return "Good";
   if(accuracy<=45)return "Weak";
   return "Bad";
 }
+
 function pruneVisited(){
   const keys=Object.keys(visited);
   if(keys.length<=4200)return;
   keys.slice(0,keys.length-4200).forEach(key=>delete visited[key]);
 }
+
 function save(force=false){
   const now=Date.now();
   if(!force&&now-lastSave<1800)return;
@@ -266,6 +280,7 @@ function save(force=false){
   localStorage[KEY+"trips"]=JSON.stringify(trips.slice(0,30));
   localStorage[KEY+"currentTrip"]=JSON.stringify(currentTrip);
 }
+
 function updateUI(){
   document.getElementById("walkedView").innerText=formatMeters(walked);
   document.getElementById("exploredView").innerText=formatMeters(explored);
@@ -294,18 +309,21 @@ function updateUI(){
   renderTrips();
   save(false);
 }
+
 function updateStatus(accepted){
   if(paused)document.getElementById("status").innerText="Paused";
   else if(indoorLock)document.getElementById("status").innerText="Indoor lock";
   else if(exploring)document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
   else document.getElementById("status").innerText=followMe?"GPS ready · Follow":"GPS ready";
 }
+
 function toast(text){
   const el=document.getElementById("toast");
   el.innerText=text;
   el.style.opacity=1;
   setTimeout(()=>{el.style.opacity=0},2200);
 }
+
 function updateUserDot(){
   if(lat===null||lng===null)return;
   const point=map.latLngToContainerPoint([lat,lng]);
@@ -317,6 +335,7 @@ function updateUserDot(){
   pulseEl.style.left=point.x+"px";
   pulseEl.style.top=point.y+"px";
 }
+
 function updateAccuracyCircle(){
   if(lat===null||lng===null||accuracy===null)return;
   const point=map.latLngToContainerPoint([lat,lng]);
@@ -327,6 +346,7 @@ function updateAccuracyCircle(){
   el.style.width=(px*2)+"px";
   el.style.height=(px*2)+"px";
   el.style.display="block";
+
   if(gpsQuality()==="Good"){
     el.style.background="rgba(0,255,136,.09)";
     el.style.borderColor="rgba(0,255,136,.24)";
@@ -338,6 +358,7 @@ function updateAccuracyCircle(){
     el.style.borderColor="rgba(255,80,80,.24)";
   }
 }
+
 function pulse(){
   if(lat===null||lng===null)return;
   const el=document.getElementById("pulse");
@@ -346,6 +367,7 @@ function pulse(){
   el.classList.add("on");
   if(navigator.vibrate)navigator.vibrate(20);
 }
+
 function eraseCircle(x,y,r){
   const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
   gradient.addColorStop(0,"rgba(0,0,0,1)");
@@ -359,6 +381,7 @@ function eraseCircle(x,y,r){
   ctx.fill();
   ctx.globalCompositeOperation="source-over";
 }
+
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
   ctx.fillStyle="rgba(0,0,0,.84)";
@@ -384,6 +407,7 @@ function drawFog(){
     eraseCircle(point.x,point.y,metersToPixels(baseRadius*1.1,lat));
   }
 }
+
 function shouldAcceptMovement(distance,seconds,acc){
   const current=currentMode();
   if(paused||indoorLock)return false;
@@ -396,11 +420,13 @@ function shouldAcceptMovement(distance,seconds,acc){
   }
   return true;
 }
+
 function smoothPoint(a,b){
   if(!lastSmooth)lastSmooth=[a,b];
   else lastSmooth=[lastSmooth[0]*0.75+a*0.25,lastSmooth[1]*0.75+b*0.25];
   return lastSmooth;
 }
+
 function addVisitedAt(a,b,notify=true){
   const key=keyFor(a,b);
   if(!visited[key]&&gpsQuality()!=="Bad"){
@@ -413,6 +439,7 @@ function addVisitedAt(a,b,notify=true){
     }
   }
 }
+
 function revealBetween(from,to){
   if(!from||!to)return;
   const dist=map.distance(from,to);
@@ -425,6 +452,7 @@ function revealBetween(from,to){
     addVisitedAt(a,b,false);
   }
 }
+
 function addRoutePoint(a,b){
   const point=smoothPoint(a,b);
   const last=routePath[routePath.length-1];
@@ -446,18 +474,21 @@ function addRoutePoint(a,b){
     currentTrip.route=currentTrip.route.slice(-1600);
   }
 }
+
 function followMap(){
   if(!followMe||lat===null||lng===null)return;
   suppressMapEvent=true;
   map.panTo([lat,lng],{animate:true,duration:.4});
   setTimeout(()=>{suppressMapEvent=false},500);
 }
+
 function toggleFollow(){
   followMe=true;
   centerMe();
   toast("Follow locked");
   updateUI();
 }
+
 function setMode(newMode){
   mode=newMode;
   lastAccepted=null;
@@ -467,6 +498,7 @@ function setMode(newMode){
   requestFogDraw();
   save(true);
 }
+
 function toggleExplore(){
   startGPS();
   exploring=!exploring;
@@ -477,6 +509,7 @@ function toggleExplore(){
   updateStatus(false);
   updateUI();
 }
+
 function togglePause(){
   paused=!paused;
   lastAccepted=null;
@@ -484,6 +517,7 @@ function togglePause(){
   updateStatus(false);
   updateUI();
 }
+
 function toggleIndoorLock(){
   indoorLock=!indoorLock;
   lastAccepted=null;
@@ -491,6 +525,7 @@ function toggleIndoorLock(){
   toast(indoorLock?"Indoor lock on":"Indoor lock off");
   updateUI();
 }
+
 function centerMe(){
   startGPS();
   if(lat===null||lng===null){
@@ -503,16 +538,20 @@ function centerMe(){
   setTimeout(()=>{suppressMapEvent=false},700);
   updateUI();
 }
+
 function toggleMenu(){document.getElementById("menu").classList.toggle("open")}
+
 function hideUI(){
   document.getElementById("panel").classList.add("hidden");
   document.getElementById("menu").classList.remove("open");
   document.getElementById("showBtn").classList.add("visible");
 }
+
 function showUI(){
   document.getElementById("panel").classList.remove("hidden");
   document.getElementById("showBtn").classList.remove("visible");
 }
+
 function toggleRoute(){
   routeVisible=!routeVisible;
   if(routeVisible){
@@ -525,10 +564,12 @@ function toggleRoute(){
     toast("Route hidden");
   }
 }
+
 function updateRoute(){
   routeGlow.setLatLngs(routePath);
   routeLine.setLatLngs(routePath);
 }
+
 function clearRoute(){
   if(!confirm("Clear route only? Opened map will stay."))return;
   routePath=[];
@@ -537,6 +578,7 @@ function clearRoute(){
   save(true);
   toast("Route cleared");
 }
+
 function startTrip(){
   if(currentTrip)return;
   currentTrip={id:Date.now(),startedAt:Date.now(),endedAt:null,mode:mode,distance:0,areas:0,route:[]};
@@ -544,6 +586,7 @@ function startTrip(){
   updateUI();
   save(true);
 }
+
 function stopTrip(){
   if(!currentTrip)return;
   currentTrip.endedAt=Date.now();
@@ -558,7 +601,9 @@ function stopTrip(){
   updateUI();
   save(true);
 }
+
 function toggleTrip(){if(currentTrip)stopTrip();else startTrip()}
+
 function renderTrips(){
   const box=document.getElementById("tripsList");
   if(!box)return;
@@ -582,13 +627,18 @@ function renderTrips(){
     `;
   }).join("");
 }
+
 function showTrip(i){
   const trip=trips[i];
-  if(!trip||!trip.route||!trip.route.length){toast("No route");return}
+  if(!trip||!trip.route||!trip.route.length){
+    toast("No route");
+    return;
+  }
   previewLine.setLatLngs(trip.route);
   map.fitBounds(L.latLngBounds(trip.route),{padding:[40,40]});
   toast("Trip preview");
 }
+
 function deleteTrip(i){
   if(!confirm("Delete this trip?"))return;
   trips.splice(i,1);
@@ -596,15 +646,18 @@ function deleteTrip(i){
   updateUI();
   save(true);
 }
+
 function clearTripPreview(){
   previewLine.setLatLngs([]);
   toast("Preview cleared");
 }
+
 function backup(){
   const data={walked,explored,visited,routePath,mode,trips,currentTrip,exportedAt:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
   navigator.clipboard.writeText(text).then(()=>toast("Backup copied")).catch(()=>prompt("Copy backup:",text));
 }
+
 function importData(){
   const text=prompt("Paste backup JSON");
   if(!text)return;
@@ -622,13 +675,20 @@ function importData(){
     requestFogDraw();
     save(true);
     toast("Import complete");
-  }catch(e){toast("Import error")}
+  }catch(e){
+    toast("Import error");
+  }
 }
+
 function resetData(){
-  if(prompt("Type DELETE to reset all data")!=="DELETE"){toast("Cancelled");return}
+  if(prompt("Type DELETE to reset all data")!=="DELETE"){
+    toast("Cancelled");
+    return;
+  }
   Object.keys(localStorage).forEach(key=>{if(key.startsWith(KEY))localStorage.removeItem(key)});
   location.reload();
 }
+
 function onGPS(pos){
   const rawLat=pos.coords.latitude;
   const rawLng=pos.coords.longitude;
@@ -700,6 +760,7 @@ function onGPS(pos){
   updateAccuracyCircle();
   followMap();
 }
+
 function onGPSError(){
   document.getElementById("status").innerText="GPS error";
   toast("Please allow location access");
