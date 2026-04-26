@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 005 PRO GPS SMART</title>
+<title>WanderGlow 005 ULTRA</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
@@ -12,148 +12,159 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-appl
 .leaflet-tile-pane{filter:brightness(1.09) contrast(1.06) saturate(1.1)}
 #fog{position:absolute;inset:0;z-index:500;pointer-events:none}
 
-#accuracyCircle{
-  position:absolute;
-  border-radius:50%;
-  background:rgba(0,255,136,.10);
-  border:2px solid rgba(0,255,136,.24);
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  z-index:3000;
-  display:none;
-}
+#accuracyCircle{position:absolute;border-radius:50%;background:rgba(0,255,136,.10);border:2px solid rgba(0,255,136,.24);transform:translate(-50%,-50%);pointer-events:none;z-index:3000;display:none}
+#userDot{position:absolute;z-index:4000;width:18px;height:18px;border-radius:50%;background:#00ff88;border:4px solid #fff;box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 34px #00ff88;transform:translate(-50%,-50%);display:none}
 
-#userDot{
-  position:absolute;
-  z-index:4000;
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:#00ff88;
-  border:4px solid #fff;
-  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 34px #00ff88;
-  transform:translate(-50%,-50%);
-  display:none;
-  pointer-events:none;
-}
-
-#pulse{
-  position:absolute;
-  z-index:3900;
-  width:80px;
-  height:80px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);
-  transform:translate(-50%,-50%) scale(.4);
-  opacity:0;
-  pointer-events:none;
-}
-#pulse.on{animation:pulse .8s ease-out}
-@keyframes pulse{
-  0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
-}
-
-.panel,.menu,.toast,.showBtn{
-  background:rgba(62,62,62,.76);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  color:white;
-  box-shadow:0 18px 45px rgba(0,0,0,.35);
-}
-
-.panel{
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:5000;
-  padding:18px;
-  border-radius:28px;
-}
-.panel.hidden{display:none}
-.title{font-size:34px;font-weight:900;letter-spacing:-1px}
-.status{margin-top:4px;color:rgba(255,255,255,.72);font-size:16px}
+.panel{position:absolute;left:14px;right:14px;bottom:18px;z-index:5000;padding:18px;border-radius:28px;background:rgba(62,62,62,.76);backdrop-filter:blur(24px);color:#fff}
 .row{display:flex;gap:10px;margin-top:14px}
-.stat{flex:1;text-align:center;padding:13px 7px;border-radius:20px;background:rgba(255,255,255,.10)}
-.stat b{display:block;font-size:22px}
-.stat small{color:rgba(255,255,255,.65)}
-
-button{
-  border:0;
-  border-radius:18px;
-  padding:14px;
-  font-weight:900;
-  font-size:16px;
-  color:white;
-  background:rgba(255,255,255,.13);
-}
-button:active{transform:scale(.94)}
-.main{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215}
-.main.active{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
-.pauseBtn.paused,.lockBtn.locked{background:linear-gradient(135deg,#ffcc66,#fff2b0);color:#2c1d00}
-
-.menu{
-  display:none;
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:6000;
-  padding:20px;
-  border-radius:28px;
-  max-height:78vh;
-  overflow:auto;
-}
-.menu.open{display:block}
-.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.modeBtn.activeMode{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215}
-.showBtn{
-  display:none;
-  position:absolute;
-  left:50%;
-  bottom:24px;
-  transform:translateX(-50%);
-  z-index:6000;
-  padding:14px 22px;
-  border-radius:22px;
-}
-.showBtn.visible{display:block}
-.toast{
-  position:absolute;
-  top:22px;
-  left:18px;
-  right:18px;
-  z-index:7000;
-  padding:14px;
-  border-radius:18px;
-  opacity:0;
-  transition:.25s;
-  font-weight:800;
-}
+.stat{flex:1;text-align:center;background:rgba(255,255,255,.10);padding:10px;border-radius:14px}
+button{border:0;border-radius:18px;padding:12px;font-weight:900;background:rgba(255,255,255,.13);color:white}
+.main{background:#00ff88;color:#000}
 </style>
 </head>
 
 <body>
+
 <div id="map"></div>
 <canvas id="fog"></canvas>
 <div id="accuracyCircle"></div>
-<div id="pulse"></div>
 <div id="userDot"></div>
-<div id="toast" class="toast"></div>
 
-<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
+<div class="panel">
+<div>WanderGlow ULTRA</div>
+<div id="status">GPS...</div>
 
-<!-- ДАЛЬШЕ КОД ИДЁТ БЕЗ ИЗМЕНЕНИЙ -->
+<div class="row">
+<div class="stat"><b id="walked">0</b>Walked</div>
+<div class="stat"><b id="explored">0</b>Explored</div>
+<div class="stat"><b id="areas">0</b>Areas</div>
+</div>
+
+<div class="row">
+<button onclick="toggleExplore()" class="main">Explore</button>
+<button onclick="center()">Follow</button>
+</div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// ⚠️ Я обрезал здесь, чтобы не спамить повторно 1000 строк
+const map=L.map("map").setView([56.95,24.1],15);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-// 👉 ВАЖНО:
-// Ты используешь ТОТ ЖЕ код что я дал в прошлом сообщении полностью
+let lat=null,lng=null,accuracy=null;
+let exploring=false;
+let follow=true;
+let gpsBuffer=[];
+let visited=JSON.parse(localStorage.getItem("ultra_v")||"{}");
+let explored=Number(localStorage.getItem("ultra_e")||0);
+let walked=Number(localStorage.getItem("ultra_w")||0);
 
+const fog=document.getElementById("fog");
+const ctx=fog.getContext("2d");
+
+function resize(){
+fog.width=innerWidth;
+fog.height=innerHeight;
+drawFog();
+}
+window.addEventListener("resize",resize);
+resize();
+
+function metersToPixels(m,lat){
+const zoom=map.getZoom();
+const mpp=40075016.686*Math.cos(lat*Math.PI/180)/Math.pow(2,zoom+8);
+return m/mpp;
+}
+
+function erase(x,y,r){
+const g=ctx.createRadialGradient(x,y,0,x,y,r);
+g.addColorStop(0,"rgba(0,0,0,1)");
+g.addColorStop(1,"rgba(0,0,0,0)");
+ctx.globalCompositeOperation="destination-out";
+ctx.fillStyle=g;
+ctx.beginPath();
+ctx.arc(x,y,r,0,Math.PI*2);
+ctx.fill();
+ctx.globalCompositeOperation="source-over";
+}
+
+function drawFog(){
+ctx.clearRect(0,0,fog.width,fog.height);
+ctx.fillStyle="rgba(0,0,0,.9)";
+ctx.fillRect(0,0,fog.width,fog.height);
+
+Object.keys(visited).forEach(k=>{
+const [a,b]=k.split("_").map(Number);
+const p=map.latLngToContainerPoint([a,b]);
+erase(p.x,p.y,metersToPixels(25,a));
+});
+
+if(lat){
+const p=map.latLngToContainerPoint([lat,lng]);
+erase(p.x,p.y,metersToPixels(25,lat));
+}
+}
+
+function updateDot(){
+if(!lat)return;
+const p=map.latLngToContainerPoint([lat,lng]);
+const d=document.getElementById("userDot");
+d.style.left=p.x+"px";
+d.style.top=p.y+"px";
+d.style.display="block";
+}
+
+function followMap(){
+if(!follow||!lat)return;
+map.panTo([lat,lng],{animate:true});
+}
+
+navigator.geolocation.watchPosition(pos=>{
+const rawLat=pos.coords.latitude;
+const rawLng=pos.coords.longitude;
+accuracy=pos.coords.accuracy;
+
+gpsBuffer.push({lat:rawLat,lng:rawLng});
+if(gpsBuffer.length>5)gpsBuffer.shift();
+
+let avgLat=0,avgLng=0;
+gpsBuffer.forEach(p=>{avgLat+=p.lat;avgLng+=p.lng});
+avgLat/=gpsBuffer.length;
+avgLng/=gpsBuffer.length;
+
+lat=lat?lat*0.7+avgLat*0.3:avgLat;
+lng=lng?lng*0.7+avgLng*0.3:avgLng;
+
+updateDot();
+drawFog();
+followMap();
+
+if(exploring){
+const key=lat.toFixed(5)+"_"+lng.toFixed(5);
+if(!visited[key]){
+visited[key]=true;
+explored+=20;
+localStorage.setItem("ultra_v",JSON.stringify(visited));
+localStorage.setItem("ultra_e",explored);
+}
+}
+
+document.getElementById("status").innerText="GPS";
+document.getElementById("explored").innerText=explored;
+document.getElementById("areas").innerText=Object.keys(visited).length;
+
+},{enableHighAccuracy:true});
+
+function toggleExplore(){
+exploring=!exploring;
+}
+
+function center(){
+follow=true;
+map.setView([lat,lng],17);
+}
 </script>
+
 </body>
 </html>
