@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 005 PRO MAX UI Upgrade</title>
+<title>WanderGlow 006 PRO Trips FINAL</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
@@ -14,28 +14,23 @@ html,body{
   background:#000;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
-
 #map{
   height:100%;
   width:100%;
   background:#111;
 }
-
 .leaflet-tile-pane{
   filter:brightness(1.08) contrast(1.06) saturate(1.08);
 }
-
 .leaflet-control-container{
   z-index:3000;
 }
-
 #fog{
   position:absolute;
   inset:0;
   z-index:500;
   pointer-events:none;
 }
-
 #accuracyCircle{
   position:absolute;
   border-radius:50%;
@@ -46,7 +41,6 @@ html,body{
   z-index:3000;
   display:none;
 }
-
 #pulse{
   position:absolute;
   z-index:3900;
@@ -58,16 +52,13 @@ html,body{
   opacity:0;
   pointer-events:none;
 }
-
 #pulse.on{
   animation:pulse .8s ease-out;
 }
-
 @keyframes pulse{
   0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}
   100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
 }
-
 #userDot{
   position:absolute;
   z-index:4000;
@@ -81,15 +72,14 @@ html,body{
   display:none;
   pointer-events:none;
 }
-
 .panel,.menu,.toast,.showBtn{
-  background:rgba(62,62,62,.78);
+  background:rgba(45,45,45,.82);
+  border:1px solid rgba(255,255,255,.08);
   backdrop-filter:blur(24px);
   -webkit-backdrop-filter:blur(24px);
   color:white;
   box-shadow:0 18px 45px rgba(0,0,0,.35);
 }
-
 .panel{
   position:absolute;
   left:14px;
@@ -99,29 +89,24 @@ html,body{
   padding:18px;
   border-radius:28px;
 }
-
 .panel.hidden{
   display:none;
 }
-
 .title{
   font-size:34px;
   font-weight:900;
   letter-spacing:-1px;
 }
-
 .status{
   margin-top:4px;
   color:rgba(255,255,255,.72);
   font-size:16px;
 }
-
 .row{
   display:flex;
   gap:10px;
   margin-top:14px;
 }
-
 .stat{
   flex:1;
   text-align:center;
@@ -129,16 +114,13 @@ html,body{
   border-radius:20px;
   background:rgba(255,255,255,.10);
 }
-
 .stat b{
   display:block;
   font-size:21px;
 }
-
 .stat small{
   color:rgba(255,255,255,.65);
 }
-
 button{
   border:0;
   border-radius:18px;
@@ -148,26 +130,21 @@ button{
   color:white;
   background:rgba(255,255,255,.13);
 }
-
 button:active{
   transform:scale(.94);
 }
-
 .main{
   background:linear-gradient(135deg,#00ff88,#baffdd);
   color:#052215;
 }
-
-.main.active{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
-  color:white;
+.main.active,.tripActive{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff)!important;
+  color:white!important;
 }
-
 .pauseBtn.paused,.lockBtn.locked,.followBtn.on{
   background:linear-gradient(135deg,#ffcc66,#fff2b0);
   color:#2c1d00;
 }
-
 .menu{
   display:none;
   position:absolute;
@@ -180,23 +157,44 @@ button:active{
   max-height:78vh;
   overflow:auto;
 }
-
 .menu.open{
   display:block;
 }
-
 .modeGrid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
   margin-top:10px;
 }
-
 .modeBtn.activeMode{
   background:linear-gradient(135deg,#00ff88,#baffdd);
   color:#052215;
 }
-
+.tripItem{
+  margin-top:10px;
+  padding:12px;
+  border-radius:18px;
+  background:rgba(255,255,255,.10);
+}
+.tripItem b{
+  display:block;
+  font-size:16px;
+}
+.tripItem small{
+  display:block;
+  margin-top:4px;
+  line-height:1.35;
+  color:rgba(255,255,255,.68);
+}
+.tripActions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.tripActions button{
+  font-size:13px;
+  padding:10px;
+}
 .showBtn{
   display:none;
   position:absolute;
@@ -207,11 +205,9 @@ button:active{
   padding:14px 24px;
   border-radius:24px;
 }
-
 .showBtn.visible{
   display:block;
 }
-
 .toast{
   position:absolute;
   top:22px;
@@ -243,7 +239,6 @@ button:active{
   <button onclick="centerMe()" style="width:100%">📍 My location</button>
 
   <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
-
   <div class="modeGrid">
     <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
     <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
@@ -251,15 +246,20 @@ button:active{
     <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
   </div>
 
+  <button id="tripMenuBtn" onclick="toggleTrip()" style="width:100%;margin-top:10px">Start trip</button>
   <button onclick="toggleFollow()" id="followMenuBtn" style="width:100%;margin-top:10px">Follow on</button>
   <button onclick="toggleIndoorLock()" id="lockMenuBtn" style="width:100%;margin-top:10px">Indoor lock off</button>
   <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
   <button onclick="clearRoute()" style="width:100%;margin-top:10px">Clear route only</button>
+  <button onclick="clearTripPreview()" style="width:100%;margin-top:10px">Clear trip preview</button>
   <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
   <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
   <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
   <button onclick="resetData()" style="width:100%;margin-top:10px;background:#a73030">Reset all data</button>
   <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
+
+  <div style="margin-top:18px;font-weight:900;font-size:18px">Trips history</div>
+  <div id="tripsList"></div>
 </div>
 
 <div id="panel" class="panel">
@@ -288,6 +288,7 @@ button:active{
     <button id="pauseBtn" class="pauseBtn" style="flex:1" onclick="togglePause()">Pause</button>
     <button id="lockBtn" class="lockBtn" style="flex:1" onclick="toggleIndoorLock()">Lock</button>
     <button id="followBtn" class="followBtn on" style="flex:1" onclick="toggleFollow()">Follow</button>
+    <button id="tripBtn" style="flex:1" onclick="toggleTrip()">Trip</button>
     <button style="flex:1" onclick="toggleMenu()">Menu</button>
   </div>
 </div>
@@ -295,8 +296,9 @@ button:active{
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const KEY="wg_005_pro_max_ui_upgrade_";
+const KEY="wg_006_pro_trips_";
 const OLD_KEYS=[
+  "wg_005_pro_max_ui_upgrade_",
   "wg_005_pro_max_final_plus_",
   "wg_005_ultra_",
   "wg_005_pro_max_plus_",
@@ -338,25 +340,29 @@ setTimeout(()=>{
 let lat=null,lng=null,accuracy=null;
 let exploring=false,paused=false,indoorLock=false,firstFix=true,routeVisible=true;
 let followMe=true,suppressMapEvent=false;
-let lastAccepted=null,fogQueued=false,lastSave=0,gpsBuffer=[];
+let lastAccepted=null,lastSmooth=null,fogQueued=false,lastSave=0,gpsQueue=[];
+let gpsStarted=false,watchId=null;
 
 let walked=Number(loadValue("walked",0));
 let explored=Number(loadValue("explored",0));
 let visited=safeJSON(loadValue("visited","{}"),{});
-let routePath=safeJSON(loadValue("routePath","[]"),[]).slice(-1200);
+let routePath=safeJSON(loadValue("routePath","[]"),[]).slice(-1600);
 let mode=loadValue("mode","walk");
+let trips=safeJSON(localStorage[KEY+"trips"]||"[]",[]);
+let currentTrip=safeJSON(localStorage[KEY+"currentTrip"]||"null",null);
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
 const routeGlow=L.polyline(routePath,{color:"#7dffd4",weight:9,opacity:.18,smoothFactor:1.5}).addTo(map);
 const routeLine=L.polyline(routePath,{color:"#00ff88",weight:4,opacity:.85,smoothFactor:1.5}).addTo(map);
+const previewLine=L.polyline([],{color:"#ffffff",weight:5,opacity:.75,dashArray:"8 10",smoothFactor:1.5}).addTo(map);
 
 const modes={
-  walk:{label:"Walk",icon:"🚶",radius:25,step:20,keyScale:4000,maxAccuracy:45,minDistance:8,maxJump:35,maxSpeed:8},
-  car:{label:"Car",icon:"🚗",radius:35,step:20,keyScale:2000,maxAccuracy:70,minDistance:10,maxJump:220,maxSpeed:140},
-  train:{label:"Train",icon:"🚆",radius:70,step:45,keyScale:1200,maxAccuracy:100,minDistance:15,maxJump:600,maxSpeed:300},
-  plane:{label:"Plane",icon:"✈️",radius:300,step:90,keyScale:300,maxAccuracy:500,minDistance:80,maxJump:30000,maxSpeed:1000}
+  walk:{label:"Walk",icon:"🚶",radius:25,step:20,keyScale:4000,maxAccuracy:45,minDistance:8,maxJump:45,maxSpeed:8,bridge:35},
+  car:{label:"Car",icon:"🚗",radius:35,step:20,keyScale:2000,maxAccuracy:70,minDistance:15,maxJump:120,maxSpeed:140,bridge:90},
+  train:{label:"Train",icon:"🚆",radius:70,step:45,keyScale:1200,maxAccuracy:100,minDistance:20,maxJump:600,maxSpeed:300,bridge:220},
+  plane:{label:"Plane",icon:"✈️",radius:300,step:90,keyScale:300,maxAccuracy:500,minDistance:80,maxJump:30000,maxSpeed:1000,bridge:2000}
 };
 
 function currentMode(){return modes[mode]||modes.walk}
@@ -374,6 +380,25 @@ map.on("move zoom",()=>{requestFogDraw();updateUserDot();updateAccuracyCircle()}
 map.on("dragstart",()=>{if(!suppressMapEvent){followMe=false;updateUI();toast("Follow off")}});
 resizeFog();
 
+function startGPS(){
+  if(gpsStarted)return;
+  gpsStarted=true;
+
+  if(!navigator.geolocation){
+    document.getElementById("status").innerText="GPS unavailable";
+    toast("GPS unavailable");
+    return;
+  }
+
+  watchId=navigator.geolocation.watchPosition(onGPS,onGPSError,{
+    enableHighAccuracy:true,
+    maximumAge:0,
+    timeout:15000
+  });
+}
+
+setTimeout(startGPS,500);
+
 function requestFogDraw(){
   if(fogQueued)return;
   fogQueued=true;
@@ -382,6 +407,11 @@ function requestFogDraw(){
 
 function formatMeters(m){
   return m>=1000?(m/1000).toFixed(2)+" km":Math.round(m)+" m";
+}
+
+function formatDate(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 }
 
 function getCountry(a,b){
@@ -418,8 +448,8 @@ function gpsQuality(){
 
 function pruneVisited(){
   const keys=Object.keys(visited);
-  if(keys.length<=3500)return;
-  keys.slice(0,keys.length-3500).forEach(key=>delete visited[key]);
+  if(keys.length<=4200)return;
+  keys.slice(0,keys.length-4200).forEach(key=>delete visited[key]);
 }
 
 function save(force=false){
@@ -430,8 +460,10 @@ function save(force=false){
   localStorage[KEY+"walked"]=walked;
   localStorage[KEY+"explored"]=explored;
   localStorage[KEY+"visited"]=JSON.stringify(visited);
-  localStorage[KEY+"routePath"]=JSON.stringify(routePath.slice(-1200));
+  localStorage[KEY+"routePath"]=JSON.stringify(routePath.slice(-1600));
   localStorage[KEY+"mode"]=mode;
+  localStorage[KEY+"trips"]=JSON.stringify(trips.slice(-30));
+  localStorage[KEY+"currentTrip"]=JSON.stringify(currentTrip);
 }
 
 function updateUI(){
@@ -457,7 +489,25 @@ function updateUI(){
   document.getElementById("followBtn").classList.toggle("on",followMe);
   document.getElementById("followMenuBtn").innerText=followMe?"Follow on":"Follow off";
 
+  document.getElementById("tripBtn").innerText=currentTrip?"Stop":"Trip";
+  document.getElementById("tripBtn").classList.toggle("tripActive",!!currentTrip);
+  document.getElementById("tripMenuBtn").innerText=currentTrip?"Stop trip":"Start trip";
+  document.getElementById("tripMenuBtn").classList.toggle("tripActive",!!currentTrip);
+
+  renderTrips();
   save(false);
+}
+
+function updateStatus(accepted){
+  if(paused){
+    document.getElementById("status").innerText="Paused";
+  }else if(indoorLock){
+    document.getElementById("status").innerText="Indoor lock";
+  }else if(exploring){
+    document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
+  }else{
+    document.getElementById("status").innerText=followMe?"GPS ready":"GPS ready";
+  }
 }
 
 function toast(text){
@@ -510,6 +560,7 @@ function pulse(){
   el.classList.remove("on");
   void el.offsetWidth;
   el.classList.add("on");
+  if(navigator.vibrate)navigator.vibrate(20);
 }
 
 function eraseCircle(x,y,r){
@@ -546,8 +597,8 @@ function drawFog(){
     const point=map.latLngToContainerPoint([lat,lng]);
     let baseRadius=currentMode().radius;
     if(gpsQuality()==="Weak")baseRadius*=0.7;
-    if(gpsQuality()==="Bad")baseRadius*=0.4;
-    if(accuracy&&accuracy>40)baseRadius*=0.6;
+    if(gpsQuality()==="Bad")baseRadius*=0.45;
+    if(accuracy&&accuracy>40)baseRadius*=0.75;
     eraseCircle(point.x,point.y,metersToPixels(baseRadius*1.1,lat));
   }
 }
@@ -558,6 +609,8 @@ function shouldAcceptMovement(distance,seconds,acc){
   if(acc!==null&&acc>current.maxAccuracy)return false;
   if(distance<current.minDistance)return false;
   if(distance>current.maxJump)return false;
+  if(mode==="car"&&distance<15)return false;
+  if(mode==="car"&&distance>80)return false;
 
   if(seconds&&seconds>0){
     const speedKmh=(distance/seconds)*3.6;
@@ -567,30 +620,96 @@ function shouldAcceptMovement(distance,seconds,acc){
   return true;
 }
 
-function followMap(){
-  if(!followMe||lat===null||lng===null)return;
-  const userPoint=map.latLngToContainerPoint([lat,lng]);
-  const centerPoint=map.latLngToContainerPoint(map.getCenter());
-  const dx=userPoint.x-centerPoint.x;
-  const dy=userPoint.y-centerPoint.y;
-  const dist=Math.sqrt(dx*dx+dy*dy);
+function smoothPoint(a,b){
+  if(!lastSmooth){
+    lastSmooth=[a,b];
+  }else{
+    lastSmooth=[
+      lastSmooth[0]*0.75+a*0.25,
+      lastSmooth[1]*0.75+b*0.25
+    ];
+  }
+  return lastSmooth;
+}
 
-  if(dist>18){
-    suppressMapEvent=true;
-    map.panTo([lat,lng],{animate:true,duration:.45});
-    setTimeout(()=>{suppressMapEvent=false},700);
+function addVisitedAt(a,b){
+  const key=keyFor(a,b);
+  if(!visited[key]&&gpsQuality()!=="Bad"){
+    visited[key]=true;
+    explored+=Math.min(currentMode().step,30);
+    toast("New area explored · "+currentMode().label);
+    pulse();
+    if(currentTrip)currentTrip.areas=(currentTrip.areas||0)+1;
   }
 }
 
+function revealBetween(from,to){
+  if(!from||!to)return;
+  const dist=map.distance(from,to);
+  const step=Math.max(currentMode().radius*0.65,15);
+  const count=Math.max(1,Math.ceil(dist/step));
+
+  for(let i=0;i<=count;i++){
+    const t=i/count;
+    const a=from[0]+(to[0]-from[0])*t;
+    const b=from[1]+(to[1]-from[1])*t;
+    addVisitedAt(a,b);
+  }
+}
+
+function addRoutePoint(a,b){
+  const point=smoothPoint(a,b);
+  const last=routePath[routePath.length-1];
+
+  if(last){
+    const dist=map.distance(last,point);
+    if(dist>currentMode().maxJump)return;
+
+    if(dist>currentMode().bridge){
+      const parts=Math.ceil(dist/currentMode().bridge);
+      for(let i=1;i<=parts;i++){
+        const t=i/parts;
+        const mid=[
+          last[0]+(point[0]-last[0])*t,
+          last[1]+(point[1]-last[1])*t
+        ];
+        routePath.push(mid);
+      }
+    }else{
+      routePath.push(point);
+    }
+  }else{
+    routePath.push(point);
+  }
+
+  if(routePath.length>1600)routePath=routePath.slice(-1600);
+  updateRoute();
+
+  if(currentTrip){
+    currentTrip.route=currentTrip.route||[];
+    currentTrip.route.push(point);
+    currentTrip.route=currentTrip.route.slice(-1600);
+  }
+}
+
+function followMap(){
+  if(!followMe||lat===null||lng===null)return;
+  suppressMapEvent=true;
+  map.panTo([lat,lng],{animate:true,duration:.4});
+  setTimeout(()=>{suppressMapEvent=false},500);
+}
+
 function toggleFollow(){
-  followMe=!followMe;
-  if(followMe)centerMe();
+  followMe=true;
+  centerMe();
+  toast("Follow locked");
   updateUI();
 }
 
 function setMode(newMode){
   mode=newMode;
   lastAccepted=null;
+  lastSmooth=null;
   toast("Mode: "+currentMode().label);
   updateUI();
   requestFogDraw();
@@ -598,29 +717,34 @@ function setMode(newMode){
 }
 
 function toggleExplore(){
+  startGPS();
   exploring=!exploring;
   const btn=document.getElementById("exploreBtn");
   btn.classList.toggle("active",exploring);
   btn.innerText=exploring?"Exploring":"Explore";
-  document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
+  if(exploring&&!currentTrip)startTrip();
+  updateStatus(false);
   updateUI();
 }
 
 function togglePause(){
   paused=!paused;
   lastAccepted=null;
-  document.getElementById("status").innerText=paused?"Tracking paused":(exploring?"Exploring...":"GPS ready");
+  lastSmooth=null;
+  updateStatus(false);
   updateUI();
 }
 
 function toggleIndoorLock(){
   indoorLock=!indoorLock;
   lastAccepted=null;
+  lastSmooth=null;
   toast(indoorLock?"Indoor lock on":"Indoor lock off");
   updateUI();
 }
 
 function centerMe(){
+  startGPS();
   if(lat===null||lng===null){
     toast("GPS is still searching...");
     return;
@@ -668,13 +792,109 @@ function updateRoute(){
 function clearRoute(){
   if(!confirm("Clear route only? Opened map will stay."))return;
   routePath=[];
+  lastSmooth=null;
   updateRoute();
   save(true);
   toast("Route cleared");
 }
 
+function startTrip(){
+  if(currentTrip)return;
+  currentTrip={
+    id:Date.now(),
+    startedAt:Date.now(),
+    endedAt:null,
+    mode:mode,
+    distance:0,
+    areas:0,
+    route:[]
+  };
+  toast("Trip started");
+  updateUI();
+  save(true);
+}
+
+function stopTrip(){
+  if(!currentTrip)return;
+  currentTrip.endedAt=Date.now();
+  currentTrip.distance=currentTrip.distance||0;
+  currentTrip.areas=currentTrip.areas||0;
+  currentTrip.mode=currentTrip.mode||mode;
+  currentTrip.route=(currentTrip.route||[]).slice(-1600);
+
+  trips.unshift(currentTrip);
+  trips=trips.slice(0,30);
+  currentTrip=null;
+  toast("Trip saved");
+  updateUI();
+  save(true);
+}
+
+function toggleTrip(){
+  if(currentTrip)stopTrip();
+  else startTrip();
+}
+
+function renderTrips(){
+  const box=document.getElementById("tripsList");
+  if(!box)return;
+  if(!trips.length){
+    box.innerHTML='<div class="tripItem"><small>No trips yet</small></div>';
+    return;
+  }
+
+  box.innerHTML=trips.slice(0,8).map((t,i)=>{
+    const title=formatDate(t.startedAt);
+    const duration=t.endedAt?Math.round((t.endedAt-t.startedAt)/60000)+" min":"";
+    const modeLabel=(modes[t.mode]||modes.walk).icon+" "+(modes[t.mode]||modes.walk).label;
+    return `
+      <div class="tripItem">
+        <b>${title}</b>
+        <small>${modeLabel} · ${formatMeters(t.distance||0)} · ${t.areas||0} areas · ${duration}</small>
+        <div class="tripActions">
+          <button onclick="showTrip(${i})">View</button>
+          <button onclick="deleteTrip(${i})">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function showTrip(i){
+  const trip=trips[i];
+  if(!trip||!trip.route||!trip.route.length){
+    toast("No route");
+    return;
+  }
+  previewLine.setLatLngs(trip.route);
+  map.fitBounds(L.latLngBounds(trip.route),{padding:[40,40]});
+  toast("Trip preview");
+}
+
+function deleteTrip(i){
+  if(!confirm("Delete this trip?"))return;
+  trips.splice(i,1);
+  previewLine.setLatLngs([]);
+  updateUI();
+  save(true);
+}
+
+function clearTripPreview(){
+  previewLine.setLatLngs([]);
+  toast("Preview cleared");
+}
+
 function backup(){
-  const data={walked,explored,visited,routePath,mode,exportedAt:new Date().toISOString()};
+  const data={
+    walked,
+    explored,
+    visited,
+    routePath,
+    mode,
+    trips,
+    currentTrip,
+    exportedAt:new Date().toISOString()
+  };
   const text=JSON.stringify(data,null,2);
   navigator.clipboard.writeText(text)
     .then(()=>toast("Backup copied"))
@@ -690,8 +910,10 @@ function importData(){
     walked=Number(data.walked||0);
     explored=Number(data.explored||0);
     visited=data.visited||{};
-    routePath=(data.routePath||[]).slice(-1200);
+    routePath=(data.routePath||[]).slice(-1600);
     mode=data.mode||"walk";
+    trips=data.trips||[];
+    currentTrip=data.currentTrip||null;
     updateRoute();
     updateUI();
     requestFogDraw();
@@ -713,7 +935,7 @@ function resetData(){
   location.reload();
 }
 
-navigator.geolocation.watchPosition(pos=>{
+function onGPS(pos){
   const rawLat=pos.coords.latitude;
   const rawLng=pos.coords.longitude;
   const acc=pos.coords.accuracy||null;
@@ -721,17 +943,16 @@ navigator.geolocation.watchPosition(pos=>{
 
   accuracy=acc;
 
-  gpsBuffer.push({lat:rawLat,lng:rawLng});
-  if(gpsBuffer.length>5)gpsBuffer.shift();
+  gpsQueue.push({lat:rawLat,lng:rawLng,acc});
+  if(gpsQueue.length>5)gpsQueue.shift();
 
   let avgLat=0,avgLng=0;
-  gpsBuffer.forEach(point=>{
-    avgLat+=point.lat;
-    avgLng+=point.lng;
+  gpsQueue.forEach(p=>{
+    avgLat+=p.lat;
+    avgLng+=p.lng;
   });
-
-  avgLat/=gpsBuffer.length;
-  avgLng/=gpsBuffer.length;
+  avgLat/=gpsQueue.length;
+  avgLng/=gpsQueue.length;
 
   if(lat===null||lng===null){
     lat=avgLat;
@@ -759,64 +980,55 @@ navigator.geolocation.watchPosition(pos=>{
     const seconds=(now-lastAccepted.time)/1000;
 
     if(shouldAcceptMovement(distance,seconds,acc)){
-      if(gpsQuality()==="Good")walked+=distance;
+      if(gpsQuality()==="Good"){
+        walked+=distance;
+        if(currentTrip)currentTrip.distance=(currentTrip.distance||0)+distance;
+      }
 
       accepted=true;
 
+      const from=[lastAccepted.lat,lastAccepted.lng];
+      const to=[lat,lng];
+
+      revealBetween(from,to);
+
       if(gpsQuality()==="Good"&&!indoorLock){
-        routePath.push([lat,lng]);
-        if(routePath.length>1200)routePath.shift();
-        updateRoute();
+        addRoutePoint(lat,lng);
       }
 
       lastAccepted={lat,lng,time:now};
+      pulse();
     }
   }else{
     lastAccepted={lat,lng,time:now};
-    if(gpsQuality()==="Good"&&!indoorLock){
-      routePath.push([lat,lng]);
-      updateRoute();
-    }
-  }
+    revealBetween([lat,lng],[lat,lng]);
 
-  if(paused){
-    document.getElementById("status").innerText="Tracking paused";
-  }else if(indoorLock){
-    document.getElementById("status").innerText="Indoor lock";
-  }else if(exploring){
-    document.getElementById("status").innerText=accepted?"Exploring...":"Exploring · GPS filtering";
-  }else{
-    document.getElementById("status").innerText=followMe?"GPS ready · Follow":"GPS ready";
+    if(gpsQuality()==="Good"&&!indoorLock){
+      addRoutePoint(lat,lng);
+    }
   }
 
   if(exploring&&!paused){
-    const key=keyFor(lat,lng);
-    if(!visited[key]&&gpsQuality()!=="Bad"){
-      visited[key]=true;
-      explored+=Math.min(currentMode().step,30);
-      toast("New area explored · "+currentMode().label);
-      pulse();
-    }
+    addVisitedAt(lat,lng);
   }
 
+  updateStatus(accepted);
   updateUI();
   requestFogDraw();
   updateUserDot();
   updateAccuracyCircle();
   followMap();
+}
 
-},()=>{
+function onGPSError(){
   document.getElementById("status").innerText="GPS error";
   toast("Please allow location access");
-},{
-  enableHighAccuracy:true,
-  maximumAge:0,
-  timeout:15000
-});
+}
 
 updateUI();
 requestFogDraw();
 updateRoute();
+renderTrips();
 </script>
 </body>
 </html>
