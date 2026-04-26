@@ -3,23 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 005 ULTRA</title>
+<title>WanderGlow 005 PRO MAX UI Upgrade</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#map{height:100%}
-.leaflet-tile-pane{filter:brightness(1.09) contrast(1.06) saturate(1.1)}
-#fog{position:absolute;inset:0;z-index:500;pointer-events:none}
+html,body{
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
 
-#accuracyCircle{position:absolute;border-radius:50%;background:rgba(0,255,136,.10);border:2px solid rgba(0,255,136,.24);transform:translate(-50%,-50%);pointer-events:none;z-index:3000;display:none}
-#userDot{position:absolute;z-index:4000;width:18px;height:18px;border-radius:50%;background:#00ff88;border:4px solid #fff;box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 34px #00ff88;transform:translate(-50%,-50%);display:none}
+#map{
+  height:100%;
+  width:100%;
+  background:#111;
+}
 
-.panel{position:absolute;left:14px;right:14px;bottom:18px;z-index:5000;padding:18px;border-radius:28px;background:rgba(62,62,62,.76);backdrop-filter:blur(24px);color:#fff}
-.row{display:flex;gap:10px;margin-top:14px}
-.stat{flex:1;text-align:center;background:rgba(255,255,255,.10);padding:10px;border-radius:14px}
-button{border:0;border-radius:18px;padding:12px;font-weight:900;background:rgba(255,255,255,.13);color:white}
-.main{background:#00ff88;color:#000}
+.leaflet-tile-pane{
+  filter:brightness(1.08) contrast(1.06) saturate(1.08);
+}
+
+.leaflet-control-container{
+  z-index:3000;
+}
+
+#fog{
+  position:absolute;
+  inset:0;
+  z-index:500;
+  pointer-events:none;
+}
+
+#accuracyCircle{
+  position:absolute;
+  border-radius:50%;
+  background:rgba(0,255,136,.10);
+  border:2px solid rgba(0,255,136,.24);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:3000;
+  display:none;
+}
+
+#pulse{
+  position:absolute;
+  z-index:3900;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);
+  transform:translate(-50%,-50%) scale(.4);
+  opacity:0;
+  pointer-events:none;
+}
+
+#pulse.on{
+  animation:pulse .8s ease-out;
+}
+
+@keyframes pulse{
+  0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
+}
+
+#userDot{
+  position:absolute;
+  z-index:4000;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#00ff88;
+  border:4px solid #fff;
+  box-shadow:0 0 0 16px rgba(0,255,136,.20),0 0 36px #00ff88;
+  transform:translate(-50%,-50%);
+  display:none;
+  pointer-events:none;
+}
+
+.panel,.menu,.toast,.showBtn{
+  background:rgba(62,62,62,.78);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  color:white;
+  box-shadow:0 18px 45px rgba(0,0,0,.35);
+}
+
+.panel{
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:5000;
+  padding:18px;
+  border-radius:28px;
+}
+
+.panel.hidden{
+  display:none;
+}
+
+.title{
+  font-size:34px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+
+.status{
+  margin-top:4px;
+  color:rgba(255,255,255,.72);
+  font-size:16px;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.stat{
+  flex:1;
+  text-align:center;
+  padding:13px 7px;
+  border-radius:20px;
+  background:rgba(255,255,255,.10);
+}
+
+.stat b{
+  display:block;
+  font-size:21px;
+}
+
+.stat small{
+  color:rgba(255,255,255,.65);
+}
+
+button{
+  border:0;
+  border-radius:18px;
+  padding:14px;
+  font-weight:900;
+  font-size:16px;
+  color:white;
+  background:rgba(255,255,255,.13);
+}
+
+button:active{
+  transform:scale(.94);
+}
+
+.main{
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.main.active{
+  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
+  color:white;
+}
+
+.pauseBtn.paused,.lockBtn.locked,.followBtn.on{
+  background:linear-gradient(135deg,#ffcc66,#fff2b0);
+  color:#2c1d00;
+}
+
+.menu{
+  display:none;
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:18px;
+  z-index:6000;
+  padding:20px;
+  border-radius:28px;
+  max-height:78vh;
+  overflow:auto;
+}
+
+.menu.open{
+  display:block;
+}
+
+.modeGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.modeBtn.activeMode{
+  background:linear-gradient(135deg,#00ff88,#baffdd);
+  color:#052215;
+}
+
+.showBtn{
+  display:none;
+  position:absolute;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  z-index:6000;
+  padding:14px 24px;
+  border-radius:24px;
+}
+
+.showBtn.visible{
+  display:block;
+}
+
+.toast{
+  position:absolute;
+  top:22px;
+  left:18px;
+  right:18px;
+  z-index:7000;
+  padding:16px 18px;
+  border-radius:22px;
+  opacity:0;
+  transition:.25s;
+  font-weight:900;
+  font-size:18px;
+}
 </style>
 </head>
 
@@ -28,143 +233,590 @@ button{border:0;border-radius:18px;padding:12px;font-weight:900;background:rgba(
 <div id="map"></div>
 <canvas id="fog"></canvas>
 <div id="accuracyCircle"></div>
+<div id="pulse"></div>
 <div id="userDot"></div>
+<div id="toast" class="toast"></div>
 
-<div class="panel">
-<div>WanderGlow ULTRA</div>
-<div id="status">GPS...</div>
+<button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
-<div class="row">
-<div class="stat"><b id="walked">0</b>Walked</div>
-<div class="stat"><b id="explored">0</b>Explored</div>
-<div class="stat"><b id="areas">0</b>Areas</div>
+<div id="menu" class="menu">
+  <button onclick="centerMe()" style="width:100%">📍 My location</button>
+
+  <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
+
+  <div class="modeGrid">
+    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
+    <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
+    <button id="modeTrain" class="modeBtn" onclick="setMode('train')">🚆 Train</button>
+    <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
+  </div>
+
+  <button onclick="toggleFollow()" id="followMenuBtn" style="width:100%;margin-top:10px">Follow on</button>
+  <button onclick="toggleIndoorLock()" id="lockMenuBtn" style="width:100%;margin-top:10px">Indoor lock off</button>
+  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
+  <button onclick="clearRoute()" style="width:100%;margin-top:10px">Clear route only</button>
+  <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
+  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
+  <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
+  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#a73030">Reset all data</button>
+  <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
 </div>
 
-<div class="row">
-<button onclick="toggleExplore()" class="main">Explore</button>
-<button onclick="center()">Follow</button>
-</div>
+<div id="panel" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div>
+      <div class="title">WanderGlow</div>
+      <div id="status" class="status">Waiting for GPS...</div>
+    </div>
+    <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
+  </div>
+
+  <div class="row">
+    <div class="stat"><b id="walkedView">0 m</b><small>Walked</small></div>
+    <div class="stat"><b id="exploredView">0 m</b><small>Explored</small></div>
+    <div class="stat"><b id="areasView">0</b><small>Areas</small></div>
+  </div>
+
+  <div class="row">
+    <div class="stat"><b id="countryView">Unknown</b><small>Country</small></div>
+    <div class="stat"><b id="modeView">🚶 Walk</b><small>Mode</small></div>
+    <div class="stat"><b id="gpsView">GPS</b><small>Signal</small></div>
+  </div>
+
+  <div class="row">
+    <button style="flex:1" onclick="centerMe()">📍</button>
+    <button id="pauseBtn" class="pauseBtn" style="flex:1" onclick="togglePause()">Pause</button>
+    <button id="lockBtn" class="lockBtn" style="flex:1" onclick="toggleIndoorLock()">Lock</button>
+    <button id="followBtn" class="followBtn on" style="flex:1" onclick="toggleFollow()">Follow</button>
+    <button style="flex:1" onclick="toggleMenu()">Menu</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const map=L.map("map").setView([56.95,24.1],15);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+const KEY="wg_005_pro_max_ui_upgrade_";
+const OLD_KEYS=[
+  "wg_005_pro_max_final_plus_",
+  "wg_005_ultra_",
+  "wg_005_pro_max_plus_",
+  "wg_005_pro_full_",
+  "wg_005_smart_",
+  "wg_005_wow_",
+  "wg_005_pro_",
+  "wg_005_clean_"
+];
+
+function loadValue(name,fallback){
+  if(localStorage[KEY+name]!==undefined)return localStorage[KEY+name];
+  for(const oldKey of OLD_KEYS){
+    if(localStorage[oldKey+name]!==undefined)return localStorage[oldKey+name];
+  }
+  return fallback;
+}
+
+function safeJSON(text,fallback){
+  try{return JSON.parse(text)}catch(e){return fallback}
+}
+
+const map=L.map("map",{zoomControl:true,preferCanvas:true}).setView([56.95,24.1],15);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:"© OpenStreetMap"
+}).addTo(map);
+
+setTimeout(()=>map.invalidateSize(),300);
+setTimeout(()=>map.invalidateSize(),1000);
+setTimeout(()=>{
+  if(lat===null||lng===null){
+    map.setView([56.95,24.1],13);
+    requestFogDraw();
+  }
+},3000);
 
 let lat=null,lng=null,accuracy=null;
-let exploring=false;
-let follow=true;
-let gpsBuffer=[];
-let visited=JSON.parse(localStorage.getItem("ultra_v")||"{}");
-let explored=Number(localStorage.getItem("ultra_e")||0);
-let walked=Number(localStorage.getItem("ultra_w")||0);
+let exploring=false,paused=false,indoorLock=false,firstFix=true,routeVisible=true;
+let followMe=true,suppressMapEvent=false;
+let lastAccepted=null,fogQueued=false,lastSave=0,gpsBuffer=[];
+
+let walked=Number(loadValue("walked",0));
+let explored=Number(loadValue("explored",0));
+let visited=safeJSON(loadValue("visited","{}"),{});
+let routePath=safeJSON(loadValue("routePath","[]"),[]).slice(-1200);
+let mode=loadValue("mode","walk");
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
-function resize(){
-fog.width=innerWidth;
-fog.height=innerHeight;
-drawFog();
-}
-window.addEventListener("resize",resize);
-resize();
+const routeGlow=L.polyline(routePath,{color:"#7dffd4",weight:9,opacity:.18,smoothFactor:1.5}).addTo(map);
+const routeLine=L.polyline(routePath,{color:"#00ff88",weight:4,opacity:.85,smoothFactor:1.5}).addTo(map);
 
-function metersToPixels(m,lat){
-const zoom=map.getZoom();
-const mpp=40075016.686*Math.cos(lat*Math.PI/180)/Math.pow(2,zoom+8);
-return m/mpp;
+const modes={
+  walk:{label:"Walk",icon:"🚶",radius:25,step:20,keyScale:4000,maxAccuracy:45,minDistance:8,maxJump:35,maxSpeed:8},
+  car:{label:"Car",icon:"🚗",radius:35,step:20,keyScale:2000,maxAccuracy:70,minDistance:10,maxJump:220,maxSpeed:140},
+  train:{label:"Train",icon:"🚆",radius:70,step:45,keyScale:1200,maxAccuracy:100,minDistance:15,maxJump:600,maxSpeed:300},
+  plane:{label:"Plane",icon:"✈️",radius:300,step:90,keyScale:300,maxAccuracy:500,minDistance:80,maxJump:30000,maxSpeed:1000}
+};
+
+function currentMode(){return modes[mode]||modes.walk}
+
+function resizeFog(){
+  fog.width=window.innerWidth;
+  fog.height=window.innerHeight;
+  requestFogDraw();
+  updateUserDot();
+  updateAccuracyCircle();
 }
 
-function erase(x,y,r){
-const g=ctx.createRadialGradient(x,y,0,x,y,r);
-g.addColorStop(0,"rgba(0,0,0,1)");
-g.addColorStop(1,"rgba(0,0,0,0)");
-ctx.globalCompositeOperation="destination-out";
-ctx.fillStyle=g;
-ctx.beginPath();
-ctx.arc(x,y,r,0,Math.PI*2);
-ctx.fill();
-ctx.globalCompositeOperation="source-over";
+window.addEventListener("resize",resizeFog);
+map.on("move zoom",()=>{requestFogDraw();updateUserDot();updateAccuracyCircle()});
+map.on("dragstart",()=>{if(!suppressMapEvent){followMe=false;updateUI();toast("Follow off")}});
+resizeFog();
+
+function requestFogDraw(){
+  if(fogQueued)return;
+  fogQueued=true;
+  requestAnimationFrame(()=>{fogQueued=false;drawFog()});
+}
+
+function formatMeters(m){
+  return m>=1000?(m/1000).toFixed(2)+" km":Math.round(m)+" m";
+}
+
+function getCountry(a,b){
+  if(a>=55.6&&a<=58.1&&b>=20.8&&b<=28.3)return "Latvia";
+  if(a>=54.8&&a<=56.5&&b>=20.9&&b<=26.9)return "Lithuania";
+  if(a>=57.4&&a<=59.8&&b>=21.5&&b<=28.3)return "Estonia";
+  return "Unknown";
+}
+
+function keyFor(a,b){
+  const scale=currentMode().keyScale;
+  return mode+"_"+Math.floor(a*scale)+"_"+Math.floor(b*scale);
+}
+
+function keyCenter(key){
+  const parts=key.split("_");
+  const keyMode=parts[0];
+  const scale=(modes[keyMode]||modes.walk).keyScale;
+  return [(Number(parts[1])+0.5)/scale,(Number(parts[2])+0.5)/scale];
+}
+
+function metersToPixels(m,latitude){
+  const zoom=map.getZoom();
+  const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
+  return Math.max(4,m/metersPerPixel);
+}
+
+function gpsQuality(){
+  if(accuracy===null)return "Search";
+  if(accuracy<=20)return "Good";
+  if(accuracy<=45)return "Weak";
+  return "Bad";
+}
+
+function pruneVisited(){
+  const keys=Object.keys(visited);
+  if(keys.length<=3500)return;
+  keys.slice(0,keys.length-3500).forEach(key=>delete visited[key]);
+}
+
+function save(force=false){
+  const now=Date.now();
+  if(!force&&now-lastSave<1800)return;
+  lastSave=now;
+  pruneVisited();
+  localStorage[KEY+"walked"]=walked;
+  localStorage[KEY+"explored"]=explored;
+  localStorage[KEY+"visited"]=JSON.stringify(visited);
+  localStorage[KEY+"routePath"]=JSON.stringify(routePath.slice(-1200));
+  localStorage[KEY+"mode"]=mode;
+}
+
+function updateUI(){
+  document.getElementById("walkedView").innerText=formatMeters(walked);
+  document.getElementById("exploredView").innerText=formatMeters(explored);
+  document.getElementById("areasView").innerText=Object.keys(visited).length;
+  document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
+  document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
+  document.getElementById("gpsView").innerText=gpsQuality();
+
+  document.querySelectorAll(".modeBtn").forEach(btn=>btn.classList.remove("activeMode"));
+  const active=document.getElementById("mode"+currentMode().label);
+  if(active)active.classList.add("activeMode");
+
+  document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause";
+  document.getElementById("pauseBtn").classList.toggle("paused",paused);
+
+  document.getElementById("lockBtn").innerText=indoorLock?"Unlock":"Lock";
+  document.getElementById("lockBtn").classList.toggle("locked",indoorLock);
+  document.getElementById("lockMenuBtn").innerText=indoorLock?"Indoor lock on":"Indoor lock off";
+
+  document.getElementById("followBtn").innerText=followMe?"Follow":"Off";
+  document.getElementById("followBtn").classList.toggle("on",followMe);
+  document.getElementById("followMenuBtn").innerText=followMe?"Follow on":"Follow off";
+
+  save(false);
+}
+
+function toast(text){
+  const el=document.getElementById("toast");
+  el.innerText=text;
+  el.style.opacity=1;
+  setTimeout(()=>{el.style.opacity=0},2200);
+}
+
+function updateUserDot(){
+  if(lat===null||lng===null)return;
+  const point=map.latLngToContainerPoint([lat,lng]);
+  const dot=document.getElementById("userDot");
+  dot.style.left=point.x+"px";
+  dot.style.top=point.y+"px";
+  dot.style.display="block";
+
+  const pulseEl=document.getElementById("pulse");
+  pulseEl.style.left=point.x+"px";
+  pulseEl.style.top=point.y+"px";
+}
+
+function updateAccuracyCircle(){
+  if(lat===null||lng===null||accuracy===null)return;
+  const point=map.latLngToContainerPoint([lat,lng]);
+  const px=Math.min(metersToPixels(accuracy,lat),220);
+  const el=document.getElementById("accuracyCircle");
+
+  el.style.left=point.x+"px";
+  el.style.top=point.y+"px";
+  el.style.width=(px*2)+"px";
+  el.style.height=(px*2)+"px";
+  el.style.display="block";
+
+  if(gpsQuality()==="Good"){
+    el.style.background="rgba(0,255,136,.09)";
+    el.style.borderColor="rgba(0,255,136,.24)";
+  }else if(gpsQuality()==="Weak"){
+    el.style.background="rgba(255,204,102,.10)";
+    el.style.borderColor="rgba(255,204,102,.28)";
+  }else{
+    el.style.background="rgba(255,80,80,.08)";
+    el.style.borderColor="rgba(255,80,80,.24)";
+  }
+}
+
+function pulse(){
+  if(lat===null||lng===null)return;
+  const el=document.getElementById("pulse");
+  el.classList.remove("on");
+  void el.offsetWidth;
+  el.classList.add("on");
+}
+
+function eraseCircle(x,y,r){
+  const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
+  gradient.addColorStop(0,"rgba(0,0,0,1)");
+  gradient.addColorStop(.35,"rgba(0,0,0,.98)");
+  gradient.addColorStop(.68,"rgba(0,0,0,.48)");
+  gradient.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.globalCompositeOperation="destination-out";
+  ctx.fillStyle=gradient;
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalCompositeOperation="source-over";
 }
 
 function drawFog(){
-ctx.clearRect(0,0,fog.width,fog.height);
-ctx.fillStyle="rgba(0,0,0,.9)";
-ctx.fillRect(0,0,fog.width,fog.height);
+  ctx.clearRect(0,0,fog.width,fog.height);
+  ctx.fillStyle="rgba(0,0,0,.84)";
+  ctx.fillRect(0,0,fog.width,fog.height);
 
-Object.keys(visited).forEach(k=>{
-const [a,b]=k.split("_").map(Number);
-const p=map.latLngToContainerPoint([a,b]);
-erase(p.x,p.y,metersToPixels(25,a));
-});
+  const w=fog.width,h=fog.height;
 
-if(lat){
-const p=map.latLngToContainerPoint([lat,lng]);
-erase(p.x,p.y,metersToPixels(25,lat));
+  Object.keys(visited).forEach(key=>{
+    const center=keyCenter(key);
+    const keyMode=key.split("_")[0];
+    const radius=(modes[keyMode]||modes.walk).radius;
+    const point=map.latLngToContainerPoint(center);
+    if(point.x<-120||point.y<-120||point.x>w+120||point.y>h+120)return;
+    eraseCircle(point.x,point.y,metersToPixels(radius,center[0]));
+  });
+
+  if(lat!==null&&lng!==null){
+    const point=map.latLngToContainerPoint([lat,lng]);
+    let baseRadius=currentMode().radius;
+    if(gpsQuality()==="Weak")baseRadius*=0.7;
+    if(gpsQuality()==="Bad")baseRadius*=0.4;
+    if(accuracy&&accuracy>40)baseRadius*=0.6;
+    eraseCircle(point.x,point.y,metersToPixels(baseRadius*1.1,lat));
+  }
 }
-}
 
-function updateDot(){
-if(!lat)return;
-const p=map.latLngToContainerPoint([lat,lng]);
-const d=document.getElementById("userDot");
-d.style.left=p.x+"px";
-d.style.top=p.y+"px";
-d.style.display="block";
+function shouldAcceptMovement(distance,seconds,acc){
+  const current=currentMode();
+  if(paused||indoorLock)return false;
+  if(acc!==null&&acc>current.maxAccuracy)return false;
+  if(distance<current.minDistance)return false;
+  if(distance>current.maxJump)return false;
+
+  if(seconds&&seconds>0){
+    const speedKmh=(distance/seconds)*3.6;
+    if(speedKmh>current.maxSpeed)return false;
+  }
+
+  return true;
 }
 
 function followMap(){
-if(!follow||!lat)return;
-map.panTo([lat,lng],{animate:true});
+  if(!followMe||lat===null||lng===null)return;
+  const userPoint=map.latLngToContainerPoint([lat,lng]);
+  const centerPoint=map.latLngToContainerPoint(map.getCenter());
+  const dx=userPoint.x-centerPoint.x;
+  const dy=userPoint.y-centerPoint.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+
+  if(dist>18){
+    suppressMapEvent=true;
+    map.panTo([lat,lng],{animate:true,duration:.45});
+    setTimeout(()=>{suppressMapEvent=false},700);
+  }
+}
+
+function toggleFollow(){
+  followMe=!followMe;
+  if(followMe)centerMe();
+  updateUI();
+}
+
+function setMode(newMode){
+  mode=newMode;
+  lastAccepted=null;
+  toast("Mode: "+currentMode().label);
+  updateUI();
+  requestFogDraw();
+  save(true);
+}
+
+function toggleExplore(){
+  exploring=!exploring;
+  const btn=document.getElementById("exploreBtn");
+  btn.classList.toggle("active",exploring);
+  btn.innerText=exploring?"Exploring":"Explore";
+  document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
+  updateUI();
+}
+
+function togglePause(){
+  paused=!paused;
+  lastAccepted=null;
+  document.getElementById("status").innerText=paused?"Tracking paused":(exploring?"Exploring...":"GPS ready");
+  updateUI();
+}
+
+function toggleIndoorLock(){
+  indoorLock=!indoorLock;
+  lastAccepted=null;
+  toast(indoorLock?"Indoor lock on":"Indoor lock off");
+  updateUI();
+}
+
+function centerMe(){
+  if(lat===null||lng===null){
+    toast("GPS is still searching...");
+    return;
+  }
+  followMe=true;
+  suppressMapEvent=true;
+  map.setView([lat,lng],17,{animate:true});
+  setTimeout(()=>{suppressMapEvent=false},700);
+  updateUI();
+}
+
+function toggleMenu(){
+  document.getElementById("menu").classList.toggle("open");
+}
+
+function hideUI(){
+  document.getElementById("panel").classList.add("hidden");
+  document.getElementById("menu").classList.remove("open");
+  document.getElementById("showBtn").classList.add("visible");
+}
+
+function showUI(){
+  document.getElementById("panel").classList.remove("hidden");
+  document.getElementById("showBtn").classList.remove("visible");
+}
+
+function toggleRoute(){
+  routeVisible=!routeVisible;
+  if(routeVisible){
+    map.addLayer(routeGlow);
+    map.addLayer(routeLine);
+    toast("Route shown");
+  }else{
+    map.removeLayer(routeGlow);
+    map.removeLayer(routeLine);
+    toast("Route hidden");
+  }
+}
+
+function updateRoute(){
+  routeGlow.setLatLngs(routePath);
+  routeLine.setLatLngs(routePath);
+}
+
+function clearRoute(){
+  if(!confirm("Clear route only? Opened map will stay."))return;
+  routePath=[];
+  updateRoute();
+  save(true);
+  toast("Route cleared");
+}
+
+function backup(){
+  const data={walked,explored,visited,routePath,mode,exportedAt:new Date().toISOString()};
+  const text=JSON.stringify(data,null,2);
+  navigator.clipboard.writeText(text)
+    .then(()=>toast("Backup copied"))
+    .catch(()=>prompt("Copy backup:",text));
+}
+
+function importData(){
+  const text=prompt("Paste backup JSON");
+  if(!text)return;
+
+  try{
+    const data=JSON.parse(text);
+    walked=Number(data.walked||0);
+    explored=Number(data.explored||0);
+    visited=data.visited||{};
+    routePath=(data.routePath||[]).slice(-1200);
+    mode=data.mode||"walk";
+    updateRoute();
+    updateUI();
+    requestFogDraw();
+    save(true);
+    toast("Import complete");
+  }catch(e){
+    toast("Import error");
+  }
+}
+
+function resetData(){
+  if(prompt("Type DELETE to reset all data")!=="DELETE"){
+    toast("Cancelled");
+    return;
+  }
+  Object.keys(localStorage).forEach(key=>{
+    if(key.startsWith(KEY))localStorage.removeItem(key);
+  });
+  location.reload();
 }
 
 navigator.geolocation.watchPosition(pos=>{
-const rawLat=pos.coords.latitude;
-const rawLng=pos.coords.longitude;
-accuracy=pos.coords.accuracy;
+  const rawLat=pos.coords.latitude;
+  const rawLng=pos.coords.longitude;
+  const acc=pos.coords.accuracy||null;
+  const now=Date.now();
 
-gpsBuffer.push({lat:rawLat,lng:rawLng});
-if(gpsBuffer.length>5)gpsBuffer.shift();
+  accuracy=acc;
 
-let avgLat=0,avgLng=0;
-gpsBuffer.forEach(p=>{avgLat+=p.lat;avgLng+=p.lng});
-avgLat/=gpsBuffer.length;
-avgLng/=gpsBuffer.length;
+  gpsBuffer.push({lat:rawLat,lng:rawLng});
+  if(gpsBuffer.length>5)gpsBuffer.shift();
 
-lat=lat?lat*0.7+avgLat*0.3:avgLat;
-lng=lng?lng*0.7+avgLng*0.3:avgLng;
+  let avgLat=0,avgLng=0;
+  gpsBuffer.forEach(point=>{
+    avgLat+=point.lat;
+    avgLng+=point.lng;
+  });
 
-updateDot();
-drawFog();
-followMap();
+  avgLat/=gpsBuffer.length;
+  avgLng/=gpsBuffer.length;
 
-if(exploring){
-const key=lat.toFixed(5)+"_"+lng.toFixed(5);
-if(!visited[key]){
-visited[key]=true;
-explored+=20;
-localStorage.setItem("ultra_v",JSON.stringify(visited));
-localStorage.setItem("ultra_e",explored);
-}
-}
+  if(lat===null||lng===null){
+    lat=avgLat;
+    lng=avgLng;
+  }else{
+    const smooth=gpsQuality()==="Good"?.30:.16;
+    lat=lat*(1-smooth)+avgLat*smooth;
+    lng=lng*(1-smooth)+avgLng*smooth;
+  }
 
-document.getElementById("status").innerText="GPS";
-document.getElementById("explored").innerText=explored;
-document.getElementById("areas").innerText=Object.keys(visited).length;
+  updateUserDot();
+  updateAccuracyCircle();
 
-},{enableHighAccuracy:true});
+  if(firstFix){
+    suppressMapEvent=true;
+    map.setView([lat,lng],17);
+    setTimeout(()=>{suppressMapEvent=false},700);
+    firstFix=false;
+  }
 
-function toggleExplore(){
-exploring=!exploring;
-}
+  let accepted=false;
 
-function center(){
-follow=true;
-map.setView([lat,lng],17);
-}
+  if(lastAccepted){
+    const distance=map.distance([lastAccepted.lat,lastAccepted.lng],[lat,lng]);
+    const seconds=(now-lastAccepted.time)/1000;
+
+    if(shouldAcceptMovement(distance,seconds,acc)){
+      if(gpsQuality()==="Good")walked+=distance;
+
+      accepted=true;
+
+      if(gpsQuality()==="Good"&&!indoorLock){
+        routePath.push([lat,lng]);
+        if(routePath.length>1200)routePath.shift();
+        updateRoute();
+      }
+
+      lastAccepted={lat,lng,time:now};
+    }
+  }else{
+    lastAccepted={lat,lng,time:now};
+    if(gpsQuality()==="Good"&&!indoorLock){
+      routePath.push([lat,lng]);
+      updateRoute();
+    }
+  }
+
+  if(paused){
+    document.getElementById("status").innerText="Tracking paused";
+  }else if(indoorLock){
+    document.getElementById("status").innerText="Indoor lock";
+  }else if(exploring){
+    document.getElementById("status").innerText=accepted?"Exploring...":"Exploring · GPS filtering";
+  }else{
+    document.getElementById("status").innerText=followMe?"GPS ready · Follow":"GPS ready";
+  }
+
+  if(exploring&&!paused){
+    const key=keyFor(lat,lng);
+    if(!visited[key]&&gpsQuality()!=="Bad"){
+      visited[key]=true;
+      explored+=Math.min(currentMode().step,30);
+      toast("New area explored · "+currentMode().label);
+      pulse();
+    }
+  }
+
+  updateUI();
+  requestFogDraw();
+  updateUserDot();
+  updateAccuracyCircle();
+  followMap();
+
+},()=>{
+  document.getElementById("status").innerText="GPS error";
+  toast("Please allow location access");
+},{
+  enableHighAccuracy:true,
+  maximumAge:0,
+  timeout:15000
+});
+
+updateUI();
+requestFogDraw();
+updateRoute();
 </script>
-
 </body>
 </html>
