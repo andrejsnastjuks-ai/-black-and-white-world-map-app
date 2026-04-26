@@ -1,44 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow Travel</title>
+<title>WanderGlow Travel Edition 002</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-html,body{
-  margin:0;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#map{height:100%}
+.leaflet-tile-pane{filter:brightness(1.05) contrast(1.05) saturate(1.08)}
+#fog{position:absolute;inset:0;z-index:500;pointer-events:none}
 
-#map{
-  height:100%;
-}
-
-.leaflet-tile-pane{
-  filter:brightness(1.05) contrast(1.05) saturate(1.08);
-}
-
-/* ВЕРХНИЙ СЛОЙ, КОТОРЫЙ СТИРАЕТСЯ */
-#fog{
-  position:absolute;
-  inset:0;
-  z-index:500;
-  pointer-events:none;
-}
-
-/* ЗЕЛЁНАЯ ТОЧКА */
 .userDot{
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:#00ff88;
-  border:4px solid white;
+  width:18px;height:18px;border-radius:50%;background:#00ff88;border:4px solid white;
   box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 30px #00ff88;
 }
 
@@ -50,105 +26,41 @@ html,body{
   box-shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
-.panel{
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:9999;
-  padding:18px;
-  border-radius:28px;
-}
-
+.panel{position:absolute;left:14px;right:14px;bottom:18px;z-index:9999;padding:18px;border-radius:28px}
 .panel.hidden{display:none}
-
-.title{
-  font-size:32px;
-  font-weight:900;
-}
-
-.status{
-  margin-top:4px;
-  color:rgba(255,255,255,.72);
-  font-size:16px;
-}
-
-.row{
-  display:flex;
-  gap:10px;
-  margin-top:14px;
-}
-
-.stat{
-  flex:1;
-  text-align:center;
-  padding:14px 8px;
-  border-radius:20px;
-  background:rgba(255,255,255,.10);
-}
-
-.stat b{font-size:26px}
+.title{font-size:32px;font-weight:900}
+.status{margin-top:4px;color:rgba(255,255,255,.72);font-size:16px}
+.row{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;text-align:center;padding:14px 8px;border-radius:20px;background:rgba(255,255,255,.10)}
+.stat b{font-size:24px}
 .stat small{color:rgba(255,255,255,.65)}
 
 button{
-  border:0;
-  border-radius:18px;
-  padding:14px;
-  font-weight:900;
-  font-size:16px;
-  color:white;
+  border:0;border-radius:18px;padding:14px;font-weight:900;font-size:16px;color:white;
   background:rgba(255,255,255,.12);
 }
-
 button:active{transform:scale(.94)}
-
-.main{
-  background:linear-gradient(135deg,#00ff88,#baffdd);
-  color:#052215;
-}
-
-.main.active{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
-  color:white;
-}
+.main{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215}
+.main.active{background:linear-gradient(135deg,#4d96ff,#9bd8ff);color:white}
 
 .menu{
-  display:none;
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:10000;
-  padding:20px;
-  border-radius:28px;
+  display:none;position:absolute;left:14px;right:14px;bottom:18px;z-index:10000;
+  padding:20px;border-radius:28px;max-height:80vh;overflow:auto;
 }
-
 .menu.open{display:block}
 
-.showBtn{
-  display:none;
-  position:absolute;
-  left:50%;
-  bottom:24px;
-  transform:translateX(-50%);
-  z-index:10001;
-  padding:14px 22px;
-  border-radius:22px;
-}
+.modeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.modeBtn.activeMode{background:linear-gradient(135deg,#00ff88,#baffdd);color:#052215}
 
+.showBtn{
+  display:none;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+  z-index:10001;padding:14px 22px;border-radius:22px;
+}
 .showBtn.visible{display:block}
 
 .toast{
-  position:absolute;
-  top:22px;
-  left:18px;
-  right:18px;
-  z-index:12000;
-  padding:14px;
-  border-radius:18px;
-  opacity:0;
-  transition:.25s;
-  font-weight:800;
+  position:absolute;top:22px;left:18px;right:18px;z-index:12000;
+  padding:14px;border-radius:18px;opacity:0;transition:.25s;font-weight:800;
 }
 </style>
 </head>
@@ -163,9 +75,18 @@ button:active{transform:scale(.94)}
 
 <div id="menu" class="menu">
   <button onclick="centerMe()" style="width:100%">📍 My location</button>
+
+  <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
+  <div class="modeGrid">
+    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
+    <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
+    <button id="modeTrain" class="modeBtn" onclick="setMode('train')">🚆 Train</button>
+    <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
+  </div>
+
   <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
   <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
-  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset</button>
+  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset data</button>
   <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
 </div>
 
@@ -179,9 +100,14 @@ button:active{transform:scale(.94)}
   </div>
 
   <div class="row">
-    <div class="stat"><b id="kmView">0.00</b><br><small>KM</small></div>
-    <div class="stat"><b id="cellsView">0</b><br><small>Places</small></div>
-    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
+    <div class="stat"><b id="walkedView">0 m</b><br><small>Walked</small></div>
+    <div class="stat"><b id="exploredView">0 m</b><br><small>Explored</small></div>
+    <div class="stat"><b id="areasView">0</b><br><small>Areas</small></div>
+  </div>
+
+  <div class="row">
+    <div class="stat"><b id="countryView">Unknown</b><br><small>Country</small></div>
+    <div class="stat"><b id="modeView">Walk</b><br><small>Mode</small></div>
   </div>
 
   <div class="row">
@@ -206,12 +132,24 @@ let exploring=false;
 let firstFix=true;
 let lastPoint=null;
 
-let xp=Number(localStorage.wg_travel_xp||0);
-let total=Number(localStorage.wg_travel_total||0);
+let walked=Number(localStorage.wg_travel_walked||0);
+let explored=Number(localStorage.wg_travel_explored||0);
 let visited=JSON.parse(localStorage.wg_travel_visited||"{}");
+let mode=localStorage.wg_travel_mode||"walk";
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
+
+const modeSettings={
+  walk:{label:"Walk",icon:"🚶",radius:25,step:25,keyScale:4000},
+  car:{label:"Car",icon:"🚗",radius:80,step:80,keyScale:1500},
+  train:{label:"Train",icon:"🚆",radius:120,step:120,keyScale:1000},
+  plane:{label:"Plane",icon:"✈️",radius:800,step:800,keyScale:220}
+};
+
+function currentMode(){
+  return modeSettings[mode]||modeSettings.walk;
+}
 
 function resizeFog(){
   fog.width=window.innerWidth;
@@ -224,33 +162,52 @@ map.on("move zoom",drawFog);
 resizeFog();
 
 function keyFor(a,b){
-  return Math.floor(a*4000)+"_"+Math.floor(b*4000);
+  const s=currentMode().keyScale;
+  return mode+"_"+Math.floor(a*s)+"_"+Math.floor(b*s);
 }
 
 function keyCenter(key){
-  const p=key.split("_");
-  return [
-    (Number(p[0])+0.5)/4000,
-    (Number(p[1])+0.5)/4000
-  ];
+  const parts=key.split("_");
+  const m=parts[0];
+  const s=(modeSettings[m]||modeSettings.walk).keyScale;
+  return [(Number(parts[1])+0.5)/s,(Number(parts[2])+0.5)/s];
 }
 
-function metersToPixels(m, latitude){
+function metersToPixels(m,latitude){
   const zoom=map.getZoom();
   const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
   return m/metersPerPixel;
 }
 
+function formatMeters(m){
+  return m>=1000 ? (m/1000).toFixed(2)+" km" : Math.round(m)+" m";
+}
+
+function getCountry(a,b){
+  if(a>=55.6&&a<=58.1&&b>=20.8&&b<=28.3)return "Latvia";
+  if(a>=54.8&&a<=56.5&&b>=20.9&&b<=26.9)return "Lithuania";
+  if(a>=57.4&&a<=59.8&&b>=21.5&&b<=28.3)return "Estonia";
+  return "Unknown";
+}
+
 function save(){
-  localStorage.wg_travel_xp=xp;
-  localStorage.wg_travel_total=total;
+  localStorage.wg_travel_walked=walked;
+  localStorage.wg_travel_explored=explored;
   localStorage.wg_travel_visited=JSON.stringify(visited);
+  localStorage.wg_travel_mode=mode;
 }
 
 function updateUI(){
-  document.getElementById("xpView").innerText=xp;
-  document.getElementById("cellsView").innerText=Object.keys(visited).length;
-  document.getElementById("kmView").innerText=(total/1000).toFixed(2);
+  document.getElementById("walkedView").innerText=formatMeters(walked);
+  document.getElementById("exploredView").innerText=formatMeters(explored);
+  document.getElementById("areasView").innerText=Object.keys(visited).length;
+  document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
+  document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
+
+  document.querySelectorAll(".modeBtn").forEach(b=>b.classList.remove("activeMode"));
+  const active=document.getElementById("mode"+currentMode().label);
+  if(active)active.classList.add("activeMode");
+
   save();
 }
 
@@ -258,7 +215,7 @@ function toast(text){
   const el=document.getElementById("toast");
   el.innerText=text;
   el.style.opacity=1;
-  setTimeout(()=>el.style.opacity=0,2000);
+  setTimeout(()=>el.style.opacity=0,2200);
 }
 
 function drawUser(){
@@ -270,20 +227,16 @@ function drawUser(){
   });
 
   if(!marker){
-    marker=L.marker([lat,lng],{
-      icon,
-      zIndexOffset:10000
-    }).addTo(map);
+    marker=L.marker([lat,lng],{icon,zIndexOffset:10000}).addTo(map).bindPopup("You are here");
   }else{
     marker.setLatLng([lat,lng]);
   }
 }
 
-/* СТИРАЕМ ВЕРХНИЙ СЛОЙ */
 function eraseCircle(x,y,r){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(.55,"rgba(0,0,0,.8)");
+  g.addColorStop(.55,"rgba(0,0,0,.82)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
@@ -296,23 +249,28 @@ function eraseCircle(x,y,r){
 
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
-
-  /* Верхний слой: неизведанная карта */
-  ctx.fillStyle="rgba(0,0,0,.88)";
+  ctx.fillStyle="rgba(0,0,0,.86)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  /* Сохранённые открытые места */
   Object.keys(visited).forEach(key=>{
-    const c=keyCenter(key);
-    const p=map.latLngToContainerPoint(c);
-    eraseCircle(p.x,p.y,metersToPixels(28,c[0]));
+    const center=keyCenter(key);
+    const keyMode=key.split("_")[0];
+    const radius=(modeSettings[keyMode]||modeSettings.walk).radius;
+    const p=map.latLngToContainerPoint(center);
+    eraseCircle(p.x,p.y,metersToPixels(radius,center[0]));
   });
 
-  /* Текущий обзор путешественника */
   if(lat!==null&&lng!==null){
     const p=map.latLngToContainerPoint([lat,lng]);
-    eraseCircle(p.x,p.y,metersToPixels(35,lat));
+    eraseCircle(p.x,p.y,metersToPixels(currentMode().radius*1.2,lat));
   }
+}
+
+function setMode(newMode){
+  mode=newMode;
+  toast("Mode: "+currentMode().label);
+  updateUI();
+  drawFog();
 }
 
 function toggleExplore(){
@@ -320,11 +278,12 @@ function toggleExplore(){
   document.getElementById("exploreBtn").classList.toggle("active",exploring);
   document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
   document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
+  updateUI();
 }
 
 function centerMe(){
   if(lat===null||lng===null){
-    toast("GPS ещё ищет локацию");
+    toast("GPS is still searching...");
     return;
   }
   map.setView([lat,lng],17);
@@ -346,29 +305,23 @@ function showUI(){
 }
 
 function backup(){
-  const data={
-    xp,
-    total,
-    visited,
-    exportedAt:new Date().toISOString()
-  };
-
+  const data={walked,explored,visited,mode,exportedAt:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
-
   navigator.clipboard.writeText(text)
     .then(()=>toast("Backup copied"))
     .catch(()=>prompt("Copy backup:",text));
 }
 
 function resetData(){
-  if(prompt("Для удаления напиши DELETE")!=="DELETE"){
+  if(prompt("Type DELETE to reset all data")!=="DELETE"){
     toast("Cancelled");
     return;
   }
 
-  localStorage.removeItem("wg_travel_xp");
-  localStorage.removeItem("wg_travel_total");
+  localStorage.removeItem("wg_travel_walked");
+  localStorage.removeItem("wg_travel_explored");
   localStorage.removeItem("wg_travel_visited");
+  localStorage.removeItem("wg_travel_mode");
   location.reload();
 }
 
@@ -379,9 +332,9 @@ navigator.geolocation.watchPosition(pos=>{
   drawUser();
 
   if(lastPoint){
-    const d=map.distance(lastPoint,[lat,lng]);
-    if(d>2&&d<1000){
-      total+=d;
+    const distance=map.distance(lastPoint,[lat,lng]);
+    if(distance>2&&distance<1000000){
+      walked+=distance;
     }
   }
 
@@ -399,8 +352,8 @@ navigator.geolocation.watchPosition(pos=>{
 
     if(!visited[key]){
       visited[key]=true;
-      xp+=10;
-      toast("+10 XP · new place discovered");
+      explored+=currentMode().step;
+      toast("New area explored · "+currentMode().label);
     }
   }
 
@@ -409,7 +362,7 @@ navigator.geolocation.watchPosition(pos=>{
 
 },()=>{
   document.getElementById("status").innerText="GPS error";
-  toast("Разреши доступ к геолокации");
+  toast("Please allow location access");
 },{
   enableHighAccuracy:true,
   maximumAge:0,
