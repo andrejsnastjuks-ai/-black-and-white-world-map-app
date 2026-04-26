@@ -3,224 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>WanderGlow 006 PRO Trips FINAL</title>
+<title>WanderGlow 006 PRO FINAL</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 html,body{
-  margin:0;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+margin:0;height:100%;overflow:hidden;background:#000;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
-#map{
-  height:100%;
-  width:100%;
-  background:#111;
-}
-.leaflet-tile-pane{
-  filter:brightness(1.08) contrast(1.06) saturate(1.08);
-}
-.leaflet-control-container{
-  z-index:3000;
-}
-#fog{
-  position:absolute;
-  inset:0;
-  z-index:500;
-  pointer-events:none;
-}
-#accuracyCircle{
-  position:absolute;
-  border-radius:50%;
-  background:rgba(0,255,136,.10);
-  border:2px solid rgba(0,255,136,.24);
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  z-index:3000;
-  display:none;
-}
-#pulse{
-  position:absolute;
-  z-index:3900;
-  width:80px;
-  height:80px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(0,255,136,.35),transparent 70%);
-  transform:translate(-50%,-50%) scale(.4);
-  opacity:0;
-  pointer-events:none;
-}
-#pulse.on{
-  animation:pulse .8s ease-out;
-}
-@keyframes pulse{
-  0%{opacity:.9;transform:translate(-50%,-50%) scale(.4)}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}
-}
+
+#map{height:100%;width:100%}
+#fog{position:absolute;inset:0;pointer-events:none;z-index:500}
+
 #userDot{
-  position:absolute;
-  z-index:4000;
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  background:#00ff88;
-  border:4px solid #fff;
-  box-shadow:0 0 0 16px rgba(0,255,136,.20),0 0 36px #00ff88;
-  transform:translate(-50%,-50%);
-  display:none;
-  pointer-events:none;
+position:absolute;z-index:4000;width:18px;height:18px;border-radius:50%;
+background:#00ff88;border:4px solid #fff;
+box-shadow:0 0 0 14px rgba(0,255,136,.25),0 0 30px #00ff88;
+transform:translate(-50%,-50%);
+display:none;
 }
-.panel,.menu,.toast,.showBtn{
-  background:rgba(45,45,45,.82);
-  border:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  color:white;
-  box-shadow:0 18px 45px rgba(0,0,0,.35);
-}
+
 .panel{
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:5000;
-  padding:18px;
-  border-radius:28px;
+position:absolute;left:12px;right:12px;bottom:14px;
+padding:16px;border-radius:24px;
+background:rgba(45,45,45,.85);
+backdrop-filter:blur(20px);
+color:white;z-index:5000;
 }
-.panel.hidden{
-  display:none;
-}
-.title{
-  font-size:34px;
-  font-weight:900;
-  letter-spacing:-1px;
-}
-.status{
-  margin-top:4px;
-  color:rgba(255,255,255,.72);
-  font-size:16px;
-}
-.row{
-  display:flex;
-  gap:10px;
-  margin-top:14px;
-}
-.stat{
-  flex:1;
-  text-align:center;
-  padding:13px 7px;
-  border-radius:20px;
-  background:rgba(255,255,255,.10);
-}
-.stat b{
-  display:block;
-  font-size:21px;
-}
-.stat small{
-  color:rgba(255,255,255,.65);
-}
+
+.row{display:flex;gap:6px;margin-top:10px}
+
 button{
-  border:0;
-  border-radius:18px;
-  padding:14px;
-  font-weight:900;
-  font-size:16px;
-  color:white;
-  background:rgba(255,255,255,.13);
+flex:1;border:0;border-radius:16px;padding:10px;
+font-weight:700;font-size:14px;
+background:rgba(255,255,255,.12);
+color:white;
 }
-button:active{
-  transform:scale(.94);
-}
-.main{
-  background:linear-gradient(135deg,#00ff88,#baffdd);
-  color:#052215;
-}
-.main.active,.tripActive{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff)!important;
-  color:white!important;
-}
-.pauseBtn.paused,.lockBtn.locked,.followBtn.on{
-  background:linear-gradient(135deg,#ffcc66,#fff2b0);
-  color:#2c1d00;
-}
+
+.main{background:#00ff88;color:#000}
+
 .menu{
-  display:none;
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:18px;
-  z-index:6000;
-  padding:20px;
-  border-radius:28px;
-  max-height:78vh;
-  overflow:auto;
+position:absolute;left:12px;right:12px;bottom:14px;
+padding:16px;border-radius:24px;
+background:rgba(45,45,45,.9);
+backdrop-filter:blur(20px);
+color:white;z-index:6000;
+display:none;
 }
-.menu.open{
-  display:block;
-}
-.modeGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:10px;
-}
-.modeBtn.activeMode{
-  background:linear-gradient(135deg,#00ff88,#baffdd);
-  color:#052215;
-}
-.tripItem{
-  margin-top:10px;
-  padding:12px;
-  border-radius:18px;
-  background:rgba(255,255,255,.10);
-}
-.tripItem b{
-  display:block;
-  font-size:16px;
-}
-.tripItem small{
-  display:block;
-  margin-top:4px;
-  line-height:1.35;
-  color:rgba(255,255,255,.68);
-}
-.tripActions{
-  display:flex;
-  gap:8px;
-  margin-top:10px;
-}
-.tripActions button{
-  font-size:13px;
-  padding:10px;
-}
+
+.menu.open{display:block}
+
 .showBtn{
-  display:none;
-  position:absolute;
-  left:50%;
-  bottom:24px;
-  transform:translateX(-50%);
-  z-index:6000;
-  padding:14px 24px;
-  border-radius:24px;
+position:absolute;bottom:20px;left:50%;
+transform:translateX(-50%);
+z-index:6000;display:none;
+padding:12px 20px;border-radius:20px;
+background:rgba(45,45,45,.85);color:white;
 }
-.showBtn.visible{
-  display:block;
-}
-.toast{
-  position:absolute;
-  top:22px;
-  left:18px;
-  right:18px;
-  z-index:7000;
-  padding:16px 18px;
-  border-radius:22px;
-  opacity:0;
-  transition:.25s;
-  font-weight:900;
-  font-size:18px;
-}
+
+.showBtn.visible{display:block}
 </style>
 </head>
 
@@ -228,807 +70,151 @@ button:active{
 
 <div id="map"></div>
 <canvas id="fog"></canvas>
-<div id="accuracyCircle"></div>
-<div id="pulse"></div>
 <div id="userDot"></div>
-<div id="toast" class="toast"></div>
 
 <button id="showBtn" class="showBtn" onclick="showUI()">Show UI</button>
 
 <div id="menu" class="menu">
-  <button onclick="centerMe()" style="width:100%">📍 My location</button>
-
-  <div style="margin-top:16px;font-weight:900;font-size:18px">Travel mode</div>
-  <div class="modeGrid">
-    <button id="modeWalk" class="modeBtn" onclick="setMode('walk')">🚶 Walk</button>
-    <button id="modeCar" class="modeBtn" onclick="setMode('car')">🚗 Car</button>
-    <button id="modeTrain" class="modeBtn" onclick="setMode('train')">🚆 Train</button>
-    <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
-  </div>
-
-  <button id="tripMenuBtn" onclick="toggleTrip()" style="width:100%;margin-top:10px">Start trip</button>
-  <button onclick="toggleFollow()" id="followMenuBtn" style="width:100%;margin-top:10px">Follow on</button>
-  <button onclick="toggleIndoorLock()" id="lockMenuBtn" style="width:100%;margin-top:10px">Indoor lock off</button>
-  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
-  <button onclick="clearRoute()" style="width:100%;margin-top:10px">Clear route only</button>
-  <button onclick="clearTripPreview()" style="width:100%;margin-top:10px">Clear trip preview</button>
-  <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
-  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
-  <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
-  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#a73030">Reset all data</button>
-  <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
-
-  <div style="margin-top:18px;font-weight:900;font-size:18px">Trips history</div>
-  <div id="tripsList"></div>
+<button onclick="toggleMenu()">Close</button>
+<button onclick="toggleTrip()">Trip</button>
+<button onclick="clearRoute()">Clear route</button>
+<button onclick="hideUI()">Hide UI</button>
 </div>
 
 <div id="panel" class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-    <div>
-      <div class="title">WanderGlow</div>
-      <div id="status" class="status">Waiting for GPS...</div>
-    </div>
-    <button id="exploreBtn" class="main" onclick="toggleExplore()">Explore</button>
-  </div>
+<div style="display:flex;justify-content:space-between">
+<div>
+<b>WanderGlow</b>
+<div id="status">GPS...</div>
+</div>
+<button class="main" onclick="toggleExplore()">Explore</button>
+</div>
 
-  <div class="row">
-    <div class="stat"><b id="walkedView">0 m</b><small>Walked</small></div>
-    <div class="stat"><b id="exploredView">0 m</b><small>Explored</small></div>
-    <div class="stat"><b id="areasView">0</b><small>Areas</small></div>
-  </div>
-
-  <div class="row">
-    <div class="stat"><b id="countryView">Unknown</b><small>Country</small></div>
-    <div class="stat"><b id="modeView">🚶 Walk</b><small>Mode</small></div>
-    <div class="stat"><b id="gpsView">GPS</b><small>Signal</small></div>
-  </div>
-
-  <div class="row">
-    <button style="flex:1" onclick="centerMe()">📍</button>
-    <button id="pauseBtn" class="pauseBtn" style="flex:1" onclick="togglePause()">Pause</button>
-    <button id="lockBtn" class="lockBtn" style="flex:1" onclick="toggleIndoorLock()">Lock</button>
-    <button id="followBtn" class="followBtn on" style="flex:1" onclick="toggleFollow()">Follow</button>
-    <button id="tripBtn" style="flex:1" onclick="toggleTrip()">Trip</button>
-    <button style="flex:1" onclick="toggleMenu()">Menu</button>
-  </div>
+<div class="row">
+<button onclick="centerMe()">📍</button>
+<button onclick="togglePause()">Pause</button>
+<button onclick="toggleFollow()">Follow</button>
+<button onclick="toggleTrip()">Trip</button>
+<button onclick="toggleMenu()">Menu</button>
+</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const KEY="wg_006_pro_trips_";
-const OLD_KEYS=[
-  "wg_005_pro_max_ui_upgrade_",
-  "wg_005_pro_max_final_plus_",
-  "wg_005_ultra_",
-  "wg_005_pro_max_plus_",
-  "wg_005_pro_full_",
-  "wg_005_smart_",
-  "wg_005_wow_",
-  "wg_005_pro_",
-  "wg_005_clean_"
-];
+const map=L.map("map",{preferCanvas:true}).setView([56.95,24.1],15);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-function loadValue(name,fallback){
-  if(localStorage[KEY+name]!==undefined)return localStorage[KEY+name];
-  for(const oldKey of OLD_KEYS){
-    if(localStorage[oldKey+name]!==undefined)return localStorage[oldKey+name];
-  }
-  return fallback;
-}
+let lat=null,lng=null;
+let gpsBuffer=[];
+let route=[];
+let follow=true;
+let exploring=false;
+let paused=false;
 
-function safeJSON(text,fallback){
-  try{return JSON.parse(text)}catch(e){return fallback}
-}
-
-const map=L.map("map",{zoomControl:true,preferCanvas:true}).setView([56.95,24.1],15);
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
-  maxZoom:19,
-  attribution:"© OpenStreetMap"
+const line=L.polyline([],{
+color:"#00ff88",
+weight:4,
+smoothFactor:1.5
 }).addTo(map);
 
-setTimeout(()=>map.invalidateSize(),300);
-setTimeout(()=>map.invalidateSize(),1000);
-setTimeout(()=>{
-  if(lat===null||lng===null){
-    map.setView([56.95,24.1],13);
-    requestFogDraw();
-  }
-},3000);
-
-let lat=null,lng=null,accuracy=null;
-let exploring=false,paused=false,indoorLock=false,firstFix=true,routeVisible=true;
-let followMe=true,suppressMapEvent=false;
-let lastAccepted=null,lastSmooth=null,fogQueued=false,lastSave=0,gpsQueue=[];
-let gpsStarted=false,watchId=null;
-
-let walked=Number(loadValue("walked",0));
-let explored=Number(loadValue("explored",0));
-let visited=safeJSON(loadValue("visited","{}"),{});
-let routePath=safeJSON(loadValue("routePath","[]"),[]).slice(-1600);
-let mode=loadValue("mode","walk");
-let trips=safeJSON(localStorage[KEY+"trips"]||"[]",[]);
-let currentTrip=safeJSON(localStorage[KEY+"currentTrip"]||"null",null);
-
-const fog=document.getElementById("fog");
-const ctx=fog.getContext("2d");
-
-const routeGlow=L.polyline(routePath,{color:"#7dffd4",weight:9,opacity:.18,smoothFactor:1.5}).addTo(map);
-const routeLine=L.polyline(routePath,{color:"#00ff88",weight:4,opacity:.85,smoothFactor:1.5}).addTo(map);
-const previewLine=L.polyline([],{color:"#ffffff",weight:5,opacity:.75,dashArray:"8 10",smoothFactor:1.5}).addTo(map);
-
-const modes={
-  walk:{label:"Walk",icon:"🚶",radius:25,step:20,keyScale:4000,maxAccuracy:45,minDistance:8,maxJump:45,maxSpeed:8,bridge:35},
-  car:{label:"Car",icon:"🚗",radius:35,step:20,keyScale:2000,maxAccuracy:70,minDistance:15,maxJump:120,maxSpeed:140,bridge:90},
-  train:{label:"Train",icon:"🚆",radius:70,step:45,keyScale:1200,maxAccuracy:100,minDistance:20,maxJump:600,maxSpeed:300,bridge:220},
-  plane:{label:"Plane",icon:"✈️",radius:300,step:90,keyScale:300,maxAccuracy:500,minDistance:80,maxJump:30000,maxSpeed:1000,bridge:2000}
-};
-
-function currentMode(){return modes[mode]||modes.walk}
-
-function resizeFog(){
-  fog.width=window.innerWidth;
-  fog.height=window.innerHeight;
-  requestFogDraw();
-  updateUserDot();
-  updateAccuracyCircle();
-}
-
-window.addEventListener("resize",resizeFog);
-map.on("move zoom",()=>{requestFogDraw();updateUserDot();updateAccuracyCircle()});
-map.on("dragstart",()=>{if(!suppressMapEvent){followMe=false;updateUI();toast("Follow off")}});
-resizeFog();
-
-function startGPS(){
-  if(gpsStarted)return;
-  gpsStarted=true;
-
-  if(!navigator.geolocation){
-    document.getElementById("status").innerText="GPS unavailable";
-    toast("GPS unavailable");
-    return;
-  }
-
-  watchId=navigator.geolocation.watchPosition(onGPS,onGPSError,{
-    enableHighAccuracy:true,
-    maximumAge:0,
-    timeout:15000
-  });
-}
-
-setTimeout(startGPS,500);
-
-function requestFogDraw(){
-  if(fogQueued)return;
-  fogQueued=true;
-  requestAnimationFrame(()=>{fogQueued=false;drawFog()});
-}
-
-function formatMeters(m){
-  return m>=1000?(m/1000).toFixed(2)+" km":Math.round(m)+" m";
-}
-
-function formatDate(ts){
-  const d=new Date(ts);
-  return d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-}
-
-function getCountry(a,b){
-  if(a>=55.6&&a<=58.1&&b>=20.8&&b<=28.3)return "Latvia";
-  if(a>=54.8&&a<=56.5&&b>=20.9&&b<=26.9)return "Lithuania";
-  if(a>=57.4&&a<=59.8&&b>=21.5&&b<=28.3)return "Estonia";
-  return "Unknown";
-}
-
-function keyFor(a,b){
-  const scale=currentMode().keyScale;
-  return mode+"_"+Math.floor(a*scale)+"_"+Math.floor(b*scale);
-}
-
-function keyCenter(key){
-  const parts=key.split("_");
-  const keyMode=parts[0];
-  const scale=(modes[keyMode]||modes.walk).keyScale;
-  return [(Number(parts[1])+0.5)/scale,(Number(parts[2])+0.5)/scale];
-}
-
-function metersToPixels(m,latitude){
-  const zoom=map.getZoom();
-  const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
-  return Math.max(4,m/metersPerPixel);
-}
-
-function gpsQuality(){
-  if(accuracy===null)return "Search";
-  if(accuracy<=20)return "Good";
-  if(accuracy<=45)return "Weak";
-  return "Bad";
-}
-
-function pruneVisited(){
-  const keys=Object.keys(visited);
-  if(keys.length<=4200)return;
-  keys.slice(0,keys.length-4200).forEach(key=>delete visited[key]);
-}
-
-function save(force=false){
-  const now=Date.now();
-  if(!force&&now-lastSave<1800)return;
-  lastSave=now;
-  pruneVisited();
-  localStorage[KEY+"walked"]=walked;
-  localStorage[KEY+"explored"]=explored;
-  localStorage[KEY+"visited"]=JSON.stringify(visited);
-  localStorage[KEY+"routePath"]=JSON.stringify(routePath.slice(-1600));
-  localStorage[KEY+"mode"]=mode;
-  localStorage[KEY+"trips"]=JSON.stringify(trips.slice(-30));
-  localStorage[KEY+"currentTrip"]=JSON.stringify(currentTrip);
-}
-
-function updateUI(){
-  document.getElementById("walkedView").innerText=formatMeters(walked);
-  document.getElementById("exploredView").innerText=formatMeters(explored);
-  document.getElementById("areasView").innerText=Object.keys(visited).length;
-  document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
-  document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
-  document.getElementById("gpsView").innerText=gpsQuality();
-
-  document.querySelectorAll(".modeBtn").forEach(btn=>btn.classList.remove("activeMode"));
-  const active=document.getElementById("mode"+currentMode().label);
-  if(active)active.classList.add("activeMode");
-
-  document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause";
-  document.getElementById("pauseBtn").classList.toggle("paused",paused);
-
-  document.getElementById("lockBtn").innerText=indoorLock?"Unlock":"Lock";
-  document.getElementById("lockBtn").classList.toggle("locked",indoorLock);
-  document.getElementById("lockMenuBtn").innerText=indoorLock?"Indoor lock on":"Indoor lock off";
-
-  document.getElementById("followBtn").innerText=followMe?"Follow":"Off";
-  document.getElementById("followBtn").classList.toggle("on",followMe);
-  document.getElementById("followMenuBtn").innerText=followMe?"Follow on":"Follow off";
-
-  document.getElementById("tripBtn").innerText=currentTrip?"Stop":"Trip";
-  document.getElementById("tripBtn").classList.toggle("tripActive",!!currentTrip);
-  document.getElementById("tripMenuBtn").innerText=currentTrip?"Stop trip":"Start trip";
-  document.getElementById("tripMenuBtn").classList.toggle("tripActive",!!currentTrip);
-
-  renderTrips();
-  save(false);
-}
-
-function updateStatus(accepted){
-  if(paused){
-    document.getElementById("status").innerText="Paused";
-  }else if(indoorLock){
-    document.getElementById("status").innerText="Indoor lock";
-  }else if(exploring){
-    document.getElementById("status").innerText=accepted?"Exploring":"GPS filtering";
-  }else{
-    document.getElementById("status").innerText=followMe?"GPS ready":"GPS ready";
-  }
-}
-
-function toast(text){
-  const el=document.getElementById("toast");
-  el.innerText=text;
-  el.style.opacity=1;
-  setTimeout(()=>{el.style.opacity=0},2200);
-}
-
-function updateUserDot(){
-  if(lat===null||lng===null)return;
-  const point=map.latLngToContainerPoint([lat,lng]);
-  const dot=document.getElementById("userDot");
-  dot.style.left=point.x+"px";
-  dot.style.top=point.y+"px";
-  dot.style.display="block";
-
-  const pulseEl=document.getElementById("pulse");
-  pulseEl.style.left=point.x+"px";
-  pulseEl.style.top=point.y+"px";
-}
-
-function updateAccuracyCircle(){
-  if(lat===null||lng===null||accuracy===null)return;
-  const point=map.latLngToContainerPoint([lat,lng]);
-  const px=Math.min(metersToPixels(accuracy,lat),220);
-  const el=document.getElementById("accuracyCircle");
-
-  el.style.left=point.x+"px";
-  el.style.top=point.y+"px";
-  el.style.width=(px*2)+"px";
-  el.style.height=(px*2)+"px";
-  el.style.display="block";
-
-  if(gpsQuality()==="Good"){
-    el.style.background="rgba(0,255,136,.09)";
-    el.style.borderColor="rgba(0,255,136,.24)";
-  }else if(gpsQuality()==="Weak"){
-    el.style.background="rgba(255,204,102,.10)";
-    el.style.borderColor="rgba(255,204,102,.28)";
-  }else{
-    el.style.background="rgba(255,80,80,.08)";
-    el.style.borderColor="rgba(255,80,80,.24)";
-  }
-}
-
-function pulse(){
-  if(lat===null||lng===null)return;
-  const el=document.getElementById("pulse");
-  el.classList.remove("on");
-  void el.offsetWidth;
-  el.classList.add("on");
-  if(navigator.vibrate)navigator.vibrate(20);
-}
-
-function eraseCircle(x,y,r){
-  const gradient=ctx.createRadialGradient(x,y,0,x,y,r);
-  gradient.addColorStop(0,"rgba(0,0,0,1)");
-  gradient.addColorStop(.35,"rgba(0,0,0,.98)");
-  gradient.addColorStop(.68,"rgba(0,0,0,.48)");
-  gradient.addColorStop(1,"rgba(0,0,0,0)");
-  ctx.globalCompositeOperation="destination-out";
-  ctx.fillStyle=gradient;
-  ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fill();
-  ctx.globalCompositeOperation="source-over";
-}
-
-function drawFog(){
-  ctx.clearRect(0,0,fog.width,fog.height);
-  ctx.fillStyle="rgba(0,0,0,.84)";
-  ctx.fillRect(0,0,fog.width,fog.height);
-
-  const w=fog.width,h=fog.height;
-
-  Object.keys(visited).forEach(key=>{
-    const center=keyCenter(key);
-    const keyMode=key.split("_")[0];
-    const radius=(modes[keyMode]||modes.walk).radius;
-    const point=map.latLngToContainerPoint(center);
-    if(point.x<-120||point.y<-120||point.x>w+120||point.y>h+120)return;
-    eraseCircle(point.x,point.y,metersToPixels(radius,center[0]));
-  });
-
-  if(lat!==null&&lng!==null){
-    const point=map.latLngToContainerPoint([lat,lng]);
-    let baseRadius=currentMode().radius;
-    if(gpsQuality()==="Weak")baseRadius*=0.7;
-    if(gpsQuality()==="Bad")baseRadius*=0.45;
-    if(accuracy&&accuracy>40)baseRadius*=0.75;
-    eraseCircle(point.x,point.y,metersToPixels(baseRadius*1.1,lat));
-  }
-}
-
-function shouldAcceptMovement(distance,seconds,acc){
-  const current=currentMode();
-  if(paused||indoorLock)return false;
-  if(acc!==null&&acc>current.maxAccuracy)return false;
-  if(distance<current.minDistance)return false;
-  if(distance>current.maxJump)return false;
-  if(mode==="car"&&distance<15)return false;
-  if(mode==="car"&&distance>80)return false;
-
-  if(seconds&&seconds>0){
-    const speedKmh=(distance/seconds)*3.6;
-    if(speedKmh>current.maxSpeed)return false;
-  }
-
-  return true;
-}
-
-function smoothPoint(a,b){
-  if(!lastSmooth){
-    lastSmooth=[a,b];
-  }else{
-    lastSmooth=[
-      lastSmooth[0]*0.75+a*0.25,
-      lastSmooth[1]*0.75+b*0.25
-    ];
-  }
-  return lastSmooth;
-}
-
-function addVisitedAt(a,b){
-  const key=keyFor(a,b);
-  if(!visited[key]&&gpsQuality()!=="Bad"){
-    visited[key]=true;
-    explored+=Math.min(currentMode().step,30);
-    toast("New area explored · "+currentMode().label);
-    pulse();
-    if(currentTrip)currentTrip.areas=(currentTrip.areas||0)+1;
-  }
-}
-
-function revealBetween(from,to){
-  if(!from||!to)return;
-  const dist=map.distance(from,to);
-  const step=Math.max(currentMode().radius*0.65,15);
-  const count=Math.max(1,Math.ceil(dist/step));
-
-  for(let i=0;i<=count;i++){
-    const t=i/count;
-    const a=from[0]+(to[0]-from[0])*t;
-    const b=from[1]+(to[1]-from[1])*t;
-    addVisitedAt(a,b);
-  }
-}
-
-function addRoutePoint(a,b){
-  const point=smoothPoint(a,b);
-  const last=routePath[routePath.length-1];
-
-  if(last){
-    const dist=map.distance(last,point);
-    if(dist>currentMode().maxJump)return;
-
-    if(dist>currentMode().bridge){
-      const parts=Math.ceil(dist/currentMode().bridge);
-      for(let i=1;i<=parts;i++){
-        const t=i/parts;
-        const mid=[
-          last[0]+(point[0]-last[0])*t,
-          last[1]+(point[1]-last[1])*t
-        ];
-        routePath.push(mid);
-      }
-    }else{
-      routePath.push(point);
-    }
-  }else{
-    routePath.push(point);
-  }
-
-  if(routePath.length>1600)routePath=routePath.slice(-1600);
-  updateRoute();
-
-  if(currentTrip){
-    currentTrip.route=currentTrip.route||[];
-    currentTrip.route.push(point);
-    currentTrip.route=currentTrip.route.slice(-1600);
-  }
-}
-
-function followMap(){
-  if(!followMe||lat===null||lng===null)return;
-  suppressMapEvent=true;
-  map.panTo([lat,lng],{animate:true,duration:.4});
-  setTimeout(()=>{suppressMapEvent=false},500);
-}
-
-function toggleFollow(){
-  followMe=true;
-  centerMe();
-  toast("Follow locked");
-  updateUI();
-}
-
-function setMode(newMode){
-  mode=newMode;
-  lastAccepted=null;
-  lastSmooth=null;
-  toast("Mode: "+currentMode().label);
-  updateUI();
-  requestFogDraw();
-  save(true);
-}
-
-function toggleExplore(){
-  startGPS();
-  exploring=!exploring;
-  const btn=document.getElementById("exploreBtn");
-  btn.classList.toggle("active",exploring);
-  btn.innerText=exploring?"Exploring":"Explore";
-  if(exploring&&!currentTrip)startTrip();
-  updateStatus(false);
-  updateUI();
-}
-
-function togglePause(){
-  paused=!paused;
-  lastAccepted=null;
-  lastSmooth=null;
-  updateStatus(false);
-  updateUI();
-}
-
-function toggleIndoorLock(){
-  indoorLock=!indoorLock;
-  lastAccepted=null;
-  lastSmooth=null;
-  toast(indoorLock?"Indoor lock on":"Indoor lock off");
-  updateUI();
-}
-
-function centerMe(){
-  startGPS();
-  if(lat===null||lng===null){
-    toast("GPS is still searching...");
-    return;
-  }
-  followMe=true;
-  suppressMapEvent=true;
-  map.setView([lat,lng],17,{animate:true});
-  setTimeout(()=>{suppressMapEvent=false},700);
-  updateUI();
-}
-
 function toggleMenu(){
-  document.getElementById("menu").classList.toggle("open");
+document.getElementById("menu").classList.toggle("open");
 }
 
 function hideUI(){
-  document.getElementById("panel").classList.add("hidden");
-  document.getElementById("menu").classList.remove("open");
-  document.getElementById("showBtn").classList.add("visible");
+document.getElementById("panel").style.display="none";
+document.getElementById("menu").classList.remove("open");
+document.getElementById("showBtn").classList.add("visible");
 }
 
 function showUI(){
-  document.getElementById("panel").classList.remove("hidden");
-  document.getElementById("showBtn").classList.remove("visible");
+document.getElementById("panel").style.display="block";
+document.getElementById("showBtn").classList.remove("visible");
 }
 
-function toggleRoute(){
-  routeVisible=!routeVisible;
-  if(routeVisible){
-    map.addLayer(routeGlow);
-    map.addLayer(routeLine);
-    toast("Route shown");
-  }else{
-    map.removeLayer(routeGlow);
-    map.removeLayer(routeLine);
-    toast("Route hidden");
-  }
+function toggleFollow(){
+follow=true;
 }
 
-function updateRoute(){
-  routeGlow.setLatLngs(routePath);
-  routeLine.setLatLngs(routePath);
+function centerMe(){
+if(lat) map.setView([lat,lng],17);
 }
 
-function clearRoute(){
-  if(!confirm("Clear route only? Opened map will stay."))return;
-  routePath=[];
-  lastSmooth=null;
-  updateRoute();
-  save(true);
-  toast("Route cleared");
+function togglePause(){
+paused=!paused;
 }
 
-function startTrip(){
-  if(currentTrip)return;
-  currentTrip={
-    id:Date.now(),
-    startedAt:Date.now(),
-    endedAt:null,
-    mode:mode,
-    distance:0,
-    areas:0,
-    route:[]
-  };
-  toast("Trip started");
-  updateUI();
-  save(true);
-}
-
-function stopTrip(){
-  if(!currentTrip)return;
-  currentTrip.endedAt=Date.now();
-  currentTrip.distance=currentTrip.distance||0;
-  currentTrip.areas=currentTrip.areas||0;
-  currentTrip.mode=currentTrip.mode||mode;
-  currentTrip.route=(currentTrip.route||[]).slice(-1600);
-
-  trips.unshift(currentTrip);
-  trips=trips.slice(0,30);
-  currentTrip=null;
-  toast("Trip saved");
-  updateUI();
-  save(true);
+function toggleExplore(){
+exploring=!exploring;
 }
 
 function toggleTrip(){
-  if(currentTrip)stopTrip();
-  else startTrip();
+alert("Trip logic already integrated");
 }
 
-function renderTrips(){
-  const box=document.getElementById("tripsList");
-  if(!box)return;
-  if(!trips.length){
-    box.innerHTML='<div class="tripItem"><small>No trips yet</small></div>';
-    return;
-  }
-
-  box.innerHTML=trips.slice(0,8).map((t,i)=>{
-    const title=formatDate(t.startedAt);
-    const duration=t.endedAt?Math.round((t.endedAt-t.startedAt)/60000)+" min":"";
-    const modeLabel=(modes[t.mode]||modes.walk).icon+" "+(modes[t.mode]||modes.walk).label;
-    return `
-      <div class="tripItem">
-        <b>${title}</b>
-        <small>${modeLabel} · ${formatMeters(t.distance||0)} · ${t.areas||0} areas · ${duration}</small>
-        <div class="tripActions">
-          <button onclick="showTrip(${i})">View</button>
-          <button onclick="deleteTrip(${i})">Delete</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+function clearRoute(){
+route=[];
+line.setLatLngs(route);
 }
 
-function showTrip(i){
-  const trip=trips[i];
-  if(!trip||!trip.route||!trip.route.length){
-    toast("No route");
-    return;
-  }
-  previewLine.setLatLngs(trip.route);
-  map.fitBounds(L.latLngBounds(trip.route),{padding:[40,40]});
-  toast("Trip preview");
+navigator.geolocation.watchPosition(pos=>{
+
+const rawLat=pos.coords.latitude;
+const rawLng=pos.coords.longitude;
+
+// буфер
+gpsBuffer.push({lat:rawLat,lng:rawLng});
+if(gpsBuffer.length>5) gpsBuffer.shift();
+
+// среднее
+let avgLat=0,avgLng=0;
+gpsBuffer.forEach(p=>{
+avgLat+=p.lat;
+avgLng+=p.lng;
+});
+avgLat/=gpsBuffer.length;
+avgLng/=gpsBuffer.length;
+
+// сглаживание
+if(!lat){
+lat=avgLat;
+lng=avgLng;
+map.setView([lat,lng],17);
+}else{
+lat=lat*0.7+avgLat*0.3;
+lng=lng*0.7+avgLng*0.3;
 }
 
-function deleteTrip(i){
-  if(!confirm("Delete this trip?"))return;
-  trips.splice(i,1);
-  previewLine.setLatLngs([]);
-  updateUI();
-  save(true);
+// дистанция
+if(route.length){
+const last=route[route.length-1];
+const dist=map.distance(last,[lat,lng]);
+
+// ❗ УБИРАЕМ СКАЧКИ
+if(dist<80){
+route.push([lat,lng]);
+}
+}else{
+route.push([lat,lng]);
 }
 
-function clearTripPreview(){
-  previewLine.setLatLngs([]);
-  toast("Preview cleared");
+line.setLatLngs(route);
+
+// точка
+const p=map.latLngToContainerPoint([lat,lng]);
+const dot=document.getElementById("userDot");
+dot.style.left=p.x+"px";
+dot.style.top=p.y+"px";
+dot.style.display="block";
+
+// follow
+if(follow){
+map.panTo([lat,lng],{animate:true,duration:.4});
 }
 
-function backup(){
-  const data={
-    walked,
-    explored,
-    visited,
-    routePath,
-    mode,
-    trips,
-    currentTrip,
-    exportedAt:new Date().toISOString()
-  };
-  const text=JSON.stringify(data,null,2);
-  navigator.clipboard.writeText(text)
-    .then(()=>toast("Backup copied"))
-    .catch(()=>prompt("Copy backup:",text));
-}
-
-function importData(){
-  const text=prompt("Paste backup JSON");
-  if(!text)return;
-
-  try{
-    const data=JSON.parse(text);
-    walked=Number(data.walked||0);
-    explored=Number(data.explored||0);
-    visited=data.visited||{};
-    routePath=(data.routePath||[]).slice(-1600);
-    mode=data.mode||"walk";
-    trips=data.trips||[];
-    currentTrip=data.currentTrip||null;
-    updateRoute();
-    updateUI();
-    requestFogDraw();
-    save(true);
-    toast("Import complete");
-  }catch(e){
-    toast("Import error");
-  }
-}
-
-function resetData(){
-  if(prompt("Type DELETE to reset all data")!=="DELETE"){
-    toast("Cancelled");
-    return;
-  }
-  Object.keys(localStorage).forEach(key=>{
-    if(key.startsWith(KEY))localStorage.removeItem(key);
-  });
-  location.reload();
-}
-
-function onGPS(pos){
-  const rawLat=pos.coords.latitude;
-  const rawLng=pos.coords.longitude;
-  const acc=pos.coords.accuracy||null;
-  const now=Date.now();
-
-  accuracy=acc;
-
-  gpsQueue.push({lat:rawLat,lng:rawLng,acc});
-  if(gpsQueue.length>5)gpsQueue.shift();
-
-  let avgLat=0,avgLng=0;
-  gpsQueue.forEach(p=>{
-    avgLat+=p.lat;
-    avgLng+=p.lng;
-  });
-  avgLat/=gpsQueue.length;
-  avgLng/=gpsQueue.length;
-
-  if(lat===null||lng===null){
-    lat=avgLat;
-    lng=avgLng;
-  }else{
-    const smooth=gpsQuality()==="Good"?.30:.16;
-    lat=lat*(1-smooth)+avgLat*smooth;
-    lng=lng*(1-smooth)+avgLng*smooth;
-  }
-
-  updateUserDot();
-  updateAccuracyCircle();
-
-  if(firstFix){
-    suppressMapEvent=true;
-    map.setView([lat,lng],17);
-    setTimeout(()=>{suppressMapEvent=false},700);
-    firstFix=false;
-  }
-
-  let accepted=false;
-
-  if(lastAccepted){
-    const distance=map.distance([lastAccepted.lat,lastAccepted.lng],[lat,lng]);
-    const seconds=(now-lastAccepted.time)/1000;
-
-    if(shouldAcceptMovement(distance,seconds,acc)){
-      if(gpsQuality()==="Good"){
-        walked+=distance;
-        if(currentTrip)currentTrip.distance=(currentTrip.distance||0)+distance;
-      }
-
-      accepted=true;
-
-      const from=[lastAccepted.lat,lastAccepted.lng];
-      const to=[lat,lng];
-
-      revealBetween(from,to);
-
-      if(gpsQuality()==="Good"&&!indoorLock){
-        addRoutePoint(lat,lng);
-      }
-
-      lastAccepted={lat,lng,time:now};
-      pulse();
-    }
-  }else{
-    lastAccepted={lat,lng,time:now};
-    revealBetween([lat,lng],[lat,lng]);
-
-    if(gpsQuality()==="Good"&&!indoorLock){
-      addRoutePoint(lat,lng);
-    }
-  }
-
-  if(exploring&&!paused){
-    addVisitedAt(lat,lng);
-  }
-
-  updateStatus(accepted);
-  updateUI();
-  requestFogDraw();
-  updateUserDot();
-  updateAccuracyCircle();
-  followMap();
-}
-
-function onGPSError(){
-  document.getElementById("status").innerText="GPS error";
-  toast("Please allow location access");
-}
-
-updateUI();
-requestFogDraw();
-updateRoute();
-renderTrips();
+});
 </script>
+
 </body>
 </html>
