@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow Travel Stable</title>
+<title>WanderGlow Travel Edition 005</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -16,17 +16,13 @@ html,body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-#map{
-  height:100%;
-}
+#map{height:100%}
 
 .leaflet-tile-pane{
   filter:brightness(1.05) contrast(1.05) saturate(1.08);
 }
 
-.leaflet-control-container{
-  z-index:3000;
-}
+.leaflet-control-container{z-index:3000}
 
 #fog{
   position:absolute;
@@ -67,9 +63,7 @@ html,body{
   border-radius:28px;
 }
 
-.panel.hidden{
-  display:none;
-}
+.panel.hidden{display:none}
 
 .title{
   font-size:34px;
@@ -99,7 +93,7 @@ html,body{
 
 .stat b{
   display:block;
-  font-size:25px;
+  font-size:23px;
 }
 
 .stat small{
@@ -130,6 +124,11 @@ button:active{
   color:white;
 }
 
+.pauseBtn.paused{
+  background:linear-gradient(135deg,#ffcc66,#fff2b0);
+  color:#2c1d00;
+}
+
 .menu{
   display:none;
   position:absolute;
@@ -143,9 +142,7 @@ button:active{
   overflow:auto;
 }
 
-.menu.open{
-  display:block;
-}
+.menu.open{display:block}
 
 .modeGrid{
   display:grid;
@@ -170,9 +167,7 @@ button:active{
   border-radius:22px;
 }
 
-.showBtn.visible{
-  display:block;
-}
+.showBtn.visible{display:block}
 
 .toast{
   position:absolute;
@@ -209,6 +204,7 @@ button:active{
     <button id="modePlane" class="modeBtn" onclick="setMode('plane')">✈️ Plane</button>
   </div>
 
+  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
   <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
   <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
   <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset data</button>
@@ -233,10 +229,12 @@ button:active{
   <div class="row">
     <div class="stat"><b id="countryView">Unknown</b><small>Country</small></div>
     <div class="stat"><b id="modeView">🚶 Walk</b><small>Mode</small></div>
+    <div class="stat"><b id="gpsView">GPS</b><small>Signal</small></div>
   </div>
 
   <div class="row">
     <button style="flex:1" onclick="centerMe()">📍</button>
+    <button id="pauseBtn" class="pauseBtn" style="flex:1" onclick="togglePause()">Pause</button>
     <button style="flex:1" onclick="toggleMenu()">Menu</button>
   </div>
 </div>
@@ -253,23 +251,35 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
 
 let lat=null;
 let lng=null;
+let accuracy=null;
 let exploring=false;
+let paused=false;
 let firstFix=true;
-let lastPoint=null;
+let lastAccepted=null;
+let lastRaw=null;
+let routeVisible=true;
 
-let walked=Number(localStorage.wg_final_walked||0);
-let explored=Number(localStorage.wg_final_explored||0);
-let visited=JSON.parse(localStorage.wg_final_visited||"{}");
-let mode=localStorage.wg_final_mode||"walk";
+let walked=Number(localStorage.wg_005_walked||0);
+let explored=Number(localStorage.wg_005_explored||0);
+let visited=JSON.parse(localStorage.wg_005_visited||"{}");
+let routePath=JSON.parse(localStorage.wg_005_routePath||"[]");
+let mode=localStorage.wg_005_mode||"walk";
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
+const routeLine=L.polyline(routePath,{
+  color:"#00ff88",
+  weight:4,
+  opacity:.72,
+  smoothFactor:1.5
+}).addTo(map);
+
 const modes={
-  walk:{label:"Walk",icon:"🚶",radius:25,step:25,keyScale:4000},
-  car:{label:"Car",icon:"🚗",radius:80,step:80,keyScale:1500},
-  train:{label:"Train",icon:"🚆",radius:120,step:120,keyScale:1000},
-  plane:{label:"Plane",icon:"✈️",radius:800,step:800,keyScale:220}
+  walk:{label:"Walk",icon:"🚶",radius:25,step:25,keyScale:4000,maxAccuracy:30,minDistance:6,maxJump:35,maxSpeed:8},
+  car:{label:"Car",icon:"🚗",radius:80,step:80,keyScale:1500,maxAccuracy:70,minDistance:12,maxJump:350,maxSpeed:160},
+  train:{label:"Train",icon:"🚆",radius:130,step:130,keyScale:1000,maxAccuracy:100,minDistance:18,maxJump:700,maxSpeed:320},
+  plane:{label:"Plane",icon:"✈️",radius:800,step:800,keyScale:220,maxAccuracy:600,minDistance:80,maxJump:30000,maxSpeed:1000}
 };
 
 function currentMode(){
@@ -284,6 +294,7 @@ function resizeFog(){
 }
 
 window.addEventListener("resize",resizeFog);
+
 map.on("move zoom",()=>{
   drawFog();
   updateUserDot();
@@ -292,9 +303,7 @@ map.on("move zoom",()=>{
 resizeFog();
 
 function formatMeters(m){
-  if(m>=1000){
-    return (m/1000).toFixed(2)+" km";
-  }
+  if(m>=1000)return (m/1000).toFixed(2)+" km";
   return Math.round(m)+" m";
 }
 
@@ -314,23 +323,28 @@ function keyCenter(key){
   const parts=key.split("_");
   const keyMode=parts[0];
   const s=(modes[keyMode]||modes.walk).keyScale;
-  return [
-    (Number(parts[1])+0.5)/s,
-    (Number(parts[2])+0.5)/s
-  ];
+  return [(Number(parts[1])+0.5)/s,(Number(parts[2])+0.5)/s];
 }
 
 function metersToPixels(m,latitude){
   const zoom=map.getZoom();
   const metersPerPixel=40075016.686*Math.cos(latitude*Math.PI/180)/Math.pow(2,zoom+8);
-  return m/metersPerPixel;
+  return Math.max(4,m/metersPerPixel);
+}
+
+function gpsQuality(){
+  if(accuracy===null)return "Search";
+  if(accuracy<=20)return "Good";
+  if(accuracy<=40)return "Weak";
+  return "Bad";
 }
 
 function save(){
-  localStorage.wg_final_walked=walked;
-  localStorage.wg_final_explored=explored;
-  localStorage.wg_final_visited=JSON.stringify(visited);
-  localStorage.wg_final_mode=mode;
+  localStorage.wg_005_walked=walked;
+  localStorage.wg_005_explored=explored;
+  localStorage.wg_005_visited=JSON.stringify(visited);
+  localStorage.wg_005_routePath=JSON.stringify(routePath.slice(-4000));
+  localStorage.wg_005_mode=mode;
 }
 
 function updateUI(){
@@ -339,10 +353,14 @@ function updateUI(){
   document.getElementById("areasView").innerText=Object.keys(visited).length;
   document.getElementById("countryView").innerText=lat!==null?getCountry(lat,lng):"Unknown";
   document.getElementById("modeView").innerText=currentMode().icon+" "+currentMode().label;
+  document.getElementById("gpsView").innerText=gpsQuality();
 
   document.querySelectorAll(".modeBtn").forEach(btn=>btn.classList.remove("activeMode"));
   const active=document.getElementById("mode"+currentMode().label);
   if(active)active.classList.add("activeMode");
+
+  document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause";
+  document.getElementById("pauseBtn").classList.toggle("paused",paused);
 
   save();
 }
@@ -356,10 +374,8 @@ function toast(text){
 
 function updateUserDot(){
   if(lat===null||lng===null)return;
-
   const point=map.latLngToContainerPoint([lat,lng]);
   const dot=document.getElementById("userDot");
-
   dot.style.left=point.x+"px";
   dot.style.top=point.y+"px";
   dot.style.display="block";
@@ -368,9 +384,9 @@ function updateUserDot(){
 function eraseCircle(x,y,r){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
   g.addColorStop(0,"rgba(0,0,0,1)");
-  g.addColorStop(.55,"rgba(0,0,0,.82)");
+  g.addColorStop(.45,"rgba(0,0,0,.92)");
+  g.addColorStop(.78,"rgba(0,0,0,.42)");
   g.addColorStop(1,"rgba(0,0,0,0)");
-
   ctx.globalCompositeOperation="destination-out";
   ctx.fillStyle=g;
   ctx.beginPath();
@@ -381,7 +397,6 @@ function eraseCircle(x,y,r){
 
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
-
   ctx.fillStyle="rgba(0,0,0,.84)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
@@ -390,7 +405,6 @@ function drawFog(){
     const keyMode=key.split("_")[0];
     const radius=(modes[keyMode]||modes.walk).radius;
     const p=map.latLngToContainerPoint(center);
-
     eraseCircle(p.x,p.y,metersToPixels(radius,center[0]));
   });
 
@@ -400,8 +414,25 @@ function drawFog(){
   }
 }
 
+function shouldAcceptMovement(distance,seconds,acc){
+  const m=currentMode();
+  if(paused)return false;
+  if(acc!==null&&acc>m.maxAccuracy)return false;
+  if(distance<m.minDistance)return false;
+  if(distance>m.maxJump)return false;
+
+  if(seconds&&seconds>0){
+    const speedKmh=(distance/seconds)*3.6;
+    if(speedKmh>m.maxSpeed)return false;
+  }
+
+  return true;
+}
+
 function setMode(newMode){
   mode=newMode;
+  lastAccepted=null;
+  lastRaw=null;
   toast("Mode: "+currentMode().label);
   updateUI();
   drawFog();
@@ -409,11 +440,17 @@ function setMode(newMode){
 
 function toggleExplore(){
   exploring=!exploring;
-
   document.getElementById("exploreBtn").classList.toggle("active",exploring);
   document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
   document.getElementById("status").innerText=exploring?"Exploring...":"Paused";
+  updateUI();
+}
 
+function togglePause(){
+  paused=!paused;
+  lastAccepted=null;
+  lastRaw=null;
+  document.getElementById("status").innerText=paused?"Tracking paused":(exploring?"Exploring...":"GPS ready");
   updateUI();
 }
 
@@ -422,7 +459,6 @@ function centerMe(){
     toast("GPS is still searching...");
     return;
   }
-
   map.setView([lat,lng],17);
 }
 
@@ -441,17 +477,20 @@ function showUI(){
   document.getElementById("showBtn").classList.remove("visible");
 }
 
+function toggleRoute(){
+  routeVisible=!routeVisible;
+  if(routeVisible){
+    map.addLayer(routeLine);
+    toast("Route shown");
+  }else{
+    map.removeLayer(routeLine);
+    toast("Route hidden");
+  }
+}
+
 function backup(){
-  const data={
-    walked,
-    explored,
-    visited,
-    mode,
-    exportedAt:new Date().toISOString()
-  };
-
+  const data={walked,explored,visited,routePath,mode,exportedAt:new Date().toISOString()};
   const text=JSON.stringify(data,null,2);
-
   navigator.clipboard.writeText(text)
     .then(()=>toast("Backup copied"))
     .catch(()=>prompt("Copy backup:",text));
@@ -463,40 +502,72 @@ function resetData(){
     return;
   }
 
-  localStorage.removeItem("wg_final_walked");
-  localStorage.removeItem("wg_final_explored");
-  localStorage.removeItem("wg_final_visited");
-  localStorage.removeItem("wg_final_mode");
+  localStorage.removeItem("wg_005_walked");
+  localStorage.removeItem("wg_005_explored");
+  localStorage.removeItem("wg_005_visited");
+  localStorage.removeItem("wg_005_routePath");
+  localStorage.removeItem("wg_005_mode");
 
   location.reload();
 }
 
 navigator.geolocation.watchPosition(pos=>{
-  lat=pos.coords.latitude;
-  lng=pos.coords.longitude;
+  const rawLat=pos.coords.latitude;
+  const rawLng=pos.coords.longitude;
+  const acc=pos.coords.accuracy||null;
+  const now=Date.now();
 
-  updateUserDot();
+  accuracy=acc;
 
-  if(lastPoint){
-    const distance=map.distance(lastPoint,[lat,lng]);
-
-    if(distance>2&&distance<1000000){
-      walked+=distance;
-    }
+  if(lat===null||lng===null){
+    lat=rawLat;
+    lng=rawLng;
+  }else{
+    lat=lat*0.65+rawLat*0.35;
+    lng=lng*0.65+rawLng*0.35;
   }
 
-  lastPoint=[lat,lng];
+  updateUserDot();
 
   if(firstFix){
     map.setView([lat,lng],17);
     firstFix=false;
   }
 
-  document.getElementById("status").innerText=exploring?"Exploring...":"GPS ready";
+  let accepted=false;
 
-  if(exploring){
+  if(lastAccepted){
+    const distance=map.distance([lastAccepted.lat,lastAccepted.lng],[lat,lng]);
+    const seconds=(now-lastAccepted.time)/1000;
+
+    if(shouldAcceptMovement(distance,seconds,acc)){
+      walked+=distance;
+      accepted=true;
+
+      routePath.push([lat,lng]);
+      if(routePath.length>4000)routePath.shift();
+      routeLine.setLatLngs(routePath);
+
+      lastAccepted={lat,lng,time:now};
+    }
+  }else{
+    lastAccepted={lat,lng,time:now};
+    routePath.push([lat,lng]);
+    routeLine.setLatLngs(routePath);
+  }
+
+  lastRaw={lat:rawLat,lng:rawLng,time:now};
+
+  if(paused){
+    document.getElementById("status").innerText="Tracking paused";
+  }else if(exploring){
+    document.getElementById("status").innerText=accepted?"Exploring...":"Exploring · GPS filtering";
+  }else{
+    document.getElementById("status").innerText="GPS ready";
+  }
+
+  if(exploring&&!paused&&gpsQuality()!=="Bad"){
     const key=keyFor(lat,lng);
-
     if(!visited[key]){
       visited[key]=true;
       explored+=currentMode().step;
@@ -519,6 +590,7 @@ navigator.geolocation.watchPosition(pos=>{
 
 updateUI();
 drawFog();
+routeLine.setLatLngs(routePath);
 </script>
 
 </body>
