@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WanderGlow Travel PRO</title>
+<title>WanderGlow Travel</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
@@ -16,14 +16,14 @@ html,body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
-#map{
-  height:100%;
-}
+#map{height:100%}
 
+/* карта немного светлее */
 .leaflet-tile-pane{
-  filter:brightness(.86) contrast(1.05) saturate(1.08);
+  filter:brightness(1.05) contrast(1.05) saturate(1.1);
 }
 
+/* туман */
 #fog{
   position:absolute;
   inset:0;
@@ -31,112 +31,70 @@ html,body{
   pointer-events:none;
 }
 
+/* зелёная точка */
 .userDot{
   width:18px;
   height:18px;
   border-radius:50%;
   background:#00ff88;
   border:4px solid white;
-  box-shadow:0 0 0 12px rgba(0,255,136,.22),0 0 32px #00ff88;
+  box-shadow:0 0 0 10px rgba(0,255,136,.25),0 0 30px #00ff88;
 }
 
-.panel,.menu,.toast,.showBtn{
-  background:rgba(70,70,70,.72);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  color:white;
-  box-shadow:0 18px 45px rgba(0,0,0,.35);
-}
-
+/* UI */
 .panel{
   position:absolute;
   left:14px;
   right:14px;
   bottom:18px;
-  z-index:9999;
   padding:18px;
-  border-radius:28px;
+  border-radius:26px;
+  background:rgba(60,60,60,.7);
+  backdrop-filter:blur(20px);
+  color:white;
+  z-index:9999;
 }
 
-.panel.hidden{
-  display:none;
-}
+.panel.hidden{display:none;}
 
 .title{
-  font-size:32px;
+  font-size:30px;
   font-weight:900;
 }
 
 .status{
+  color:rgba(255,255,255,.7);
   margin-top:4px;
-  color:rgba(255,255,255,.72);
-  font-size:16px;
 }
 
 .row{
   display:flex;
   gap:10px;
-  margin-top:14px;
+  margin-top:12px;
 }
 
 .stat{
   flex:1;
   text-align:center;
-  padding:14px 8px;
-  border-radius:20px;
-  background:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.1);
+  padding:12px;
+  border-radius:16px;
 }
 
-.stat b{
-  font-size:26px;
-}
-
-.stat small{
-  color:rgba(255,255,255,.65);
-}
-
-.progress{
-  height:9px;
-  background:rgba(255,255,255,.14);
-  border-radius:99px;
-  overflow:hidden;
-  margin-top:12px;
-}
-
-.bar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#00ff88,#75bbff);
-}
-
-.goal{
-  margin-top:10px;
-  font-size:15px;
-  color:rgba(255,255,255,.75);
-}
+.stat b{font-size:24px}
 
 button{
   border:0;
-  border-radius:18px;
-  padding:14px;
-  font-weight:900;
-  font-size:16px;
+  border-radius:16px;
+  padding:12px;
+  font-weight:800;
   color:white;
-  background:rgba(255,255,255,.12);
-}
-
-button:active{
-  transform:scale(.94);
+  background:rgba(255,255,255,.15);
 }
 
 .main{
-  background:linear-gradient(135deg,#00ff88,#baffdd);
-  color:#052215;
-}
-
-.main.active{
-  background:linear-gradient(135deg,#4d96ff,#9bd8ff);
-  color:white;
+  background:linear-gradient(135deg,#00ff88,#7dffd4);
+  color:#002c18;
 }
 
 .menu{
@@ -145,68 +103,42 @@ button:active{
   left:14px;
   right:14px;
   bottom:18px;
-  z-index:10000;
   padding:20px;
-  border-radius:28px;
-  max-height:78vh;
-  overflow:auto;
+  border-radius:26px;
+  background:rgba(60,60,60,.75);
+  backdrop-filter:blur(20px);
+  z-index:10000;
 }
 
-.menu.open{
-  display:block;
-}
+.menu.open{display:block;}
 
 .showBtn{
   display:none;
   position:absolute;
+  bottom:20px;
   left:50%;
-  bottom:24px;
   transform:translateX(-50%);
+  padding:12px 20px;
+  border-radius:20px;
+  background:rgba(60,60,60,.8);
+  color:white;
   z-index:10001;
-  padding:14px 22px;
-  border-radius:22px;
 }
 
-.showBtn.visible{
-  display:block;
-}
+.showBtn.visible{display:block;}
 
 .toast{
   position:absolute;
-  top:22px;
-  left:18px;
-  right:18px;
-  z-index:12000;
-  padding:14px;
-  border-radius:18px;
-  opacity:0;
-  transition:.25s;
-  font-weight:800;
-}
-
-.placeDot{
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:#ffd23f;
-  border:3px solid #111;
-  box-shadow:0 0 16px rgba(255,210,63,.9);
-}
-
-.placeItem,.achievementItem{
-  background:rgba(255,255,255,.10);
-  border-radius:18px;
+  top:20px;
+  left:20px;
+  right:20px;
+  background:rgba(60,60,60,.85);
   padding:12px;
-  margin-top:10px;
-}
-
-.placeItem b,.achievementItem b{
-  display:block;
-  font-size:16px;
-}
-
-.placeItem small,.achievementItem small{
-  color:rgba(255,255,255,.65);
+  border-radius:14px;
+  color:white;
+  opacity:0;
+  transition:.3s;
+  z-index:12000;
 }
 </style>
 </head>
@@ -221,24 +153,12 @@ button:active{
 
 <div id="menu" class="menu">
   <button onclick="centerMe()" style="width:100%">📍 My location</button>
-  <button onclick="savePlace()" style="width:100%;margin-top:10px">⭐ Save place</button>
-  <button onclick="toggleRoute()" style="width:100%;margin-top:10px">🗺 Route on/off</button>
-  <button onclick="hideUI()" style="width:100%;margin-top:10px">👁 Hide UI</button>
-
-  <button onclick="backup()" style="width:100%;margin-top:10px">Backup</button>
-  <button onclick="importData()" style="width:100%;margin-top:10px">Import</button>
-  <button onclick="resetData()" style="width:100%;margin-top:10px;background:#9e2f2f">Reset</button>
+  <button onclick="hideUI()" style="width:100%;margin-top:10px">Hide UI</button>
   <button onclick="toggleMenu()" style="width:100%;margin-top:10px">Close</button>
-
-  <div style="margin-top:18px;font-size:18px;font-weight:900">Saved Places</div>
-  <div id="placesList"></div>
-
-  <div style="margin-top:18px;font-size:18px;font-weight:900">Achievements</div>
-  <div id="achievementsList"></div>
 </div>
 
 <div id="panel" class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+  <div style="display:flex;justify-content:space-between">
     <div>
       <div class="title">WanderGlow</div>
       <div id="status" class="status">Waiting for GPS...</div>
@@ -247,21 +167,10 @@ button:active{
   </div>
 
   <div class="row">
-    <div class="stat"><b id="kmView">0.00</b><br><small>KM</small></div>
-    <div class="stat"><b id="cellsView">0</b><br><small>Cells</small></div>
-    <div class="stat"><b id="xpView">0</b><br><small>XP</small></div>
+    <div class="stat"><b id="cellsView">0</b><br>Cells</div>
+    <div class="stat"><b id="xpView">0</b><br>XP</div>
+    <div class="stat"><b id="kmView">0.00</b><br>KM</div>
   </div>
-
-  <div class="row">
-    <div class="stat"><b id="todayKmView">0.00</b><br><small>Today KM</small></div>
-    <div class="stat"><b id="todayCellsView">0</b><br><small>Today Cells</small></div>
-    <div class="stat"><b id="todayXpView">0</b><br><small>Today XP</small></div>
-  </div>
-
-  <div class="progress">
-    <div id="bar" class="bar"></div>
-  </div>
-  <div id="goal" class="goal">Goal: open 10 cells</div>
 
   <div class="row">
     <button style="flex:1" onclick="centerMe()">📍</button>
@@ -274,135 +183,66 @@ button:active{
 <script>
 const map = L.map("map").setView([56.95,24.1],15);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
-  maxZoom:19,
-  attribution:"© OpenStreetMap"
-}).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
 let lat=null,lng=null;
 let marker=null;
-let firstFix=true;
 let exploring=false;
-let routeVisible=true;
-let lastPoint=null;
 
-let todayKey=new Date().toISOString().slice(0,10);
-
-let xp=Number(localStorage.wg_rts_xp||0);
-let total=Number(localStorage.wg_rts_total||0);
-let cells=JSON.parse(localStorage.wg_rts_cells||"{}");
-let zones=JSON.parse(localStorage.wg_rts_zones||"{}");
-let path=JSON.parse(localStorage.wg_rts_path||"[]");
-let places=JSON.parse(localStorage.wg_rts_places||"[]");
-let achievements=JSON.parse(localStorage.wg_rts_achievements||"{}");
-let today=JSON.parse(localStorage.wg_rts_today||"{}");
-
-if(today.date!==todayKey){
-  today={
-    date:todayKey,
-    xp:0,
-    cells:0,
-    km:0
-  };
-}
+let cells=JSON.parse(localStorage.cells||"{}");
+let xp=Number(localStorage.xp||0);
+let total=Number(localStorage.total||0);
 
 const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
-const route=L.polyline(path,{
-  color:"#00ff88",
-  weight:4,
-  opacity:.65
-}).addTo(map);
-
-let placeMarkers=[];
-
-function resizeFog(){
+function resize(){
   fog.width=window.innerWidth;
   fog.height=window.innerHeight;
-  drawFog();
 }
-
-window.addEventListener("resize",resizeFog);
-map.on("move zoom",drawFog);
-resizeFog();
+resize();
 
 function cellKey(a,b){
   return Math.floor(a*1000)+"_"+Math.floor(b*1000);
 }
 
-function zoneKey(a,b){
-  return Math.floor(a*100)+"_"+Math.floor(b*100);
-}ег}
-  function cellCenter(key){
+function cellCenter(key){
   const p=key.split("_");
   return [(Number(p[0])+0.5)/1000,(Number(p[1])+0.5)/1000];
 }
 
-function level(){
-  return Math.floor(xp/100)+1;
-}
-
 function save(){
-  localStorage.wg_rts_xp=xp;
-  localStorage.wg_rts_total=total;
-  localStorage.wg_rts_cells=JSON.stringify(cells);
-  localStorage.wg_rts_zones=JSON.stringify(zones);
-  localStorage.wg_rts_path=JSON.stringify(path.slice(-1500));
-  localStorage.wg_rts_places=JSON.stringify(places);
-  localStorage.wg_rts_achievements=JSON.stringify(achievements);
-  localStorage.wg_rts_today=JSON.stringify(today);
+  localStorage.cells=JSON.stringify(cells);
+  localStorage.xp=xp;
+  localStorage.total=total;
 }
 
-function toast(text){
+function toast(t){
   const el=document.getElementById("toast");
-  el.innerText=text;
+  el.innerText=t;
   el.style.opacity=1;
   setTimeout(()=>el.style.opacity=0,2000);
 }
 
-function updateUI(){
-  const cellCount=Object.keys(cells).length;
-
-  document.getElementById("xpView").innerText=xp;
-  document.getElementById("cellsView").innerText=cellCount;
-  document.getElementById("kmView").innerText=(total/1000).toFixed(2);
-
-  document.getElementById("todayXpView").innerText=today.xp||0;
-  document.getElementById("todayCellsView").innerText=today.cells||0;
-  document.getElementById("todayKmView").innerText=(today.km||0).toFixed(2);
-
-  document.getElementById("bar").style.width=(xp%100)+"%";
-
-  renderPlaces();
-  renderAchievements();
-  save();
-}
-
-/* ===== USER ===== */
 function drawUser(){
   const icon=L.divIcon({
     html:'<div class="userDot"></div>',
     className:'',
-    iconSize:[34,34],
-    iconAnchor:[17,17]
+    iconSize:[30,30],
+    iconAnchor:[15,15]
   });
 
   if(!marker){
-    marker=L.marker([lat,lng],{
-      icon,
-      zIndexOffset:10000
-    }).addTo(map);
+    marker=L.marker([lat,lng],{icon}).addTo(map);
   }else{
     marker.setLatLng([lat,lng]);
   }
 }
 
-/* ===== FOG (малый радиус) ===== */
-function removeFogCircle(x,y,r,strength){
+/* FOG */
+function cut(x,y,r){
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
-  g.addColorStop(0,"rgba(0,0,0,"+strength+")");
-  g.addColorStop(.65,"rgba(0,0,0,"+(strength*.75)+")");
+  g.addColorStop(0,"rgba(0,0,0,1)");
   g.addColorStop(1,"rgba(0,0,0,0)");
 
   ctx.globalCompositeOperation="destination-out";
@@ -416,45 +256,34 @@ function removeFogCircle(x,y,r,strength){
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
 
-  ctx.fillStyle="rgba(0,0,0,.90)";
+  ctx.fillStyle="rgba(0,0,0,.85)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
-  Object.keys(cells).forEach(key=>{
-    const center=cellCenter(key);
-    const p=map.latLngToContainerPoint(center);
-
-    // 20–30 метров (уменьшено)
-    removeFogCircle(p.x,p.y,15,.76);
+  Object.keys(cells).forEach(k=>{
+    const p=map.latLngToContainerPoint(cellCenter(k));
+    cut(p.x,p.y,25);
   });
 
-  if(lat!==null&&lng!==null){
+  if(lat){
     const p=map.latLngToContainerPoint([lat,lng]);
-
-    // текущий обзор
-    removeFogCircle(p.x,p.y,24,.95);
+    cut(p.x,p.y,60);
   }
 }
 
-/* ===== ACTIONS ===== */
+/* UI */
 function toggleExplore(){
   exploring=!exploring;
-  document.getElementById("exploreBtn").classList.toggle("active",exploring);
   document.getElementById("exploreBtn").innerText=exploring?"Exploring":"Explore";
 }
 
 function centerMe(){
-  if(lat===null||lng===null){
-    toast("GPS...");
-    return;
-  }
-  map.setView([lat,lng],17);
+  if(lat) map.setView([lat,lng],17);
 }
 
 function toggleMenu(){
   document.getElementById("menu").classList.toggle("open");
 }
 
-/* ===== HIDE UI ===== */
 function hideUI(){
   document.getElementById("panel").classList.add("hidden");
   document.getElementById("menu").classList.remove("open");
@@ -466,176 +295,35 @@ function showUI(){
   document.getElementById("showBtn").classList.remove("visible");
 }
 
-/* ===== ROUTE ===== */
-function toggleRoute(){
-  routeVisible=!routeVisible;
-  if(routeVisible){
-    map.addLayer(route);
-  }else{
-    map.removeLayer(route);
-  }
-}
-
-/* ===== PLACES ===== */
-function savePlace(){
-  if(lat===null||lng===null)return;
-
-  const name=prompt("Название")||"Place";
-
-  places.push({
-    name,
-    lat,
-    lng,
-    date:new Date().toLocaleDateString()
-  });
-
-  drawPlaces();
-  updateUI();
-  toast("Saved");
-}
-
-function drawPlaces(){
-  placeMarkers.forEach(m=>map.removeLayer(m));
-  placeMarkers=[];
-
-  places.forEach((p,i)=>{
-    const icon=L.divIcon({
-      html:'<div class="placeDot"></div>',
-      className:"",
-      iconSize:[20,20],
-      iconAnchor:[10,10]
-    });
-
-    const m=L.marker([p.lat,p.lng],{icon}).addTo(map);
-    placeMarkers.push(m);
-  });
-}
-
-function renderPlaces(){
-  const box=document.getElementById("placesList");
-  box.innerHTML="";
-
-  places.slice().reverse().forEach(p=>{
-    box.innerHTML+=`
-      <div class="placeItem">
-        <b>${p.name}</b>
-        <small>${p.date}</small>
-      </div>
-    `;
-  });
-}
-
-/* ===== ACHIEVEMENTS ===== */
-function unlock(id,name){
-  if(achievements[id])return;
-  achievements[id]=true;
-  toast("🏆 "+name);
-}
-
-function renderAchievements(){
-  const box=document.getElementById("achievementsList");
-  box.innerHTML="";
-
-  if(achievements.first10) box.innerHTML+=`<div class="achievementItem"><b>Explorer</b><small>10 cells</small></div>`;
-  if(achievements.km1) box.innerHTML+=`<div class="achievementItem"><b>Traveler</b><small>1 km</small></div>`;
-  if(achievements.zone1) box.innerHTML+=`<div class="achievementItem"><b>Discoverer</b><small>1 zone</small></div>`;
-}
-
-/* ===== DATA ===== */
-function backup(){
-  const text=JSON.stringify({xp,total,cells,zones,path,places});
-  navigator.clipboard.writeText(text);
-  toast("Backup copied");
-}
-
-function importData(){
-  const text=prompt("Paste JSON");
-  if(!text)return;
-
-  try{
-    const d=JSON.parse(text);
-    xp=d.xp||0;
-    total=d.total||0;
-    cells=d.cells||{};
-    zones=d.zones||{};
-    path=d.path||[];
-    places=d.places||[];
-
-    route.setLatLngs(path);
-    drawPlaces();
-    updateUI();
-    drawFog();
-  }catch{
-    toast("Error");
-  }
-}
-
-function resetData(){
-  if(prompt("DELETE")!=="DELETE")return;
-  localStorage.clear();
-  location.reload();
-}
-
-/* ===== GPS ===== */
+/* GPS */
 navigator.geolocation.watchPosition(pos=>{
   lat=pos.coords.latitude;
   lng=pos.coords.longitude;
 
   drawUser();
+  map.setView([lat,lng],17);
 
-  if(lastPoint){
-    const d=map.distance(lastPoint,[lat,lng]);
-    if(d>2&&d<1000){
-      total+=d;
-      today.km+=d/1000;
-    }
-  }
-
-  lastPoint=[lat,lng];
-
-  if(firstFix){
-    map.setView([lat,lng],17);
-    firstFix=false;
-  }
-
-  path.push([lat,lng]);
-  if(path.length>1500)path.shift();
-  route.setLatLngs(path);
+  document.getElementById("status").innerText="Exploring";
 
   if(exploring){
-    const ck=cellKey(lat,lng);
-    const zk=zoneKey(lat,lng);
-
-    if(!cells[ck]){
-      cells[ck]=true;
+    const key=cellKey(lat,lng);
+    if(!cells[key]){
+      cells[key]=true;
       xp+=10;
-      today.xp+=10;
-      today.cells+=1;
-      unlock("first10","Explorer");
-    }
-
-    if(!zones[zk]){
-      zones[zk]=true;
-      xp+=50;
-      unlock("zone1","New zone");
-    }
-
-    if(total>1000){
-      unlock("km1","1 km");
+      toast("+10 XP");
     }
   }
 
-  updateUI();
+  document.getElementById("xpView").innerText=xp;
+  document.getElementById("cellsView").innerText=Object.keys(cells).length;
+
+  save();
   drawFog();
 
 },{
   enableHighAccuracy:true
 });
-
-drawPlaces();
-updateUI();
-drawFog();
-
 </script>
+
 </body>
 </html>
