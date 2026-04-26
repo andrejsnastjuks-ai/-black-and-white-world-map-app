@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WanderGlow Travel</title>
+<title>WanderGlow FINAL</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -13,13 +13,14 @@ html,body{margin:0;height:100%;background:#000;font-family:sans-serif}
 
 #fog{
   position:absolute;
-  inset:0;
-  z-index:500;
+  top:0;left:0;
+  width:100%;height:100%;
   pointer-events:none;
+  z-index:500;
 }
 
 .userDot{
-  width:16px;height:16px;border-radius:50%;
+  width:14px;height:14px;border-radius:50%;
   background:#00ff88;
   border:3px solid white;
   box-shadow:0 0 20px #00ff88;
@@ -28,10 +29,10 @@ html,body{margin:0;height:100%;background:#000;font-family:sans-serif}
 .panel{
   position:absolute;
   bottom:20px;left:10px;right:10px;
-  background:rgba(50,50,50,.7);
+  background:rgba(40,40,40,.7);
   backdrop-filter:blur(20px);
   border-radius:20px;
-  padding:15px;
+  padding:14px;
   color:white;
 }
 
@@ -71,7 +72,7 @@ button{
   <div style="display:flex;justify-content:space-between">
     <div>
       <b>WanderGlow</b><br>
-      <small id="status">Waiting GPS...</small>
+      <small id="status">GPS...</small>
     </div>
     <button id="exploreBtn" class="main">Explore</button>
   </div>
@@ -80,11 +81,6 @@ button{
     <div class="stat"><b id="walked">0 m</b><br>Walked</div>
     <div class="stat"><b id="explored">0 m</b><br>Explored</div>
     <div class="stat"><b id="areas">0</b><br>Areas</div>
-  </div>
-
-  <div class="row">
-    <div class="stat"><b id="country">Unknown</b><br>Country</div>
-    <div class="stat"><b id="mode">Walk</b><br>Mode</div>
   </div>
 
   <div class="row">
@@ -102,7 +98,9 @@ const map=L.map("map").setView([56.95,24.1],15);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-let lat,lng,marker,exploring=false,lastPoint;
+let lat,lng,marker;
+let exploring=false;
+let lastPoint;
 
 let walked=0;
 let explored=0;
@@ -112,43 +110,55 @@ const fog=document.getElementById("fog");
 const ctx=fog.getContext("2d");
 
 const modes={
-  walk:{r:25,step:25,label:"Walk"},
-  car:{r:80,step:80,label:"Car"},
-  train:{r:120,step:120,label:"Train"},
-  plane:{r:600,step:600,label:"Plane"}
+  walk:{r:25,step:25},
+  car:{r:80,step:80},
+  train:{r:120,step:120},
+  plane:{r:500,step:500}
 };
 
 let mode="walk";
 
 function resize(){
-  fog.width=innerWidth;
-  fog.height=innerHeight;
+  fog.width=window.innerWidth;
+  fog.height=window.innerHeight;
 }
 resize();
 
-function key(lat,lng){
-  return Math.floor(lat*4000)+"_"+Math.floor(lng*4000);
-}
+window.addEventListener("resize", ()=>{
+  resize();
+  drawFog();
+});
+
+map.on("move zoom", drawFog);
 
 function metersToPx(m){
-  const z=map.getZoom();
-  return m/(156543.03392*Math.cos(lat*Math.PI/180)/Math.pow(2,z));
+  if(!lat) return m;
+  const zoom = map.getZoom();
+  const metersPerPixel =
+    40075016.686 * Math.cos(lat * Math.PI/180) / Math.pow(2, zoom + 8);
+  return m / metersPerPixel;
+}
+
+function key(lat,lng){
+  return Math.floor(lat*3000)+"_"+Math.floor(lng*3000);
 }
 
 function drawFog(){
   ctx.clearRect(0,0,fog.width,fog.height);
+
   ctx.fillStyle="rgba(0,0,0,.85)";
   ctx.fillRect(0,0,fog.width,fog.height);
 
   Object.keys(visited).forEach(k=>{
     const [a,b]=k.split("_");
-    const p=map.latLngToContainerPoint([a/4000,b/4000]);
-    erase(p.x,p.y,modes.walk.r);
+    const p=map.latLngToContainerPoint([a/3000,b/3000]);
+
+    erase(p.x,p.y,metersToPx(30));
   });
 
   if(lat){
     const p=map.latLngToContainerPoint([lat,lng]);
-    erase(p.x,p.y,modes[mode].r*1.3);
+    erase(p.x,p.y,metersToPx(modes[mode].r));
   }
 }
 
@@ -169,18 +179,10 @@ function updateUI(){
   document.getElementById("walked").innerText=Math.round(walked)+" m";
   document.getElementById("explored").innerText=Math.round(explored)+" m";
   document.getElementById("areas").innerText=Object.keys(visited).length;
-  document.getElementById("mode").innerText=modes[mode].label;
-  document.getElementById("country").innerText=getCountry();
-}
-
-function getCountry(){
-  if(lat>55&&lat<58 && lng>20&&lng<28) return "Latvia";
-  return "Unknown";
 }
 
 function setMode(m){
   mode=m;
-  updateUI();
 }
 
 document.getElementById("exploreBtn").onclick=()=>{
@@ -195,7 +197,9 @@ navigator.geolocation.watchPosition(p=>{
     marker=L.marker([lat,lng],{
       icon:L.divIcon({html:'<div class="userDot"></div>'})
     }).addTo(map);
-  }else marker.setLatLng([lat,lng]);
+  }else{
+    marker.setLatLng([lat,lng]);
+  }
 
   if(lastPoint){
     const d=map.distance(lastPoint,[lat,lng]);
